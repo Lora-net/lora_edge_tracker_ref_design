@@ -26,14 +26,18 @@ Update modem firmware :
 Read internal log :
 -	Read the internal log and send them by UART
 
-## 2. Build & Install
+## 2. Documentation
+
+https://lora-developers.semtech.com/library/tech-papers-and-guides/lora-edge-tracker-reference-design-user-guide/
+
+## 3. Build & Install
 
 To build the host softwares, proceed as follow:
 
 -	use the Keil project, or
 -	execute the makefile (in gcc folder)
 
-## 3. Changelog
+## 4. Changelog
 
 ### V 1.1.2 ###
 
