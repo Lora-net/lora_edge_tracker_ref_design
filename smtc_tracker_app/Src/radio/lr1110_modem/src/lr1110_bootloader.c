@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_bootloader.c
+ * @file      lr1110_bootloader.c
  *
- * \brief     Bootloader driver implementation for LR1110
+ * @brief     Bootloader driver implementation for LR1110
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -103,30 +103,30 @@ uint32_t min( uint32_t a, uint32_t b )
 }
 
 /*!
- * \brief Helper function to fill cbuffer with opcode and offset
+ * @brief Helper function to fill cbuffer with opcode and offset
  *
  * Typically used in write flash functions.
  *
- * \warning It is up to the caller to ensure the size of cbuffer is big enough to contain all information!
+ * @warning It is up to the caller to ensure the size of cbuffer is big enough to contain all information!
  */
 static void lr1110_bootloader_fill_cbuffer_opcode_offset_flash( uint8_t* cbuffer, uint16_t opcode, uint32_t offset );
 
 /*!
- * \brief Helper function to fill cdata with data
+ * @brief Helper function to fill cdata with data
  *
  * Typically used in write flash functions.
  *
- * \warning It is up to the caller to ensure the size of cdata is big enough to contain all data!
+ * @warning It is up to the caller to ensure the size of cdata is big enough to contain all data!
  */
 static void lr1110_bootloader_fill_cdata_flash( uint8_t* cdata, const uint32_t* data, uint8_t data_length );
 
 /*!
- * \brief Helper function to fill cbuffer and cdata with information to write flash
+ * @brief Helper function to fill cbuffer and cdata with information to write flash
  *
  * Typically used in write flash functions. Internally calls lr1110_bootloader_fill_cbuffer_opcode_offset_flash and
  * lr1110_bootloader_fill_cdata_flash.
  *
- * \warning It is up to the caller to ensure the sizes of cbuffer and cdata are big enough to contain their respective
+ * @warning It is up to the caller to ensure the sizes of cbuffer and cdata are big enough to contain their respective
  * information!
  */
 static void lr1110_bootloader_fill_cbuffer_cdata_flash( uint8_t* cbuffer, uint8_t* cdata, uint16_t opcode,

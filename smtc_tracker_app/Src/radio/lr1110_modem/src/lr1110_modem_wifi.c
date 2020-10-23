@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_modem_wifi.c
+ * @file      lr1110_modem_wifi.c
  *
- * \brief     Wi-Fi passive scan driver implementation for LR1110 modem
+ * @brief     Wi-Fi passive scan driver implementation for LR1110 modem
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -44,11 +44,11 @@
 
 #ifndef MIN
 /*!
- * \brief Returns the minimum value between a and b
+ * @brief Returns the minimum value between a and b
  *
- * \param [in] a 1st value
- * \param [in] b 2nd value
- * \retval minValue Minimum value
+ * @param [in] a 1st value
+ * @param [in] b 2nd value
+ * @retval minValue Minimum value
  */
 #define MIN( a, b ) ( ( a > b ) ? b : a )
 #endif  // MIN
@@ -103,7 +103,7 @@ typedef enum
 } lr1110_modem_api_command_wifi_t;
 
 /*!
- * \brief Wi-Fi result interface structure
+ * @brief Wi-Fi result interface structure
  */
 typedef union
 {
@@ -122,7 +122,7 @@ typedef union
  */
 
 /*!
- * \brief Return a uint16 value by reading a buffer of uint8 from index.
+ * @brief Return a uint16 value by reading a buffer of uint8 from index.
  *
  * This function interpret the array MSB first. It is equivalent to:
  * return array[index] * 256 + array[index+1]
@@ -131,7 +131,7 @@ typedef union
 static uint16_t uint16_from_array( const uint8_t* array, const uint16_t index );
 
 /*!
- * \brief Return a uint64 value by reading a buffer of uint8 from index.
+ * @brief Return a uint64 value by reading a buffer of uint8 from index.
  *
  * This function interpret the array MSB first.
  *

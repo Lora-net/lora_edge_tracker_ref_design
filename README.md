@@ -35,6 +35,10 @@ To build the host softwares, proceed as follow:
 
 ## 3. Changelog
 
+### V 1.1.2 ###
+
+-	Add STM32WB SMPS (switched-mode power supply) configuration in application and bootloader
+
 ### V 1.1.1 ###
 
 -	Remove infinite loop in HardFault Handler / Error Handler / Hal mcu panic and replaced by hal_mcu_reset

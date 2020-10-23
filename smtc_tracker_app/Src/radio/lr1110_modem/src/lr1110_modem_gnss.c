@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_modem_gnss.c
+ * @file      lr1110_modem_gnss.c
  *
- * \brief     GNSS scan driver implementation for LR1110 modem
+ * @brief     GNSS scan driver implementation for LR1110 modem
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -112,8 +112,8 @@ typedef enum
     LR1110_MODEM_GNSS_READ_XTAL_ERROR_CMD              = 0x13,  //!< read the xtal accuracy
     LR1110_MODEM_GNSS_PUSH_SOLVER_CMD                  = 0x14,  //!< set the informations from the solver to the chip
     LR1110_MODEM_GNSS_GET_CONTEXT_STATUS_CMD           = 0x16,  //!< read the GNSS context status
-    LR1110_MODEM_GNSS_GET_NB_SV_DETECTED_CMD           = 0x17,  //!< read the number of detected satellites 
-    LR1110_MODEM_GNSS_GET_SV_DETECTED_CMD              = 0x18,  //!< read the informations of detected satellites 
+    LR1110_MODEM_GNSS_GET_NB_SV_DETECTED_CMD           = 0x17,  //!< read the number of detected satellites
+    LR1110_MODEM_GNSS_GET_SV_DETECTED_CMD              = 0x18,  //!< read the informations of detected satellites
     LR1110_MODEM_GNSS_GET_TIMINGS_CMD                  = 0x19,  //!< read the meseaured timings during the scan
     LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_CMD        = 0x1A,  //!< read the almanac by index
     LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD           = 0x30,  //!< start the scan autonomous
@@ -395,9 +395,10 @@ lr1110_modem_response_code_t lr1110_modem_gnss_get_context( const void*         
     gnss_context->gnss_firmware_version = rbuffer[2];
     gnss_context->global_almanac_crc    = ( ( uint32_t ) rbuffer[6] << 24 ) + ( ( uint32_t ) rbuffer[5] << 16 ) +
                                        ( ( uint32_t ) rbuffer[4] << 8 ) + ( ( uint32_t ) rbuffer[3] << 0 );
-    gnss_context->error_code              = rbuffer[7] >> 4;
+    gnss_context->error_code              = ( lr1110_modem_gnss_dmc_error_code_t ) ( rbuffer[7] >> 4 );
     gnss_context->almanac_update_bit_mask = ( rbuffer[7] >> 1 ) & 0x07;
-    gnss_context->frequency_search_space  = ( ( rbuffer[7] & 0x01 ) << 1 ) | ( rbuffer[8] >> 7 );
+    gnss_context->frequency_search_space =
+        ( lr1110_modem_gnss_frequency_search_space_t )( ( ( rbuffer[7] & 0x01 ) << 1 ) | ( rbuffer[8] >> 7 ) );
 
     return rc;
 }
@@ -468,8 +469,8 @@ lr1110_modem_response_code_t lr1110_modem_gnss_get_timings( const void* context,
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_almanac_read_by_index( const void* context, uint8_t sv_id, uint8_t nb_sv,
-                                                                 uint8_t* almanac_read, uint8_t buffer_len )
+lr1110_modem_response_code_t lr1110_modem_gnss_almanac_read_by_index( const void* context, uint8_t sv_id, uint8_t nb_sv,
+                                                                      uint8_t* almanac_read, uint8_t buffer_len )
 {
     uint8_t                      cbuffer[LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_CMD_LENGTH];
     uint8_t                      rbuffer[LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_RBUFFER_LENGTH] = { 0 };
@@ -503,8 +504,9 @@ lr1110_modem_response_code_t lr1110_modem_almanac_read_by_index( const void* con
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*   context,
-                                                                   const uint8_t gnss_input_paramaters,
+lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*                           context,
+                                                                   const lr1110_modem_gnss_search_mode_t effort_mode,
+                                                                   const uint8_t gnss_input_parameters,
                                                                    const uint8_t nb_sat )
 {
     uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD_LENGTH];
@@ -512,8 +514,8 @@ lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*  
     cbuffer[0] = LR1110_MODEM_GROUP_ID_GNSS;
     cbuffer[1] = LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD;
 
-    cbuffer[2] = 0x00;
-    cbuffer[3] = gnss_input_paramaters;
+    cbuffer[2] = ( uint8_t ) effort_mode;
+    cbuffer[3] = gnss_input_parameters;
     cbuffer[4] = nb_sat;
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
@@ -522,7 +524,7 @@ lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*  
 
 lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted_md( const void*                           context,
                                                                  const lr1110_modem_gnss_search_mode_t effort_mode,
-                                                                 const uint8_t gnss_input_paramaters,
+                                                                 const uint8_t gnss_input_parameters,
                                                                  const uint8_t nb_sat )
 {
     uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD_LENGTH];
@@ -531,7 +533,7 @@ lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted_md( const void*    
     cbuffer[1] = LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD;
 
     cbuffer[2] = ( uint8_t ) effort_mode;
-    cbuffer[3] = gnss_input_paramaters;
+    cbuffer[3] = gnss_input_parameters;
     cbuffer[4] = nb_sat;
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(

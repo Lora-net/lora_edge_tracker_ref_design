@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_modem_driver_version.h
+ * @file      lr1110_modem_driver_version.h
  *
- * \brief     Placeholder to keep the version of LR1110 driver.
+ * @brief     Placeholder to keep the version of LR1110 driver.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -29,19 +29,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __LR1110_MODEM_DRIVER_VERSION_H__
-#define __LR1110_MODEM_DRIVER_VERSION_H__
+#ifndef LR1110_MODEM_DRIVER_VERSION_H
+#define LR1110_MODEM_DRIVER_VERSION_H
 
 #define LR1110_MODEM_DRIVER_VERSION_MAJOR 1
 #define LR1110_MODEM_DRIVER_VERSION_MINOR 0
 #define LR1110_MODEM_DRIVER_VERSION_PATCH 0
 
 #ifdef __cplusplus
-extern "C"{
-#endif // __cplusplus
+extern "C" {
+#endif  // __cplusplus
 
 /*!
- * \brief Compare version information with current ones
+ * @brief Compare version information with current ones
  *
  * This macro expands to true boolean value if the version information provided in argument is compatible or
  * retro-compatible with the version of this code base
@@ -55,6 +55,6 @@ const char* lr1110_modem_driver_version_get_version_string( void );
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif  // __LR1110_MODEM_DRIVER_VERSION_H__
+#endif  // LR1110_MODEM_DRIVER_VERSION_H

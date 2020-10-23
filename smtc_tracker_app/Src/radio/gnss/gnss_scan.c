@@ -181,8 +181,8 @@ gnss_scan_result_t gnss_scan_execute( const void* context )
 
             if( scan_type == AUTONOMOUS_MODE )
             {
-                modem_response_code = lr1110_modem_gnss_scan_autonomous_md( context, gnss.settings.input_paramaters,
-                                                                            gnss.settings.nb_sat );
+                modem_response_code = lr1110_modem_gnss_scan_autonomous_md( context, gnss.settings.search_mode,
+                                                        gnss.settings.input_paramaters, gnss.settings.nb_sat );
             }
             else
             {

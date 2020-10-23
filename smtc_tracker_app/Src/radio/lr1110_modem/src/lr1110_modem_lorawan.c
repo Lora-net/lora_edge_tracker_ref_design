@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_modem_lorawan.c
+ * @file      lr1110_modem_lorawan.c
  *
- * \brief     LoRaWAN driver implementation for LR1110 modem
+ * @brief     LoRaWAN driver implementation for LR1110 modem
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -222,27 +222,27 @@ enum
  */
 
 /*!
- * \brief This command returns the number of bytes of next Event stored in LR1110 Modem. The returned value is the
+ * @brief This command returns the number of bytes of next Event stored in LR1110 Modem. The returned value is the
  * length encoded in two bytes.
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
  *
- * \param [out] event_size Event size encoded in two bytes
+ * @param [out] event_size Event size encoded in two bytes
  *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_get_event_size( const void* context, uint16_t* event_size );
 
 /*!
- * \brief This command returns size of command response to read
+ * @brief This command returns size of command response to read
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
  *
- * \param [in] cmd Command ID of the read command to be analyzed
+ * @param [in] cmd Command ID of the read command to be analyzed
  *
- * \param [out] cmd_rsp_size Response size
+ * @param [out] cmd_rsp_size Response size
  *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_get_cmd_rsp_size( const void* context, uint8_t cmd, uint8_t* cmd_rsp_size );
 

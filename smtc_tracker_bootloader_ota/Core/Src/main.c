@@ -265,11 +265,16 @@ void SystemClock_Config( void )
   HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
 #endif
 
-        /**
-         *  Write twice the value to flush the APB-AHB bridge to ensure the  bit is written
-         */
-        HAL_PWR_EnableBkUpAccess(); /**< Enable access to the RTC registers */
-        HAL_PWR_EnableBkUpAccess();
+    /**
+     *  Write twice the value to flush the APB-AHB bridge to ensure the  bit is written
+     */
+    HAL_PWR_EnableBkUpAccess(); /**< Enable access to the RTC registers */
+    HAL_PWR_EnableBkUpAccess();
+    
+    /* Configure the SMPS */
+    LL_PWR_SMPS_SetStartupCurrent(LL_PWR_SMPS_STARTUP_CURRENT_80MA);
+    LL_PWR_SMPS_SetOutputVoltageLevel(LL_PWR_SMPS_OUTPUT_VOLTAGE_1V50);
+    LL_PWR_SMPS_SetMode(LL_PWR_SMPS_STEP_DOWN);
 
   /**
    * Select LSE clock

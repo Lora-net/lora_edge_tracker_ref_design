@@ -161,6 +161,13 @@ uint16_t hal_mcu_get_vref_level( void );
 void hal_mcu_system_clock_forward_LSE( bool enable );
 
 /*!
+ * \brief Activate the SMPS
+ *
+ * \param enable Enable or disable the SMPS
+ */
+void hal_mcu_smps_enable( bool enable );
+
+/*!
  * \brief Prints debug trace
  *
  * \param variadics arguments

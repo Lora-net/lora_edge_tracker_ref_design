@@ -154,6 +154,11 @@ static void vprint( const char* fmt, va_list argp );
  */
 static void on_soft_watchdog_event( void* context );
 
+/*!
+ * \brief Configure the STM32WB SMPS
+ */
+static void hal_mcu_smps_config( void );
+
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
@@ -380,6 +385,30 @@ void assert_failed( uint8_t* file, uint32_t line )
 
 void hal_mcu_partial_sleep_enable( bool enable ) { partial_sleep_enable = enable; }
 
+void hal_mcu_system_clock_forward_LSE( bool enable )
+{
+    if( enable )
+    {
+        HAL_RCCEx_EnableLSCO( RCC_LSCOSOURCE_LSE );
+    }
+    else
+    {
+        HAL_RCCEx_DisableLSCO( );
+    }
+}
+
+void hal_mcu_smps_enable( bool enable )
+{
+    if( enable )
+    {
+        LL_PWR_SMPS_Enable( );
+    }
+    else
+    {
+        LL_PWR_SMPS_Disable( );
+    }
+}
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------
@@ -444,6 +473,9 @@ static void hal_mcu_system_clock_config( void )
     {
         hal_mcu_panic( );
     }
+    
+    /* Configure the SMPS */
+    hal_mcu_smps_config( );
 
     /*Configure GPIO pin : PA2 */
     GPIO_InitStruct.Pin = GPIO_PIN_2;
@@ -456,24 +488,31 @@ static void hal_mcu_system_clock_config( void )
     hal_mcu_system_clock_forward_LSE( true );
 }
 
-void hal_mcu_system_clock_forward_LSE( bool enable )
+static void hal_mcu_smps_config( void )
 {
-    if( enable )
-    {
-        HAL_RCCEx_EnableLSCO( RCC_LSCOSOURCE_LSE );
-    }
-    else
-    {
-        HAL_RCCEx_DisableLSCO( );
-    }
+   /* 
+    *   See AN5246 from ST
+    *
+    *   TX level of +0 dBm (Tx Code = 25) and a digital
+    *   activity at 20 mA maximum, then we have to set the VFBSMPS at a voltage higher than
+    *   1.4 V + 15 mV (load impact) + 10 mV (trimming accuracy), that is VFBSMPS > 1.425 V, which
+    *   gives 1.450 V
+    *
+    *   SMPSVOS = (VFBSMPS – 1.5 V) / 50 mV + SMPS_coarse_engi_trim
+    *
+    *   uint8_t smps_coarse_engi_trim = (*( __IO uint32_t* ) 0x1FFF7559) & 0x0F;
+    *   uint8_t smps_fine_engi_trim = (*( __IO uint32_t* ) 0x1FFF7549) & 0x0F;
+    *   float vfbsmps = 1.45;
+    *
+    *   smpsvos = ( ( vfbsmps - 1.5 ) / 0.050 ) + smps_coarse_engi_trim;
+    */
+
+    /* Configure the SMPS */
+    LL_PWR_SMPS_SetStartupCurrent(LL_PWR_SMPS_STARTUP_CURRENT_80MA);
+    LL_PWR_SMPS_SetOutputVoltageLevel(LL_PWR_SMPS_OUTPUT_VOLTAGE_1V50); // smpsvos should be 6 meaning LL_PWR_SMPS_OUTPUT_VOLTAGE_1V50
+    LL_PWR_SMPS_SetMode(LL_PWR_SMPS_STEP_DOWN);
 }
 
-/*!
- * \brief  Programmable Voltage Detector (PVD) Configuration
- *         PVD set to level 6 for a threshold around 2.9V.
- * \param  None
- * \retval None
- */
 static void hal_mcu_pvd_config( void )
 {
     PWR_PVDTypeDef sConfigPVD;

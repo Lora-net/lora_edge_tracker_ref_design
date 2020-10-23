@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_modem_wifi.h
+ * @file      lr1110_modem_wifi.h
  *
- * \brief     Wi-Fi passive scan driver definition for LR1110 modem
+ * @brief     Wi-Fi passive scan driver definition for LR1110 modem
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -20,8 +20,8 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH S.A. BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * ARE DISCLAIMED. IN NO EVENT SHALL SEMTECH CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __LR1110_MODEM_WIFI_H__
-#define __LR1110_MODEM_WIFI_H__
+#ifndef LR1110_MODEM_WIFI_H
+#define LR1110_MODEM_WIFI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,7 +94,7 @@ extern "C" {
  */
 
 /*!
- * \brief Wi-Fi Channels index
+ * @brief Wi-Fi Channels index
  */
 typedef enum
 {
@@ -117,15 +117,13 @@ typedef enum
 } lr1110_modem_wifi_channel_t;
 
 /*!
- * \brief Wi-Fi signal type for passive scanning configuration
+ * @brief Wi-Fi signal type for passive scanning configuration
  *
- * Note it is not possible to configure the Wi-Fi passive scanning to search
- * Wi-Fi type N GreenField. Only Wi-Fi type N Mixed Mode can be scanned by
- * LR1110.
+ * Note it is not possible to configure the Wi-Fi passive scanning to search Wi-Fi type N GreenField. Only Wi-Fi type N
+ * Mixed Mode can be scanned by LR1110.
  *
- * \warning LR1110_WIFI_TYPE_SCAN_G and LR1110_WIFI_TYPE_SCAN_N configurations
- * are implemented the same way, and both will scan Wi-Fi type G **AND** Wi-Fi
- * type N.
+ * @warning LR1110_WIFI_TYPE_SCAN_G and LR1110_WIFI_TYPE_SCAN_N configurations are implemented the same way, and both
+ * will scan Wi-Fi type G **AND** Wi-Fi type N.
  */
 typedef enum
 {
@@ -136,7 +134,7 @@ typedef enum
 } lr1110_modem_wifi_signal_type_scan_t;
 
 /*!
- * \brief Wi-Fi signal type for passive scan results
+ * @brief Wi-Fi signal type for passive scan results
  *
  * Note that the WiFi N detected is Wi-Fi N Mixed mode, and not GreenField.
  */
@@ -148,7 +146,7 @@ typedef enum
 } lr1110_modem_wifi_signal_type_result_t;
 
 /*!
- * \brief WiFi capture mode
+ * @brief WiFi capture mode
  */
 typedef enum
 {
@@ -165,9 +163,8 @@ typedef enum
     LR1110_MODEM_WIFI_RESULT_FORMAT_BASIC_MAC_TYPE_CHANNEL = 0x04,
 } lr1110_modem_wifi_result_format_t;
 
-
 /*!
- * \brief Type to store a MAC address
+ * @brief Type to store a MAC address
  */
 typedef uint8_t lr1110_modem_wifi_mac_address_t[LR1110_MODEM_WIFI_MAC_ADDRESS_LENGTH];
 
@@ -180,10 +177,10 @@ typedef uint8_t lr1110_modem_wifi_frame_type_info_byte_t;
 typedef uint16_t lr1110_modem_wifi_channel_mask_t;
 
 /*!
- * \brief Cumulative timings
+ * @brief Cumulative timings
  *
- * This structure is representing the cumulative time spent in the different
- * modes of Wi-Fi passive scanning procedure. Timing provided in [us].
+ * This structure is representing the cumulative time spent in the different modes of Wi-Fi passive scanning procedure.
+ * Timing provided in [us].
  * */
 typedef struct
 {
@@ -195,7 +192,7 @@ typedef struct
 } lr1110_modem_wifi_cumulative_timings_t;
 
 /*!
- * \brief Basic complete result structure
+ * @brief Basic complete result structure
  *
  * The beacon period is expressed in TU (Time Unit). 1 TU is 1024 microseconds.
  */
@@ -213,7 +210,7 @@ typedef struct
 } lr1110_modem_wifi_basic_complete_result_t;
 
 /*!
- * \brief Basic MAC, type, channel result structure
+ * @brief Basic MAC, type, channel result structure
  */
 typedef struct
 {
@@ -224,7 +221,7 @@ typedef struct
 } lr1110_modem_wifi_basic_mac_type_channel_result_t;
 
 /*!
- * \brief Wi-Fi version parameters
+ * @brief Wi-Fi version parameters
  */
 typedef struct
 {
@@ -238,70 +235,66 @@ typedef struct
  */
 
 /*!
- * \brief Enable/Disable usage of hardware de-barker
+ * @brief Enable/Disable usage of hardware de-barker
  *
  * Hardware de-barker is used by the chip only in Wi-Fi type B passive scan. Using it dramatically reduces the passive
  * scan time. It must be enabled for country code search operations. It is enabled by default.
  *
- * \warning Disabling the Hardware De-Barker makes the LR1110_WIFI_SCAN_MODE_FULL_PACKET unusable.
+ * @warning Disabling the Hardware De-Barker makes the LR1110_WIFI_SCAN_MODE_FULL_PACKET unusable.
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
+ * @param [in] enable_hardware_debarker Set to true to enable usage of hardware de-barker, false to disable
  *
- * \param [in] enable_hardware_debarker Set to true to enable usage of hardware de-barker, false to disable
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_cfg_hardware_debarker( const void* context,
                                                                       const bool  enable_hardware_debarker );
 
 /*!
- * \brief Reset the internal counters of cumulative timing
+ * @brief Reset the internal counters of cumulative timing
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
  *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_reset_cumulative_timing( const void* context );
 
 /*!
- * \brief Read the internal counters of cumulative timing
+ * @brief Read the internal counters of cumulative timing
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
+ * @param [out] timing A pointer to the cumulative timing structure to populate
  *
- * \param [out] timing A pointer to the cumulative timing structure to populate
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_read_cumulative_timing( const void*                             context,
                                                                        lr1110_modem_wifi_cumulative_timings_t* timing );
 
 /*!
- * \brief Configure the timestamp used to discriminate mobile access points from gateways.
+ * @brief Configure the timestamp used to discriminate mobile access points from gateways.
  *
  * This filtering is based on the hypothesis that mobile access points have timestamp shorter than gateways.
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
+ * @param [in] timestamp_in_s Timestamp value in second
  *
- * \param [in] timestamp_in_s Timestamp value in second
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_cfg_timestamp_ap_phone( const void* context, uint32_t timestamp_in_s );
 
 /*!
- * \brief Get the internal wifi firmware version
+ * @brief Get the internal wifi firmware version
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
+ * @param [out] wifi_version The wifi version structure populated with version numbers
  *
- * \param [out] wifi_version The wifi version structure populated with version numbers
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_read_version( const void*                  context,
                                                              lr1110_modem_wifi_version_t* wifi_version );
 
 /*!
- * \brief Start a Wi-Fi passive scan operation
+ * @brief Start a Wi-Fi passive scan operation
  *
  * During the complete passive scan operation, the LR1110 remains busy and cannot receive any commands. Using this
  * command **DOES** reset the results already obtained by previous passive scan operations.
@@ -323,29 +316,21 @@ lr1110_modem_response_code_t lr1110_modem_wifi_read_version( const void*        
  * lr1110_wifi_read_extended_results </td>
  * </table>
  *
- * \param [in] context Chip implementation context
- *
- * \param [in] signal_type The type of Wi-Fi Signal to scan for
- *
- * \param [in] channels Mask of the Wi-Fi channels to scan
- *
- * \param [in] scan_mode Scan mode to execute
- *
- * \param [in] max_results The maximal number of results to gather. When this limit is reached, the passive scan
+ * @param [in] context Chip implementation context
+ * @param [in] signal_type The type of Wi-Fi Signal to scan for
+ * @param [in] channels Mask of the Wi-Fi channels to scan
+ * @param [in] scan_mode Scan mode to execute
+ * @param [in] max_results The maximal number of results to gather. When this limit is reached, the passive scan
  * automatically stop. Range of allowed values is [1:32]. Note that value 0 is forbidden.
- *
- * \param [in] nb_scan_per_channel The number of internal scan sequences per channel scanned. Range of accepted values
+ * @param [in] nb_scan_per_channel The number of internal scan sequences per channel scanned. Range of accepted values
  * is [1:255]. Note that value 0 is forbidden.
- *
- * \param [in] timeout_in_ms The maximal duration of a single preamble search. Expressed in ms. Range of allowed values
+ * @param [in] timeout_in_ms The maximal duration of a single preamble search. Expressed in ms. Range of allowed values
  * is [1:65535]. Note that value 0 is forbidden.
- *
- * \param [in] abort_on_timeout If true, the beacon search jumps to next configured Wi-Fi channel (or stop if there is
+ * @param [in] abort_on_timeout If true, the beacon search jumps to next configured Wi-Fi channel (or stop if there is
  * no more channel to scan) as soon as a search timeout is encountered
+ * @param [in] result_format scanner result format \see lr1110_modem_wifi_result_format_t
  *
- * \param [in] result_format scanner result format \see lr1110_modem_wifi_result_format_t
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan(
     const void* context, const lr1110_modem_wifi_signal_type_scan_t signal_type,
@@ -354,7 +339,7 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan(
     const bool abort_on_timeout, const lr1110_modem_wifi_result_format_t result_format );
 
 /*!
- * \brief Start a Wi-Fi passive scan operation
+ * @brief Start a Wi-Fi passive scan operation
  *
  * During the complete passive scan operation, the LR1110 remains busy and cannot receive any commands. Using this
  * command **DOES** reset the results already obtained by previous passive scan operations.
@@ -376,28 +361,20 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan(
  * lr1110_wifi_read_extended_results </td>
  * </table>
  *
- * \param [in] context Chip implementation context
- *
- * \param [in] signal_type The type of Wi-Fi Signal to scan for
- *
- * \param [in] channels Mask of the Wi-Fi channels to scan
- *
- * \param [in] scan_mode Scan mode to execute
- *
- * \param [in] max_results The maximal number of results to gather. When this limit is reached, the passive scan
+ * @param [in] context Chip implementation context
+ * @param [in] signal_type The type of Wi-Fi Signal to scan for
+ * @param [in] channels Mask of the Wi-Fi channels to scan
+ * @param [in] scan_mode Scan mode to execute
+ * @param [in] max_results The maximal number of results to gather. When this limit is reached, the passive scan
  * automatically stop. Range of allowed values is [1:32]. Note that value 0 is forbidden.
+ * @param [in] timeout_per_channel_ms The maximal duration of a single preamble search. Expressed in ms. Range of
+ * allowed values is [1:65535]. Note that value 0 is forbidden.
+ * @param [in] timeout_per_scan_ms The maximal duration of a single preamble search. Expressed in ms. Range of allowed
+ * values is [0:65535]. If set to 0, the command will keep listening until exhaustion of timeout_per_channel_ms or until
+ * nb_max_results is reached
+ * @param [in] result_format scanner result format \see lr1110_modem_wifi_result_format_t
  *
- * \param [in] timeout_per_channel_ms The maximal duration of a single preamble search. Expressed in ms. Range of allowed values
- * is [1:65535]. Note that value 0 is forbidden.
- *
- * \param [in] timeout_per_scan_ms The maximal duration of a single preamble
- * search. Expressed in ms. Range of allowed values is [0:65535]. If set to 0,
- * the command will keep listening until exhaustion of timeout_per_channel_ms or
- * until nb_max_results is reached
- *
- * \param [in] result_format scanner result format \see lr1110_modem_wifi_result_format_t
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan_time_limit(
     const void* context, const lr1110_modem_wifi_signal_type_scan_t signal_type,
@@ -406,111 +383,91 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan_time_limit(
     const lr1110_modem_wifi_result_format_t result_format );
 
 /*!
- * \brief Start a Wi-Fi passive scan for country codes extraction
+ * @brief Start a Wi-Fi passive scan for country codes extraction
  *
  * This command starts a Wi-Fi passive scan operation for Beacons and Probe Responses on Wi-Fi type B only. It is to
  * be used to extract the Country Code fields.
  *
  * During the passive scan, the results are filtered to keep only single MAC addresses.
  *
- * \param [in] context Chip implementation context
- *
- * \param [in] channels_mask Mask of the Wi-Fi channels to scan
- *
- * \param [in] nb_max_results The maximum number of country code to gather. When this limit is reached, the passive
+ * @param [in] context Chip implementation context
+ * @param [in] channels_mask Mask of the Wi-Fi channels to scan
+ * @param [in] nb_max_results The maximum number of country code to gather. When this limit is reached, the passive
  * scan automatically stops. Maximal value is 32
- *
- * \param [in] nb_scan_per_channel Maximal number of scan attempts per channel. Maximal value is 255
- *
- * \param [in] timeout_in_ms The maximal duration of a single beacon search. Expressed in ms. Maximal value is 65535
+ * @param [in] nb_scan_per_channel Maximal number of scan attempts per channel. Maximal value is 255
+ * @param [in] timeout_in_ms The maximal duration of a single beacon search. Expressed in ms. Maximal value is 65535
  * ms
- *
- * \param [in] abort_on_timeout If true, the beacon search jumps to next configured Wi-Fi channel (or stop if there
+ * @param [in] abort_on_timeout If true, the beacon search jumps to next configured Wi-Fi channel (or stop if there
  * is no more channel to scan) as soon as a search timeout is encountered
  *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code(
     const void* context, const lr1110_modem_wifi_channel_mask_t channels_mask, const uint8_t nb_max_results,
     const uint8_t nb_scan_per_channel, const uint16_t timeout_in_ms, const bool abort_on_timeout );
 
 /*!
- * \brief Start a Wi-Fi passive scan for country code extraction with duration
- * stop conditions
+ * @brief Start a Wi-Fi passive scan for country code extraction with duration stop conditions
  *
- * This command acts similarly to lr1110_wifi_search_country_code, except that
- * its stop conditions are provided by timeouts, and not by maximal number of
- * scan attempts or results to find.
+ * This command acts similarly to lr1110_wifi_search_country_code, except that its stop conditions are provided by
+ * timeouts, and not by maximal number of scan attempts or results to find.
  *
- * \param [in] context Chip implementation context
+ * @param [in] context Chip implementation context
+ * @param [in] channels_mask Mask of the Wi-Fi channels to scan
+ * @param [in] nb_max_results The maximum number of country code to gather. When this limit is reached, the passive scan
+ * automatically stops. Maximal value is 32
+ * @param [in] timeout_per_channel_ms The maximal duration of a scan on one channel. Expressed in ms
+ * @param [in] timeout_per_scan_ms The maximal duration of a single preamble search. Expressed in ms. Range of allowed
+ * values is [0:65535]. If set to 0, the command will keep listening until exhaustion of timeout_per_channel_ms or until
+ * nb_max_results is reached
  *
- * \param [in] channels_mask Mask of the Wi-Fi channels to scan
- *
- * \param [in] nb_max_results The maximum number of country code to gather. When
- * this limit is reached, the passive scan automatically stops. Maximal value is
- * 32
- *
- * \param [in] timeout_per_channel_ms The maximal duration of a scan on one
- * channel. Expressed in ms
- *
- * \param [in] timeout_per_scan_ms The maximal duration of a single preamble
- * search. Expressed in ms. Range of allowed values is [0:65535]. If set to 0,
- * the command will keep listening until exhaustion of timeout_per_channel_ms or
- * until nb_max_results is reached
- *
- * \returns Operation status
+ * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code_time_limit(
     const void* context, const lr1110_modem_wifi_channel_mask_t channels_mask, const uint8_t nb_max_results,
     const uint16_t timeout_per_channel_ms, const uint16_t timeout_per_scan_ms );
 
 /*!
- * \brief Read complete results
+ * @brief Read complete results
  *
- * \param [in] buffer Buffer containing the raw data
- *
- * \param [in] buffer_len Size of the raw data buffer
- *
- * \param [out] results Pointer to an array of result structures to populate. It is up to the caller to ensure this
+ * @param [in] buffer Buffer containing the raw data
+ * @param [in] buffer_len Size of the raw data buffer
+ * @param [out] results Pointer to an array of result structures to populate. It is up to the caller to ensure this
  * array can hold at least nb_results elements.
- *
- * \param [out] nb_results Number of results read
+ * @param [out] nb_results Number of results read
  */
 void lr1110_modem_wifi_read_basic_results( const uint8_t* buffer, const uint16_t buffer_len,
                                            lr1110_modem_wifi_basic_mac_type_channel_result_t* results,
                                            uint8_t*                                           nb_results );
 
 /*!
- * \brief Read basic results
+ * @brief Read basic results
  *
- * \param [in] buffer Buffer containing the raw data
- *
- * \param [in] buffer_len Size of the raw data buffer
- *
- * \param [out] results Pointer to an array of result structures to populate. It is up to the caller to ensure this
+ * @param [in] buffer Buffer containing the raw data
+ * @param [in] buffer_len Size of the raw data buffer
+ * @param [out] results Pointer to an array of result structures to populate. It is up to the caller to ensure this
  * array can hold at least nb_results elements.
- *
- * \param [out] nb_results Number of results read
+ * @param [out] nb_results Number of results read
  */
 void lr1110_modem_wifi_read_complete_results( const uint8_t* buffer, const uint16_t buffer_len,
                                               lr1110_modem_wifi_basic_complete_result_t* results, uint8_t* nb_results );
 
 /*!
- * \brief Helper method to retrieve channel from channel info byte
+ * @brief Helper method to retrieve channel from channel info byte
  *
- * \param [in] info_byte The chanel info byte from passive scan result
+ * @param [in] info_byte The chanel info byte from passive scan result
  *
- * \retval The channel of scanned MAC address
+ * @returns The channel of scanned MAC address
  */
 lr1110_modem_wifi_channel_t lr1110_modem_extract_channel_from_info_byte(
     const lr1110_modem_wifi_channel_info_byte_t info_byte );
 
 /*!
- * \brief Helper method to retrieve the signal type from data rate info byte
+ * @brief Helper method to retrieve the signal type from data rate info byte
  *
- * \param [in] data_rate_info The data rate info byte from a passive scan result
+ * @param [in] data_rate_info The data rate info byte from a passive scan result
  *
- * \retval The Signal Type of the scanned frame
+ * @returns The Signal Type of the scanned frame
  */
 lr1110_modem_wifi_signal_type_result_t lr1110_modem_extract_signal_type_from_data_rate_info(
     const lr1110_modem_wifi_datarate_info_byte_t data_rate_info );
@@ -519,6 +476,6 @@ lr1110_modem_wifi_signal_type_result_t lr1110_modem_extract_signal_type_from_dat
 }
 #endif
 
-#endif  // __LR1110_MODEM_WIFI_H__
+#endif  // LR1110_MODEM_WIFI_H
 
 /* --- EOF ------------------------------------------------------------------ */
