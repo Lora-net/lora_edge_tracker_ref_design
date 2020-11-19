@@ -35,7 +35,8 @@
  */
  
 #include "main_tracker.h"
-#include "Commissioning_tracker.h"
+#include "lorawan_commissioning.h"
+#include "lorawan_config.h"
 #include "lr1110_tracker_board.h"
 #include "wifi_scan.h"
 #include "gnss_scan.h"
@@ -57,18 +58,6 @@
  * value in [ms].
  */
 #define APP_TX_DUTYCYCLE_RND 1000
-
-/*!
- * \brief Default datarate
- */
-#define LORAWAN_DEFAULT_DATARATE LR1110_MODEM_ADR_PROFILE_NETWORK_SERVER_CONTROLLED
-
-/*!
- * \brief LoRaWAN ETSI duty cycle control enable/disable
- *
- * \remark Please note that ETSI mandates duty cycled transmissions. Set to false only for test purposes
- */
-#define LORAWAN_DUTYCYCLE_ON LR1110_MODEM_DUTY_CYCLE_ENABLE
 
 /*!
  * \brief Force the LoRaWAN keys writing in flash memory
@@ -135,6 +124,11 @@ static uint32_t stream_cnt = 0;
  * \brief Downlink counter \note only for trace/debug
  */
 static uint32_t downlink_cnt = 0;
+
+/*!
+ * \brief Previous modem charge before read it into the LR1110 Modem-E
+ */
+static uint32_t previous_modem_charge = 0;
 
 /*!
  * \brief Device states
@@ -293,11 +287,6 @@ static void lr1110_modem_no_event( void );
 static void parse_frame( uint8_t port, const uint8_t* payload, uint8_t size );
 
 /*!
- * \brief Lorawan default init
- */
-static lr1110_modem_response_code_t lorawan_init( void );
-
-/*!
  * \brief GNSS default init
  */
 static lr1110_modem_response_code_t gnss_init( void );
@@ -306,6 +295,13 @@ static lr1110_modem_response_code_t gnss_init( void );
  * \brief Get and update in flash context the gnss assistance position if has changed
  */
 static void store_new_assistance_position( void );
+
+/*!
+ * \brief Update in flash context the accumulated charge if has changed
+ *
+ * \param [in] modem_charge the actual modem charge
+ */
+static void store_new_acculated_charge( uint32_t modem_charge );
 
 /*!
  * \brief Convert lr1110 modem status to string
@@ -431,7 +427,7 @@ int main( void )
     }
 
     /* Basic LoRaWAN configuration */
-    if( lorawan_init( ) != LR1110_MODEM_RESPONSE_CODE_OK )
+    if( lorawan_init( tracker_ctx.lorawan_region ) != LR1110_MODEM_RESPONSE_CODE_OK )
     {
         HAL_DBG_TRACE_ERROR( "###### ===== LORAWAN INIT ERROR ==== ######\r\n\r\n" );
     }
@@ -653,6 +649,8 @@ int main( void )
                     /* Modem charge */
                     lr1110_modem_get_charge( &lr1110, &tracker_ctx.charge );
                     HAL_DBG_TRACE_PRINTF( "Charge value : %d mAh\r\n", tracker_ctx.charge );
+                    store_new_acculated_charge( tracker_ctx.charge );
+                    HAL_DBG_TRACE_PRINTF( "Accumulated charge value : %d mAh\r\n", tracker_ctx.accumulated_charge );
                         
                     /* Board voltage charge */
                     tracker_ctx.voltage = hal_mcu_get_vref_level( );
@@ -661,6 +659,7 @@ int main( void )
                     if( tracker_ctx.internal_log_enable )
                     {
                         tracker_store_internal_log( );
+                        HAL_DBG_TRACE_PRINTF( "Internal Log memory space remaining: %d %%\r\n", tracker_get_remaining_memory_space( ) );
                     }
 
                     /* Build the payload and stream it */
@@ -938,10 +937,10 @@ static void build_and_stream_payload( void )
     /* Get charge */
     tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = TAG_CHARGE;  // Charge TAG
     tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = 4;           // Charge LEN
-    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.charge >> 24;
-    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.charge >> 16;
-    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.charge >> 8;
-    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.charge;
+    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.accumulated_charge >> 24;
+    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.accumulated_charge >> 16;
+    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.accumulated_charge >> 8;
+    tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = tracker_ctx.accumulated_charge;
 
     /* Get board voltage */
     tracker_ctx.lorawan_payload[tracker_ctx.lorawan_payload_len++] = TAG_VOLTAGE;  // Voltage TAG
@@ -953,48 +952,6 @@ static void build_and_stream_payload( void )
     add_payload_in_streaming_fifo( tracker_ctx.lorawan_payload, tracker_ctx.lorawan_payload_len );
 
     tracker_ctx.lorawan_payload_len = 0;  // reset the payload len
-}
-
-static lr1110_modem_response_code_t lorawan_init( void )
-{
-    lr1110_modem_dm_info_fields_t dm_info_fields;
-    lr1110_modem_response_code_t  modem_response_code = LR1110_MODEM_RESPONSE_CODE_OK;
-
-    modem_response_code |= lr1110_modem_set_class( &lr1110, LR1110_LORAWAN_CLASS_A );
-
-    if( tracker_ctx.lorawan_region == LR1110_LORAWAN_REGION_EU868 )
-    {
-        HAL_DBG_TRACE_MSG( "REGION      : EU868\r\n\r\n" );
-        modem_response_code |= lr1110_modem_set_region( &lr1110, LR1110_LORAWAN_REGION_EU868 );
-
-        modem_response_code |= lr1110_modem_activate_duty_cycle( &lr1110, LORAWAN_DUTYCYCLE_ON );
-
-        /* The EIRP on this board/band is 13.2 dBm, add an offset of 2 dBm */
-        modem_response_code |= lr1110_modem_set_tx_power_offset( &lr1110, 2 );
-    }
-    if( tracker_ctx.lorawan_region == LR1110_LORAWAN_REGION_US915 )
-    {
-        HAL_DBG_TRACE_MSG( "REGION      : US915\r\n\r\n" );
-        modem_response_code |= lr1110_modem_set_region( &lr1110, LR1110_LORAWAN_REGION_US915 );
-    }
-
-    modem_response_code |= lr1110_modem_set_adr_profile( &lr1110, LORAWAN_DEFAULT_DATARATE, adr_custom_list );
-
-    /* Set DM info field */
-    dm_info_fields.dm_info_field[0] = LR1110_MODEM_DM_INFO_TYPE_CHARGE;
-    dm_info_fields.dm_info_field[1] = LR1110_MODEM_DM_INFO_TYPE_GNSS_ALMANAC_STATUS;
-    dm_info_fields.dm_info_field[2] = LR1110_MODEM_DM_INFO_TYPE_TEMPERATURE;
-    dm_info_fields.dm_info_length   = 3;
-
-    modem_response_code |= lr1110_modem_set_dm_info_field( &lr1110, &dm_info_fields );
-
-    modem_response_code |= lr1110_modem_set_dm_info_interval( &lr1110, LR1110_MODEM_REPORTING_INTERVAL_IN_HOUR, 1 );
-
-    modem_response_code |= lr1110_modem_set_alc_sync_mode( &lr1110, LR1110_MODEM_ALC_SYNC_MODE_ENABLE );
-
-    modem_response_code |= lr1110_modem_stream_init( &lr1110, 0, LR1110_MODEM_FILE_ENCRYPTION_DISABLE );
-
-    return modem_response_code;
 }
 
 static lr1110_modem_response_code_t gnss_init( void )
@@ -1026,6 +983,19 @@ static void store_new_assistance_position( void )
         tracker_ctx.gnss_settings.assistance_position.longitude = assistance_position.longitude;
 
         tracker_store_app_ctx( );
+    }
+}
+
+static void store_new_acculated_charge( uint32_t modem_charge )
+{
+    /* Store the new accumulated charge only if the modem charge has changed */
+    if( modem_charge != previous_modem_charge )
+    {
+        tracker_ctx.accumulated_charge += modem_charge - previous_modem_charge; 
+        HAL_DBG_TRACE_MSG( "New acculated charge stored\r\n" );
+        tracker_store_app_ctx( );
+
+        previous_modem_charge = modem_charge;
     }
 }
 
@@ -1179,6 +1149,9 @@ static void lr1110_modem_reset_event( uint16_t reset_count )
 static void lr1110_modem_network_joined( void )
 {
     HAL_DBG_TRACE_INFO( "###### ===== JOINED ==== ######\r\n\r\n" );
+
+    /* Set the ADR profile once joined */
+    lr1110_modem_set_adr_profile( &lr1110, LORAWAN_DEFAULT_DATARATE, adr_custom_list );
 }
 
 static void lr1110_modem_join_fail( void ) { HAL_DBG_TRACE_INFO( "###### ===== JOIN FAIL ==== ######\r\n\r\n" ); }
@@ -1259,7 +1232,7 @@ void lr1110_modem_alarm( void )
         }
         else
         {
-            HAL_DBG_TRACE_ERROR( "Unknow modem status %d\r\n\r\n", modem_status );
+            HAL_DBG_TRACE_WARNING( "Unknow modem status %d\r\n\r\n", modem_status );
             device_state = DEVICE_STATE_CYCLE;
         }
     }
@@ -1270,7 +1243,7 @@ static void lr1110_modem_down_data( int8_t rssi, int8_t snr, lr1110_modem_down_d
 {
     HAL_DBG_TRACE_INFO( "\r\n###### ===== DOWNLINK FRAME %lu ==== ######\r\n\r\n", downlink_cnt++ );
 
-    HAL_DBG_TRACE_PRINTF( "RX WINDOW   : %d\r\n", flags );
+    HAL_DBG_TRACE_PRINTF( "RX WINDOW   : %d\r\n", flags & ( LR1110_MODEM_DOWN_DATA_EVENT_DNW1 | LR1110_MODEM_DOWN_DATA_EVENT_DNW2 ) );
 
     HAL_DBG_TRACE_PRINTF( "RX PORT     : %d\r\n", port );
 

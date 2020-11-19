@@ -128,7 +128,7 @@ void lr1110_modem_event_process( const void* context )
                     if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->down_data != NULL ) )
                     {
                         int8_t  rssi  = ( ( int8_t ) event_fields.buffer[0] ) - 64;
-                        int8_t  snr   = ( event_fields.buffer[1] << 2 );
+                        int8_t  snr   = ( ( ( int8_t ) event_fields.buffer[1] ) >> 2 );
                         uint8_t flags = event_fields.buffer[2];
                         uint8_t port  = event_fields.buffer[3];
                         uint8_t buffer_size = event_fields.buffer_len - 4;  // remove rssi/snr/flags and port from buffer

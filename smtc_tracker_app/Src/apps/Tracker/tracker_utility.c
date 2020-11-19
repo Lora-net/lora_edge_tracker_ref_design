@@ -35,9 +35,11 @@
  */
 
 #include <time.h>
+#include "lorawan_config.h"
 #include "lr1110_tracker_board.h"
 #include "tracker_utility.h"
 #include "main_tracker.h"
+#include "lorawan_commissioning.h"
 
 /*
  * -----------------------------------------------------------------------------
@@ -53,6 +55,7 @@
 #define NB_CHUNK_ALMANAC 42
 #define CHUNK_INTERNAL_LOG 145
 #define INTERNAL_LOG_BUFFER_LEN 3000
+#define ACCUMULATED_CHARGE_THRESHOLD 10000
 
 /*
  * -----------------------------------------------------------------------------
@@ -250,6 +253,11 @@ void tracker_reset_internal_log( void )
     }
 }
 
+uint8_t tracker_get_remaining_memory_space( void )
+{
+    return (tracker_ctx.flash_remaining_space * 100 ) / (tracker_ctx.flash_addr_end - tracker_ctx.flash_addr_start);
+}
+
 uint8_t tracker_restore_app_ctx( void )
 {
     uint8_t tracker_ctx_buf[255];
@@ -330,6 +338,23 @@ uint8_t tracker_restore_app_ctx( void )
         tracker_ctx.gnss_scan_if_wifi_not_good_enough = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.lorawan_adr_profile = tracker_ctx_buf[tracker_ctx_buf_idx++]; 
         tracker_ctx.internal_log_enable  = tracker_ctx_buf[tracker_ctx_buf_idx++]; 
+        
+        tracker_ctx.accumulated_charge = tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
+        tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 16;
+        tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 24;
+
+        /* When a device is updated with an existing context. the accumulated_charge will be not 
+        properly set and the value will be read just from the flash which has a dummy value 
+        (because not previously set in the flash).
+        a normal device provided by Semtech has two batteries which have 2.6Ah (total) capacity 
+        so 2600 mAh. so a normal device can't cross 10 000 mAh.
+        Avoid wrong value after update a device which didn't have this metric */
+        
+        if( tracker_ctx.accumulated_charge > ACCUMULATED_CHARGE_THRESHOLD )
+        {
+            tracker_ctx.accumulated_charge = 0;
+        }
     }
     return SUCCESS;
 }
@@ -409,6 +434,11 @@ void tracker_store_app_ctx( void )
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.gnss_scan_if_wifi_not_good_enough;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.lorawan_adr_profile;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.internal_log_enable; 
+    
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 8;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 16;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 24;
 
     flash_write_buffer( FLASH_USER_TRACKER_CTX_START_ADDR, tracker_ctx_buf, tracker_ctx_buf_idx );
 }
@@ -422,13 +452,7 @@ void tracker_init_app_ctx( uint8_t* dev_eui, uint8_t* join_eui, uint8_t* app_key
     memcpy( tracker_ctx.dev_eui, dev_eui, 8 );
     memcpy( tracker_ctx.join_eui, join_eui, 8 );
     memcpy( tracker_ctx.app_key, app_key, 16 );
-#if defined( USE_REGION_EU868 )
-    tracker_ctx.lorawan_region = LR1110_LORAWAN_REGION_EU868;
-#endif
-#if defined( USE_REGION_US915 )
-    tracker_ctx.lorawan_region = LR1110_LORAWAN_REGION_US915;
-    ;
-#endif
+    tracker_ctx.lorawan_region = LORAWAN_REGION_USED;
     tracker_ctx.use_semtech_join_server = USE_SEMTECH_JOIN_SERVER;
     tracker_ctx.lorawan_adr_profile     = LR1110_MODEM_ADR_PROFILE_MOBILE_LOW_POWER;
 
@@ -460,6 +484,7 @@ void tracker_init_app_ctx( uint8_t* dev_eui, uint8_t* join_eui, uint8_t* app_key
     tracker_ctx.app_keep_alive_frame_interval   = TRACKER_KEEP_ALIVE_FRAME_INTERVAL;
     tracker_ctx.airplane_mode = true; 
     tracker_ctx.internal_log_enable = false;
+    tracker_ctx.accumulated_charge = 0;
     
     if( store_in_flash == true )
     {
@@ -503,7 +528,7 @@ void tracker_store_internal_log( void )
         scan_buf[index++] = tracker_ctx.tout >> 8;
 
         /* GNSS scan on Patch Antenna */
-        if( ( tracker_ctx.patch_nav_message_len > 2 ) && ( GNSS_PATCH_ANTENNA_LOG_ACTIVATED == 1 ) )
+        if( ( tracker_ctx.patch_nav_message_len > 0 ) && ( GNSS_PATCH_ANTENNA_LOG_ACTIVATED == 1 ) )
         {
             scan_buf[index]     = TAG_GNSS_PATCH_ANTENNA;
             scan_buf[index + 1] = tracker_ctx.patch_nav_message_len;
@@ -513,7 +538,7 @@ void tracker_store_internal_log( void )
         }
 
         /* GNSS scan on Patch Antenna */
-        if( ( tracker_ctx.pcb_nav_message_len > 2 ) && ( GNSS_PCB_ANTENNA_LOG_ACTIVATED == 1 ) )
+        if( ( tracker_ctx.pcb_nav_message_len > 0 ) && ( GNSS_PCB_ANTENNA_LOG_ACTIVATED == 1 ) )
         {
             scan_buf[index]     = TAG_GNSS_PCB_ANTENNA;
             scan_buf[index + 1] = tracker_ctx.pcb_nav_message_len;
@@ -644,7 +669,14 @@ void tracker_restore_internal_log( void )
                                           epoch_time.tm_sec );
                     HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, tag_element );
 
-                    HAL_DBG_TRACE_MSG( "01" );
+                    if( len > 1 )
+                    {
+                        HAL_DBG_TRACE_MSG( "01" );
+                    }
+                    else
+                    {
+                        HAL_DBG_TRACE_MSG( "00" );
+                    }
                     for( uint8_t i = 0; i < len; i++ )
                     {
                         HAL_DBG_TRACE_PRINTF( "%02X", scan_buf[scan_buf_index++] );
@@ -682,7 +714,14 @@ void tracker_restore_internal_log( void )
                                           epoch_time.tm_sec );
                     HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, tag_element );
 
-                    HAL_DBG_TRACE_MSG( "01" );
+                    if( len > 1 )
+                    {
+                        HAL_DBG_TRACE_MSG( "01" );
+                    }
+                    else
+                    {
+                        HAL_DBG_TRACE_MSG( "00" );
+                    }
                     for( uint8_t i = 0; i < len; i++ )
                     {
                         HAL_DBG_TRACE_PRINTF( "%02X", scan_buf[scan_buf_index++] );
@@ -926,7 +965,14 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
                 memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
                 *buffer_len += output_buffer_len_tmp;
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"01");
+                if( len > 1)
+                {
+                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"01");
+                }
+                else
+                {
+                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"00");
+                }
                 memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
                 *buffer_len += output_buffer_len_tmp;
                 
@@ -961,7 +1007,14 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
                 memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
                 *buffer_len += output_buffer_len_tmp;
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "01" );
+                if( len > 1)
+                {
+                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"01");
+                }
+                else
+                {
+                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"00");
+                }
                 memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
                 *buffer_len += output_buffer_len_tmp;
                 
@@ -1132,6 +1185,22 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = modem_status;
 
                 payload_index += GET_MODEM_STATUS_LEN;
+                break;
+            }
+            
+            case GET_MODEM_DATE_CMD:
+            {
+                uint32_t date = lr1110_modem_board_get_systime_from_gps( &lr1110 );
+
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_MODEM_DATE_CMD;
+                buffer_out[output_buffer_index++] = GET_MODEM_DATE_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = date >> 24;
+                buffer_out[output_buffer_index++] = date >> 16;
+                buffer_out[output_buffer_index++] = date >> 8;
+                buffer_out[output_buffer_index++] = date;
+
+                payload_index += GET_MODEM_DATE_LEN;
                 break;
             }
 
@@ -2191,7 +2260,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 }
                 else
                 {
-                    /* Don't change the value of the region in this case */
+                    /* Don't change the value of the usage of the usage of join server in this case */
                     /* NAck the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
                     buffer_out[output_buffer_index++] = SET_LORAWAN_JOIN_SERVER_CMD;
@@ -2211,6 +2280,44 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = tracker_ctx.use_semtech_join_server;
 
                 payload_index += GET_LORAWAN_JOIN_SERVER_LEN;
+                break;
+            }
+            
+            case SET_LORAWAN_DUTY_CYCLE_CMD:
+            {
+                if( payload[payload_index] <= 1 )
+                {
+                    tracker_ctx.duty_cycle_enable = payload[payload_index];
+                    lr1110_modem_activate_duty_cycle( &lr1110, ( lr1110_modem_duty_cycle_t ) tracker_ctx.duty_cycle_enable ); 
+                    
+                    /* Ack the CMD */
+                    buffer_out[0] += 1;  // Add the element in the output buffer
+                    buffer_out[output_buffer_index++] = SET_LORAWAN_DUTY_CYCLE_CMD;
+                    buffer_out[output_buffer_index++] = SET_LORAWAN_DUTY_CYCLE_LEN;
+                    buffer_out[output_buffer_index++] = tracker_ctx.duty_cycle_enable;
+                }
+                else
+                {
+                    /* NAck the CMD */
+                    tracker_ctx.duty_cycle_enable = true;
+                    buffer_out[0] += 1;  // Add the element in the output buffer
+                    buffer_out[output_buffer_index++] = SET_LORAWAN_DUTY_CYCLE_CMD;
+                    buffer_out[output_buffer_index++] = SET_LORAWAN_DUTY_CYCLE_LEN;
+                    buffer_out[output_buffer_index++] = tracker_ctx.duty_cycle_enable;
+                }
+
+                payload_index += SET_LORAWAN_DUTY_CYCLE_LEN;
+                break;
+            }
+
+            case GET_LORAWAN_DUTY_CYCLE_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_LORAWAN_DUTY_CYCLE_CMD;
+                buffer_out[output_buffer_index++] = GET_LORAWAN_DUTY_CYCLE_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.duty_cycle_enable;
+
+                payload_index += GET_LORAWAN_DUTY_CYCLE_LEN;
                 break;
             }
             
@@ -2346,10 +2453,38 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_BOARD_VOLTAGE_CMD;
                 buffer_out[output_buffer_index++] = GET_BOARD_VOLTAGE_ANSWER_LEN;
+                tracker_ctx.voltage = hal_mcu_get_vref_level( );
                 buffer_out[output_buffer_index++] = tracker_ctx.voltage >> 8;
                 buffer_out[output_buffer_index++] = tracker_ctx.voltage;
 
                 payload_index += GET_BOARD_VOLTAGE_LEN;
+                break;
+            }
+            
+            case GET_APP_ACCUMULATED_CHARGE_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_APP_ACCUMULATED_CHARGE_CMD;
+                buffer_out[output_buffer_index++] = GET_APP_ACCUMULATED_CHARGE_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.accumulated_charge >> 24;
+                buffer_out[output_buffer_index++] = tracker_ctx.accumulated_charge >> 16;
+                buffer_out[output_buffer_index++] = tracker_ctx.accumulated_charge >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.accumulated_charge;
+
+                payload_index += GET_APP_ACCUMULATED_CHARGE_ANSWER_LEN;
+                break;
+            }
+            
+            case RESET_APP_ACCUMULATED_CHARGE_CMD:
+            {
+                tracker_ctx.new_value_to_set = true;
+                tracker_ctx.accumulated_charge = 0;
+
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = RESET_APP_ACCUMULATED_CHARGE_CMD;
+                buffer_out[output_buffer_index++] = RESET_APP_ACCUMULATED_CHARGE_LEN;
+
+                payload_index += RESET_APP_ACCUMULATED_CHARGE_LEN;
                 break;
             }
 
@@ -2399,6 +2534,17 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = tracker_ctx.internal_log_enable;
 
                 payload_index += GET_APP_INTERNAL_LOG_LEN;
+                break;
+            }
+            
+            case GET_APP_INTERNAL_LOG_REMANING_SPACE_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_APP_INTERNAL_LOG_REMANING_SPACE_CMD;
+                buffer_out[output_buffer_index++] = GET_APP_INTERNAL_LOG_REMANING_SPACE_LEN;
+                buffer_out[output_buffer_index++] = tracker_get_remaining_memory_space( );
+
+                payload_index += GET_APP_INTERNAL_LOG_REMANING_SPACE_ANSWER_LEN;
                 break;
             }
             

@@ -34,10 +34,24 @@ https://lora-developers.semtech.com/library/tech-papers-and-guides/lora-edge-tra
 
 To build the host softwares, proceed as follow:
 
--	use the Keil project, or
--	execute the makefile (in gcc folder)
+-	Use the Keil project lr1110_modem_tracker_sdk.uvprojx located in smtc_tracker_app/MDK-ARM
+-	Execute the makefile (in gcc folder):
+	- Install arm-none-eabi-gcc : https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
+	- Make -j
+	- lora_edge_tracker_sdk.bin is created in the gcc/build folder
 
 ## 4. Changelog
+
+### V 1.2.0 ###
+
+-	Fix the SNR reading which was wrong
+-	Fix RNG module
+-	Add Get date BLE command
+-	Add Get/Flush Accumulated charge BLE command
+-	Add Internal Log memory space remaining BLE command
+-	Merge LoRaWAN commissioning files for tracker and lorawan app
+-	Add empty GNSS scan in internal log
+-	Update LR1110 Modem-E driver
 
 ### V 1.1.2 ###
 

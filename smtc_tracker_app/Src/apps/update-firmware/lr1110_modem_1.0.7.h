@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LR1110_FW_H
-#define LR1110_FW_H
+#ifndef __LR1110_FW_H__
+#define __LR1110_FW_H__
 
 /*
  * -----------------------------------------------------------------------------

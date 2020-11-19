@@ -1,7 +1,7 @@
 /*!
- * \file      main_tracker.h
+ * \file      lorawan_config.h
  *
- * \brief     lr1110 Modem Tracker Application definition
+ * \brief     LoRaWAN configuration definition
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __MAIN_TRACKER_H__
-#define __MAIN_TRACKER_H__
+#ifndef LORAWAN_CONFIG_H
+#define LORAWAN_CONFIG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +40,8 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- DEPENDENCIES ------------------------------------------------------------
  */
+
+#include "lr1110_tracker_board.h"
 
 /*
  * -----------------------------------------------------------------------------
@@ -52,75 +54,56 @@ extern "C" {
  */
 
 /*!
- * \brief Defines the application scan interval
- * when device has moved. 60s, value in [ms].
+ * \brief LoRaWAN ETSI duty cycle control enable/disable
+ *
+ * \remark Please note that ETSI mandates duty cycled transmissions. Set to false only for test purposes
  */
-#define TRACKER_SCAN_INTERVAL 60000
+#define LORAWAN_DUTYCYCLE_ON LR1110_MODEM_DUTY_CYCLE_ENABLE
 
 /*!
- * \brief Defines the application keep alive frame interval
- * when device doesn't move. 3600s, value in [ms].
+ * \brief LoRaWAN confirmed messages
  */
-#define TRACKER_KEEP_ALIVE_FRAME_INTERVAL 3600000
+#define LORAWAN_CONFIRMED_MSG_ON false
 
 /*!
- * \brief Defines the application data transmission duty cycle counter.
- * when device doesn't move.
+ * \brief Default datarate
  */
-#define TRACKER_APP_TX_LOW_DUTYCYCLE_CTN TRACKER_KEEP_ALIVE_FRAME_INTERVAL / TRACKER_SCAN_INTERVAL
-
+#define LORAWAN_DEFAULT_DATARATE LR1110_MODEM_ADR_PROFILE_NETWORK_SERVER_CONTROLLED
+    
 /*!
- * \brief Defines the BLE thread advertisement timeout
- * when device doesn't connect to smartphone. 30000, value in [ms].
- */
-#define ADV_TIMEOUT_MS 30000
-
-/*!
- * \brief Define the voltage in mV threshold where the tracker
- * stays in airplane mode.
- */
-#define BOARD_VOLTAGE_THRESHOLD 2500
-
-/*!
- * \brief Defines the application firmware version
- */
-#define TRACKER_MAJOR_APP_VERSION 1
-#define TRACKER_MINOR_APP_VERSION 2
-#define TRACKER_SUB_MINOR_APP_VERSION 0
-
-#define TRACKER_PCB_HW_NUMBER 595
-#define TRACKER_MAJOR_PCB_HW_VERSION 1
-#define TRACKER_MINOR_PCB_HW_VERSION 0
-
-/*!
- * \brief LoRaWAN application tag
- */
-#define TAG_NAV_PCB 6
-#define TAG_NAV_PATCH 7
-#define TAG_WIFI_SCAN 8
-#define TAG_ACCELEROMETER 9
-#define TAG_CHARGE 10
-#define TAG_VOLTAGE 11
-
-/*!
- * \brief LoRaWAN stream application port
- */
-#define LORAWAN_STREAM_APP_PORT 199
-
-/*!
- * \brief LoRaWAN port used to the gnss push solver messages
- */
-#define GNSS_PUSH_SOLVER_MSG_PORT 150
+ * \brief LoRaWAN confirmed messages
+ */   
+#if defined( USE_REGION_EU868 )
+    #define LORAWAN_REGION_USED LR1110_LORAWAN_REGION_EU868
+#elif defined( USE_REGION_US915 )
+    #define LORAWAN_REGION_USED LR1110_LORAWAN_REGION_US915
+#else
+    #error No region selected: define USE_REGION_EU868 or USE_REGION_US915 to select one
+#endif
 
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC TYPES ------------------------------------------------------------
  */
 
+/*
+ * -----------------------------------------------------------------------------
+ * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
+ */
+
+/*!
+ * \brief Lorawan default init
+ *
+ * \param [in] region LoRaWAN region to use \ref lr1110_modem_regions_t
+ *
+ * \param [ret] lr1110_modem_response_code_t
+ */
+lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region );
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __MAIN_TRACKER_H__
+#endif  // LORAWAN_CONFIG_H
 
 /* --- EOF ------------------------------------------------------------------ */

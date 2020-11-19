@@ -331,8 +331,6 @@ typedef enum
  */
 typedef enum
 {
-    LR1110_MODEM_DOWN_DATA_EVENT_ACK  = 0x80,  //!< confirmed UP frame was acked
-    LR1110_MODEM_DOWN_DATA_EVENT_NACK = 0x40,  //!< confirmed UP frame was not acked
     LR1110_MODEM_DOWN_DATA_EVENT_DNW1 = 0x01,  //!< received in 1st DN slot
     LR1110_MODEM_DOWN_DATA_EVENT_DNW2 = 0x02,  //!< received in 2dn DN slot
 } lr1110_modem_down_data_flag_t;

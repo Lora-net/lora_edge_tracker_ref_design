@@ -18,7 +18,7 @@ EVK_TARGET = lora_edge_tracker_sdk
 
 #Choose the app to compile
 TRACKER_APP = 1
-LORAMAC_APP = 0
+LORAWAN_APP = 0
 GNSS_APP = 0
 WIFI_APP = 0
 TX_CONTINUOUS_APP = 0
@@ -120,6 +120,7 @@ ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_system.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_wifi.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/wifi/wifi_scan.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/gnss/gnss_scan.c \
+${TOP_DIR}/smtc_tracker_app/Src/radio/lorawan_config/lorawan_config.c \
 ${TOP_DIR}/Drivers/BSP/Components/external_supply/external_supply.c \
 ${TOP_DIR}/Drivers/BSP/Components/Leds/leds.c \
 ${TOP_DIR}/Drivers/BSP/Components/lis2de12/lis2de12.c \
@@ -162,9 +163,9 @@ C_SOURCES +=  \
 ${TOP_DIR}/Src/apps/Tracker/main_tracker.c
 endif
 
-ifeq ($(LORAMAC_APP),1)
+ifeq ($(LORAMAC_WAN),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/LoRaMac/classA/main_loramac_a.c
+${TOP_DIR}/Src/apps/LoRaWAN/main_lorawan.c
 endif
 
 ifeq ($(GNSS_APP),1)
@@ -303,10 +304,11 @@ C_INCLUDES =  \
 -I${TOP_DIR}/smtc_tracker_app/Inc/boards \
 -I${TOP_DIR}/smtc_tracker_app/Inc/ble/app \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio \
+-I${TOP_DIR}/smtc_tracker_app/Src/radio/lorawan_config \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/wifi \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/gnss \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src \
--I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaMac/classA \
+-I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaWAN \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/update_firmware \
 

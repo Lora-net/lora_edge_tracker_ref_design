@@ -338,7 +338,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -506,9 +506,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -1597,6 +1597,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2159,7 +2169,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_US915,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2327,9 +2337,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -3418,6 +3428,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -3980,7 +4000,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER,TRX_TO_MODEM</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -4148,9 +4168,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -5239,6 +5259,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -5801,7 +5831,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER,MODEM_TO_MODEM</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -5969,9 +5999,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -7060,6 +7090,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -7691,7 +7731,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER,MODEM_TO_TRX</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -7859,9 +7899,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -8954,6 +8994,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>lr1110 modem drivers</GroupName>
           <Files>
             <File>
@@ -9181,7 +9231,7 @@
       </Groups>
     </Target>
     <Target>
-      <TargetName>lr1110_modem_loramac_EU868</TargetName>
+      <TargetName>lr1110_modem_lorawan_EU868</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
@@ -9257,7 +9307,7 @@
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
             <UserProg1Name>fromelf #L --bincombined  --output=$L@L.bin</UserProg1Name>
-            <UserProg2Name>srecord\srec_cat.exe ../../smtc_tracker_bootloader_ota/MDK-ARM/BLE_Ota/Exe/BLE_Ota.hex -Intel -fill 0xFF 0x08000000 0x08007000 lr1110_modem_tracker_sdk/lr1110_modem_tracker_sdk.hex -Intel -o ../../Hex_merged/lr1110_modem_loramac_EU868.hex -Intel</UserProg2Name>
+            <UserProg2Name>srecord\srec_cat.exe ../../smtc_tracker_bootloader_ota/MDK-ARM/BLE_Ota/Exe/BLE_Ota.hex -Intel -fill 0xFF 0x08000000 0x08007000 lr1110_modem_tracker_sdk/lr1110_modem_tracker_sdk.hex -Intel -o ../../Hex_merged/lr1110_modem_lorawan_EU868.hex -Intel</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
@@ -9512,7 +9562,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -9680,9 +9730,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -10771,6 +10821,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -11071,7 +11131,7 @@
       </Groups>
     </Target>
     <Target>
-      <TargetName>lr1110_modem_loramac_US915</TargetName>
+      <TargetName>lr1110_modem_lorawan_US915</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
@@ -11147,7 +11207,7 @@
             <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
             <UserProg1Name>fromelf #L --bincombined  --output=$L@L.bin</UserProg1Name>
-            <UserProg2Name>srecord\srec_cat.exe ../../smtc_tracker_bootloader_ota/MDK-ARM/BLE_Ota/Exe/BLE_Ota.hex -Intel -fill 0xFF 0x08000000 0x08007000 lr1110_modem_tracker_sdk/lr1110_modem_tracker_sdk.hex -Intel -o ../../Hex_merged/lr1110_modem_loramac_US915.hex -Intel</UserProg2Name>
+            <UserProg2Name>srecord\srec_cat.exe ../../smtc_tracker_bootloader_ota/MDK-ARM/BLE_Ota/Exe/BLE_Ota.hex -Intel -fill 0xFF 0x08000000 0x08007000 lr1110_modem_tracker_sdk/lr1110_modem_tracker_sdk.hex -Intel -o ../../Hex_merged/lr1110_modem_lorawan_US915.hex -Intel</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
@@ -11402,7 +11462,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_US915,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -11570,9 +11630,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -12661,6 +12721,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -13223,7 +13293,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -13391,9 +13461,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -14482,6 +14552,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -15113,7 +15193,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -15281,9 +15361,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -16372,6 +16452,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -17003,7 +17093,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -17171,9 +17261,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -18262,6 +18352,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -18824,7 +18924,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -18992,9 +19092,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -20083,6 +20183,16 @@
               <FileName>gnss_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\radio\gnss\gnss_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -20645,7 +20755,7 @@
               <MiscControls>--diag_suppress 1296  </MiscControls>
               <Define>USE_HAL_DRIVER,STM32WB55xx,USE_FULL_LL_DRIVER,USE_REGION_EU868,LR1110_TRACKER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app</IncludePath>
+              <IncludePath>../Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc;../../Drivers/STM32WBxx_HAL_Driver/Inc/Legacy;../../Utilities/lpm/tiny_lpm;../../Middlewares/ST/STM32_WPAN;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/tl;../../Middlewares/ST/STM32_WPAN/interface/patterns/ble_thread/shci;../../Middlewares/ST/STM32_WPAN/utilities;../../Middlewares/ST/STM32_WPAN/ble/core;../../Middlewares/ST/STM32_WPAN/ble/core/auto;../../Middlewares/ST/STM32_WPAN/ble/core/template;../../Middlewares/ST/STM32_WPAN/ble/svc/Inc;../../Middlewares/ST/STM32_WPAN/ble/svc/Src;../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../../Drivers/CMSIS/Device/ST/STM32WBxx/Include;../../Utilities/sequencer;../../Middlewares/ST/STM32_WPAN/ble;../../Drivers/CMSIS/Include;..\..\Drivers\BSP\Components\lis2de12;..\..\Drivers\BSP\Components\Leds;..\..\Drivers\BSP\Components\hall_effect;..\..\Drivers\BSP\Components\external_supply;..\..\Drivers\BSP\Components\rf_switch;..\..\Drivers\BSP\Components\usr_button;..\Inc\smtc_hal;..\Inc\boards;..\Src\radio\lr1110_modem\src;..\Src\radio\gnss;..\Src\radio\wifi;..\Src\radio;..\Src\apps\update-firmware;..\Src\apps\Tracker;..\Inc\ble\app;..\Src\radio\lorawan_config</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -20813,9 +20923,9 @@
               </FileOption>
             </File>
             <File>
-              <FileName>main_loramac_a.c</FileName>
+              <FileName>main_lorawan.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\apps\LoRaMac\classA\main_loramac_a.c</FilePath>
+              <FilePath>..\Src\apps\LoRaWAN\main_lorawan.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -21908,6 +22018,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>LoRaWAN Config</GroupName>
+          <Files>
+            <File>
+              <FileName>lorawan_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\radio\lorawan_config\lorawan_config.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>lr1110 modem drivers</GroupName>
           <Files>
             <File>
@@ -22142,8 +22262,8 @@
       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
         <targetInfos>
-          <targetInfo name="lr1110_modem_loramac_EU868"/>
-          <targetInfo name="lr1110_modem_loramac_US915"/>
+          <targetInfo name="lr1110_modem_lorawan_EU868"/>
+          <targetInfo name="lr1110_modem_lorawan_US915"/>
           <targetInfo name="lr1110_modem_read_internal_log"/>
           <targetInfo name="lr1110_modem_test_gnss"/>
           <targetInfo name="lr1110_modem_test_low_power"/>

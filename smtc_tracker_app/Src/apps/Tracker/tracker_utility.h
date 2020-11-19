@@ -94,6 +94,9 @@ extern "C" {
 #define GET_MODEM_STATUS_CMD 0x45
 #define GET_MODEM_STATUS_LEN 0x00
 #define GET_MODEM_STATUS_ANSWER_LEN 0x02
+#define GET_MODEM_DATE_CMD 0x46
+#define GET_MODEM_DATE_LEN 0x00
+#define GET_MODEM_DATE_ANSWER_LEN 0x04
 
 /* Board */
 #define GET_BOARD_VOLTAGE_CMD 0x40
@@ -137,6 +140,11 @@ extern "C" {
 #define GET_LORAWAN_CHIP_EUI_CMD 0x44
 #define GET_LORAWAN_CHIP_EUI_LEN 0x00
 #define GET_LORAWAN_CHIP_EUI_ANSWER_LEN 0x08
+#define SET_LORAWAN_DUTY_CYCLE_CMD 0x47
+#define SET_LORAWAN_DUTY_CYCLE_LEN 0x01
+#define GET_LORAWAN_DUTY_CYCLE_CMD 0x48
+#define GET_LORAWAN_DUTY_CYCLE_LEN 0x00
+#define GET_LORAWAN_DUTY_CYCLE_ANSWER_LEN 0x01
 
 /* GNSS */
 #define SET_GNSS_ENABLE_CMD 0x08
@@ -254,6 +262,14 @@ extern "C" {
 #define GET_APP_INTERNAL_LOG_ANSWER_LEN 0x01
 #define READ_APP_INTERNAL_LOG_CMD 0x43
 #define READ_APP_INTERNAL_LOG_LEN 0x00
+#define GET_APP_INTERNAL_LOG_REMANING_SPACE_CMD 0x49
+#define GET_APP_INTERNAL_LOG_REMANING_SPACE_LEN 0x00
+#define GET_APP_INTERNAL_LOG_REMANING_SPACE_ANSWER_LEN 0x01
+#define GET_APP_ACCUMULATED_CHARGE_CMD 0x4A
+#define GET_APP_ACCUMULATED_CHARGE_LEN 0x00
+#define GET_APP_ACCUMULATED_CHARGE_ANSWER_LEN 0x04
+#define RESET_APP_ACCUMULATED_CHARGE_CMD 0x4B
+#define RESET_APP_ACCUMULATED_CHARGE_LEN 0x00
 
 /*
  * -----------------------------------------------------------------------------
@@ -285,6 +301,7 @@ typedef struct
     uint8_t  lorawan_region;
     bool     use_semtech_join_server;
     uint8_t  lorawan_adr_profile;
+    bool     duty_cycle_enable;
 
     /* Modem version information */
     lr1110_modem_version_t modem_version;
@@ -332,6 +349,7 @@ typedef struct
     int16_t                tout;
     bool                   dry_contact;
     uint32_t               charge;
+    uint32_t               accumulated_charge;
 
     /* parameters for flash read/write operations */
     bool     internal_log_flush_request;
@@ -420,12 +438,19 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
 void tracker_erase_internal_log( void );
 
 /*!
- * \brief Erase the internal log et create a new internal log context
+ * \brief Erase the internal log et create a new internal log context.
  */
 void tracker_reset_internal_log( void );
 
 /*!
- * \brief Parse the commands coming from outside
+ * \brief return the user memory flash remaning space.
+ *
+ * \retval the user memory flash remaning space in percentage
+ */
+uint8_t tracker_get_remaining_memory_space( void );
+
+/*!
+ * \brief Parse the commands coming from outside.
  * \param [in] payload payload to parse
  * \param [in] buffer_out answer output buffer
  *
