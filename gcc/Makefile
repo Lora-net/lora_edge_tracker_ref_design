@@ -160,42 +160,42 @@ ${TOP_DIR}/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_exti.c \
 
 ifeq ($(TRACKER_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/Tracker/main_tracker.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker/main_tracker.c 
 endif
 
-ifeq ($(LORAMAC_WAN),1)
+ifeq ($(LORAWAN_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/LoRaWAN/main_lorawan.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaMac/classA/main_loramac_a.c 
 endif
 
 ifeq ($(GNSS_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/gnss_test/main_test_gnss.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/gnss_test/main_test_gnss.c 
 endif
 
 ifeq ($(WIFI_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/wifi_test/main_test_wifi.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/wifi_test/main_test_wifi.c 
 endif
 
 ifeq ($(TX_CONTINUOUS_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/tx_continuous_test/main_test_tx_continuous.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/tx_continuous_test/main_test_tx_continuous.c 
 endif
 
 ifeq ($(UPDATE_MODEM_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/update-firmware/update_firmware.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/update_firmware.c 
 endif
 
 ifeq ($(BLE_STANDALONE_APP),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/update-firmware/main_BLE_standalone.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/main_BLE_standalone.c 
 endif
 
 ifeq ($(READ_INTERNAL_LOG),1)
 C_SOURCES +=  \
-${TOP_DIR}/Src/apps/update-firmware/main_read_internal_log.c
+${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/main_read_internal_log.c 
 endif
 
 
@@ -308,7 +308,7 @@ C_INCLUDES =  \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/wifi \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/gnss \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src \
--I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaWAN \
+-I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaMac/classA \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/update_firmware \
 
