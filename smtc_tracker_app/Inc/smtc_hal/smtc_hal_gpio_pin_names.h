@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_gpio_pin_names.h
+ * @file      smtc_hal_gpio_pin_names.h
  *
- * \brief     Defines NucleoL073 platform pin names
+ * @brief     Defines NucleoL073 platform pin names
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SMTC_HAL_GPIO_PIN_NAMES_H__
-#define __SMTC_HAL_GPIO_PIN_NAMES_H__
+#ifndef SMTC_HAL_GPIO_PIN_NAMES_H
+#define SMTC_HAL_GPIO_PIN_NAMES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +57,7 @@ extern "C" {
  */
 
 /*!
- * \brief HAL Gpio pin name
+ * @brief HAL Gpio pin name
  */
 typedef enum hal_gpio_pin_names_e
 {
@@ -115,4 +115,4 @@ typedef enum hal_gpio_pin_names_e
 }
 #endif
 
-#endif  // __SMTC_HAL_GPIO_PIN_NAMES_H__
+#endif  // SMTC_HAL_GPIO_PIN_NAMES_H

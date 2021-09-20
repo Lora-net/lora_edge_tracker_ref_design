@@ -52,10 +52,13 @@
  * --- PUBLIC TYPES ------------------------------------------------------------
  */
 
+/*!
+ * @brief Return status for driver operations
+ */
 typedef enum lr1110_status_e
 {
-    LR1110_STATUS_OK    = 0,
-    LR1110_STATUS_ERROR = 3,
+    LR1110_STATUS_OK    = 0,  //!< Operation terminated successfully
+    LR1110_STATUS_ERROR = 3,  //!< Operation terminated with error
 } lr1110_status_t;
 
 /*

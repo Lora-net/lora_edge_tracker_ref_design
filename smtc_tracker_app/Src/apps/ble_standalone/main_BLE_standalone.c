@@ -1,7 +1,7 @@
 /*!
- * \file      main_BLE_standalone.c
+ * @file      main_BLE_standalone.c
  *
- * \brief     main BLE standalone implementation
+ * @brief     main BLE standalone implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -60,7 +60,7 @@
  */
 
 /*!
- * \brief Radio hardware and global parameters
+ * @brief Radio hardware and global parameters
  */
 extern lr1110_t lr1110;
 
@@ -75,8 +75,7 @@ extern lr1110_t lr1110;
  */
 
 /**
- * @brief  The application entry point.
- * @retval int
+ * @brief  Main application entry point.
  */
 int main( void )
 {
@@ -85,9 +84,8 @@ int main( void )
     uint8_t app_key[16] = { 0x6D, 0xA2, 0x64, 0xA2, 0xA6, 0xB7, 0x09, 0xDB,
                             0xA6, 0xD5, 0x5A, 0xA6, 0x97, 0x28, 0x0E, 0x25 };
 
-    // Init board
+    /* Init board */
     hal_mcu_init( );
-
     hal_mcu_init_periph( );
 
     HAL_DBG_TRACE_MSG( "\r\n\r\n" );
@@ -101,7 +99,7 @@ int main( void )
     while( 1 )
     {
         uint8_t status;
-        // Turn on the 2G4 SPDT and set it into the right direction
+        /* Turn on the 2G4 SPDT and set it into the right direction */
         spdt_2g4_on( );
         set_ble_antenna( );
 

@@ -31,13 +31,26 @@
 
 #include "lr1110_modem_driver_version.h"
 
+/*!
+ * @brief Helper macro to concatenate string
+ */
 #define STR_HELPER( x ) #x
+
+/*!
+ * @brief Macro to stringify names
+ */
 #define STR( x ) STR_HELPER( x )
 
+/*!
+ * @brief String representation of the driver version
+ */
 #define LR1110_MODEM_DRIVER_VERSION_FULL                                                               \
     "v" STR( LR1110_MODEM_DRIVER_VERSION_MAJOR ) "." STR( LR1110_MODEM_DRIVER_VERSION_MINOR ) "." STR( \
         LR1110_MODEM_DRIVER_VERSION_PATCH )
 
+/*!
+ * @brief Returns version string
+ */
 const char* lr1110_modem_driver_version_get_version_string( void )
 {
     return ( const char* ) LR1110_MODEM_DRIVER_VERSION_FULL;

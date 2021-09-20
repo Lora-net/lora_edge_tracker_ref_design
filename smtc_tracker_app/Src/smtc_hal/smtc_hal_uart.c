@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_uart.c
+ * @file      smtc_hal_uart.c
  *
- * \brief     Board specific package UART API implementation.
+ * @brief     Board specific package UART API implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -58,7 +58,7 @@
  */
  
  /*!
- * \brief UART structure
+ * @brief UART structure
  */
 typedef struct hal_uart_s
 {
@@ -75,7 +75,7 @@ static hal_uart_t hal_uart[] = {
     [0] =
         {
             .interface = USART1,
-            .handle    = NULL,
+            .handle    = { NULL },
             .pins =
                 {
                     .tx = NC,
@@ -145,7 +145,7 @@ void hal_uart_tx( const uint32_t id, uint8_t* buff, uint16_t len )
     HAL_UART_Transmit( &hal_uart[local_id].handle, ( uint8_t* ) buff, len, 0xffffff );
 }
 
-void hal_uart_rx( const uint32_t id, uint8_t* rx_buffer, uint8_t len )
+void hal_uart_rx( const uint32_t id, uint8_t* rx_buffer, uint16_t len )
 {
     assert_param( ( id > 0 ) && ( ( id - 1 ) < sizeof( hal_uart ) ) );
     uint32_t local_id = id - 1;

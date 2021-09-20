@@ -47,19 +47,69 @@
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
+/*!
+ * @brief Maximal number of uint32_t elements writable per SPI burst for flash update
+ */
 #define LR1110_FLASH_DATA_UINT32_MAX ( 64 )
+
+/*!
+ * @brief Maximal number of uint8_t elements writable per SPI burst for flash update
+ */
 #define LR1110_FLASH_DATA_UINT8_MAX ( LR1110_FLASH_DATA_UINT32_MAX * 4 )
 
+/*!
+ * @brief Length of command buffer for commands that have no parameter
+ */
 #define LR1110_BL_CMD_NO_PARAM_LENGTH 2
+
+/*!
+ * @brief Length of command buffer for bootloader get version command
+ */
 #define LR1110_BL_VERSION_CMD_LENGTH LR1110_BL_CMD_NO_PARAM_LENGTH
+
+/*!
+ * @brief Length of command buffer for flash erase command
+ */
 #define LR1110_BL_ERASE_FLASH_CMD_LENGTH LR1110_BL_CMD_NO_PARAM_LENGTH
+
+/*!
+ * @brief Length of command buffer for flash page erase command
+ */
 #define LR1110_BL_ERASE_PAGE_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH + 1 )
+
+/*!
+ * @brief Length of command buffer for flash write command
+ */
 #define LR1110_BL_WRITE_FLASH_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH + 4 )
+
+/*!
+ * @brief Length of command buffer for write encrypted flash command
+ */
 #define LR1110_BL_WRITE_FLASH_ENCRYPTED_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH + 4 )
+
+/*!
+ * @brief Length of command buffer for flash hash getter command
+ */
 #define LR1110_BL_GET_HASH_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH )
+
+/*!
+ * @brief Length of command buffer for reboot command
+ */
 #define LR1110_BL_REBOOT_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH + 1 )
+
+/*!
+ * @brief Length of command buffer for PIN read command
+ */
 #define LR1110_BL_GET_PIN_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH )
+
+/*!
+ * @brief Length of command buffer for EUI read command
+ */
 #define LR1110_BL_GET_CHIP_EUI_CMD_LENGTH ( LR1110_BL_CMD_NO_PARAM_LENGTH )
+
+/*!
+ * @brief
+ */
 
 /*
  * -----------------------------------------------------------------------------
@@ -68,16 +118,16 @@
 
 enum
 {
-    LR1110_BL_GET_STATUS_OC            = 0x0100,
-    LR1110_BL_GET_VERSION_OC           = 0x0101,
-    LR1110_BL_ERASE_FLASH_OC           = 0x8000,
-    LR1110_BL_ERASE_PAGE_OC            = 0x8001,
-    LR1110_BL_WRITE_FLASH_OC           = 0x8002,
-    LR1110_BL_WRITE_FLASH_ENCRYPTED_OC = 0x8003,
-    LR1110_BL_GET_HASH_OC              = 0x8004,
-    LR1110_BL_REBOOT_OC                = 0x8005,
-    LR1110_BL_GET_PIN_OC               = 0x800B,
-    LR1110_BL_GET_CHIP_EUI_OC          = 0x800C,
+    LR1110_BL_GET_STATUS_OC            = 0x0100,  //!< Operation code for get status command
+    LR1110_BL_GET_VERSION_OC           = 0x0101,  //!< Operation code for get version command
+    LR1110_BL_ERASE_FLASH_OC           = 0x8000,  //!< Operation code for flash erase command
+    LR1110_BL_ERASE_PAGE_OC            = 0x8001,  //!< Operation code for flash page erase command
+    LR1110_BL_WRITE_FLASH_OC           = 0x8002,  //!< Operation code for write flash command
+    LR1110_BL_WRITE_FLASH_ENCRYPTED_OC = 0x8003,  //!< Operation code for encrypted flash write command
+    LR1110_BL_GET_HASH_OC              = 0x8004,  //!< Operation code for hash getter command
+    LR1110_BL_REBOOT_OC                = 0x8005,  //!< Operation code for  reboot command
+    LR1110_BL_GET_PIN_OC               = 0x800B,  //!< Operation code for PIN read command
+    LR1110_BL_GET_CHIP_EUI_OC          = 0x800C,  //!< Operation code for EUI read command
 };
 
 /*
@@ -90,6 +140,14 @@ enum
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
  */
 
+/*!
+ * @brief Return minimal value of arguments
+ *
+ * @param [in] a First operand
+ * @param [in] b Second operand
+ *
+ * @returns The minimal value between a and b, interpreted as uint32_t.
+ */
 uint32_t min( uint32_t a, uint32_t b )
 {
     uint32_t min = a;

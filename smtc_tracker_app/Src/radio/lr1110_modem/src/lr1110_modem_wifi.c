@@ -42,48 +42,26 @@
  * --- PRIVATE MACROS-----------------------------------------------------------
  */
 
-#ifndef MIN
-/*!
- * @brief Returns the minimum value between a and b
- *
- * @param [in] a 1st value
- * @param [in] b 2nd value
- * @retval minValue Minimum value
- */
-#define MIN( a, b ) ( ( a > b ) ? b : a )
-#endif  // MIN
-
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
 #define LR1110_WIFI_BASIC_COMPLETE_RESULT_SIZE ( 22 )
+#define LR1110_WIFI_EXTENDED_FULL_RESULT_SIZE ( 79 )
 #define LR1110_WIFI_BASIC_MAC_TYPE_CHANNEL_RESULT_SIZE ( 9 )
 
-#define LR1110_WIFI_MAX_SIZE_PER_SPI( single_size ) \
-    ( single_size * ( LR1110_WIFI_MAX_RESULT_PER_TRANSACTION( single_size ) ) )
-
-#define LR1110_WIFI_MAX_RESULT_PER_TRANSACTION( single_size ) \
-    ( MIN( ( LR1110_WIFI_READ_RESULT_LIMIT ) / ( single_size ), LR1110_WIFI_N_RESULTS_MAX_PER_CHUNK ) )
-
-#define LR1110_WIFI_CONFIG_HARDWARE_DEBARKER_CMD_LENGTH ( 2 + 1 )
 #define LR1110_WIFI_RESET_CUMUL_TIMING_CMD_LENGTH ( 2 )
 #define LR1110_WIFI_READ_CUMUL_TIMING_CMD_LENGTH ( 2 )
 #define LR1110_WIFI_CONFIG_TIMESTAMP_AP_PHONE_CMD_LENGTH ( 2 + 4 )
 #define LR1110_WIFI_GET_VERSION_CMD_LENGTH ( 2 )
-#define LR1110_WIFI_PASSIVE_SCAN_MD_CMD_LENGTH ( 2 + 10 )
-#define LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_MD_CMD_LENGTH ( 2 + 10 )
-#define LR1110_WIFI_SEARCH_COUNTRY_CODE_MD_CMD_LENGTH ( 2 + 7 )
-#define LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_MD_CMD_LENGTH ( 2 + 7 )
+#define LR1110_WIFI_PASSIVE_SCAN_CMD_LENGTH ( 2 + 10 )
+#define LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_CMD_LENGTH ( 2 + 10 )
+#define LR1110_WIFI_SEARCH_COUNTRY_CODE_CMD_LENGTH ( 2 + 7 )
+#define LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_CMD_LENGTH ( 2 + 7 )
 
 #define LR1110_WIFI_ALL_CUMULATIVE_TIMING_SIZE ( 16 )
 #define LR1110_WIFI_VERSION_SIZE ( 2 )
-#define LR1110_WIFI_READ_RESULT_LIMIT ( 1020 )
-#define LR1110_WIFI_COUNTRY_RESULT_LENGTH_SIZE ( 1 )
-#define LR1110_WIFI_SCAN_SINGLE_COUNTRY_CODE_RESULT_SIZE ( 10 )
-#define LR1110_WIFI_MAX_COUNTRY_CODE_RESULT_SIZE \
-    ( LR1110_WIFI_MAX_COUNTRY_CODE * LR1110_WIFI_SCAN_SINGLE_COUNTRY_CODE_RESULT_SIZE )
 
 /*
  * -----------------------------------------------------------------------------
@@ -91,15 +69,14 @@
  */
 typedef enum
 {
-    LR1110_MODEM_WIFI_CONFIG_HARDWARE_DEBARKER_CMD          = 0x04,
-    LR1110_MODEM_WIFI_RESET_CUMUL_TIMING_PHASE_CMD          = 0x07,
-    LR1110_MODEM_WIFI_READ_CUMUL_TIMING_PHASE_CMD           = 0x08,
-    LR1110_MODEM_WIFI_CONFIG_TIMESTAMP_AP_PHONE_CMD         = 0x0B,
-    LR1110_MODEM_WIFI_GET_FIRMWARE_WIFI_VERSION_CMD         = 0x20,
-    LR1110_MODEM_WIFI_PASSIVE_SCAN_MD_CMD                   = 0x30,
-    LR1110_MODEM_WIFI_PASSIVE_SCAN_TIME_LIMIT_MD_CMD        = 0x31,
-    LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_MD_CMD            = 0x32,
-    LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_MD_CMD = 0x33,
+    LR1110_MODEM_WIFI_RESET_CUMUL_TIMING_PHASE_CMD       = 0x07,
+    LR1110_MODEM_WIFI_READ_CUMUL_TIMING_PHASE_CMD        = 0x08,
+    LR1110_MODEM_WIFI_CONFIG_TIMESTAMP_AP_PHONE_CMD      = 0x0B,
+    LR1110_MODEM_WIFI_GET_FIRMWARE_WIFI_VERSION_CMD      = 0x20,
+    LR1110_MODEM_WIFI_PASSIVE_SCAN_CMD                   = 0x30,
+    LR1110_MODEM_WIFI_PASSIVE_SCAN_TIME_LIMIT_CMD        = 0x31,
+    LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_CMD            = 0x32,
+    LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_CMD = 0x33,
 } lr1110_modem_api_command_wifi_t;
 
 /*!
@@ -144,6 +121,9 @@ static void interpret_basic_complete_result_from_buffer( const uint8_t nb_result
 static void interpret_basic_mac_type_channel_result_from_buffer(
     const uint8_t nb_results, const uint8_t* buffer, lr1110_modem_wifi_basic_mac_type_channel_result_t* result );
 
+static void interpret_extended_full_result_from_buffer( const uint8_t nb_results, const uint8_t* buffer,
+                                                        lr1110_modem_wifi_extended_full_result_t* result );
+
 static void lr1110_wifi_read_mac_address_from_buffer( const uint8_t* buffer, const uint16_t index_in_buffer,
                                                       lr1110_modem_wifi_mac_address_t mac_address );
 
@@ -151,20 +131,6 @@ static void lr1110_wifi_read_mac_address_from_buffer( const uint8_t* buffer, con
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
-
-lr1110_modem_response_code_t lr1110_modem_wifi_cfg_hardware_debarker( const void* context,
-                                                                      const bool  enable_hardware_debarker )
-{
-    uint8_t cbuffer[LR1110_WIFI_CONFIG_HARDWARE_DEBARKER_CMD_LENGTH];
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_WIFI;
-    cbuffer[1] = LR1110_MODEM_WIFI_CONFIG_HARDWARE_DEBARKER_CMD;
-
-    cbuffer[2] = enable_hardware_debarker;
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_WIFI_CONFIG_HARDWARE_DEBARKER_CMD_LENGTH, 0, 0 );
-}
 
 lr1110_modem_response_code_t lr1110_modem_wifi_reset_cumulative_timing( const void* context )
 {
@@ -244,9 +210,9 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan(
     const uint8_t max_results, const uint8_t nb_scan_per_channel, const uint16_t timeout_in_ms,
     const bool abort_on_timeout, const lr1110_modem_wifi_result_format_t result_format )
 {
-    const uint8_t cbuffer[LR1110_WIFI_PASSIVE_SCAN_MD_CMD_LENGTH] = {
+    const uint8_t cbuffer[LR1110_WIFI_PASSIVE_SCAN_CMD_LENGTH] = {
         ( uint8_t ) LR1110_MODEM_GROUP_ID_WIFI,
-        ( uint8_t ) LR1110_MODEM_WIFI_PASSIVE_SCAN_MD_CMD,
+        ( uint8_t ) LR1110_MODEM_WIFI_PASSIVE_SCAN_CMD,
         ( uint8_t ) signal_type,
         ( uint8_t )( channels >> 8 ),
         ( uint8_t ) channels,
@@ -260,7 +226,7 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan(
     };
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
-                                                                    LR1110_WIFI_PASSIVE_SCAN_MD_CMD_LENGTH, 0, 0 );
+                                                                    LR1110_WIFI_PASSIVE_SCAN_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan_time_limit(
@@ -269,9 +235,9 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan_time_limit(
     const uint8_t max_results, const uint16_t timeout_per_channel_ms, const uint16_t timeout_per_scan_ms,
     const lr1110_modem_wifi_result_format_t result_format )
 {
-    const uint8_t cbuffer[LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_MD_CMD_LENGTH] = {
+    const uint8_t cbuffer[LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_CMD_LENGTH] = {
         ( uint8_t ) LR1110_MODEM_GROUP_ID_WIFI,
-        ( uint8_t ) LR1110_MODEM_WIFI_PASSIVE_SCAN_TIME_LIMIT_MD_CMD,
+        ( uint8_t ) LR1110_MODEM_WIFI_PASSIVE_SCAN_TIME_LIMIT_CMD,
         ( uint8_t ) signal_type,
         ( uint8_t )( channels >> 8 ),
         ( uint8_t ) channels,
@@ -285,16 +251,16 @@ lr1110_modem_response_code_t lr1110_modem_wifi_passive_scan_time_limit(
     };
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_MD_CMD_LENGTH, 0, 0 );
+        context, cbuffer, LR1110_WIFI_PASSIVE_SCAN_TIME_LIMIT_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code(
     const void* context, const lr1110_modem_wifi_channel_mask_t channels_mask, const uint8_t nb_max_results,
     const uint8_t nb_scan_per_channel, const uint16_t timeout_in_ms, const bool abort_on_timeout )
 {
-    const uint8_t cbuffer[LR1110_WIFI_SEARCH_COUNTRY_CODE_MD_CMD_LENGTH] = {
+    const uint8_t cbuffer[LR1110_WIFI_SEARCH_COUNTRY_CODE_CMD_LENGTH] = {
         ( uint8_t ) LR1110_MODEM_GROUP_ID_WIFI,
-        ( uint8_t ) LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_MD_CMD,
+        ( uint8_t ) LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_CMD,
         ( uint8_t )( channels_mask >> 8 ),
         ( uint8_t ) channels_mask,
         nb_max_results,
@@ -304,17 +270,17 @@ lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code(
         ( uint8_t )( abort_on_timeout ? 1 : 0 )
     };
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_WIFI_SEARCH_COUNTRY_CODE_MD_CMD_LENGTH, 0, 0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_WIFI_SEARCH_COUNTRY_CODE_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code_time_limit(
     const void* context, const lr1110_modem_wifi_channel_mask_t channels_mask, const uint8_t nb_max_results,
     const uint16_t timeout_per_channel_ms, const uint16_t timeout_per_scan_ms )
 {
-    const uint8_t cbuffer[LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_MD_CMD_LENGTH] = {
+    const uint8_t cbuffer[LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_CMD_LENGTH] = {
         ( uint8_t ) LR1110_MODEM_GROUP_ID_WIFI,
-        ( uint8_t ) LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_MD_CMD,
+        ( uint8_t ) LR1110_MODEM_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_CMD,
         ( uint8_t )( channels_mask >> 8 ),
         ( uint8_t ) channels_mask,
         nb_max_results,
@@ -325,22 +291,31 @@ lr1110_modem_response_code_t lr1110_modem_wifi_search_country_code_time_limit(
     };
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_MD_CMD_LENGTH, 0, 0 );
+        context, cbuffer, LR1110_WIFI_SEARCH_COUNTRY_CODE_TIME_LIMIT_CMD_LENGTH, 0, 0 );
 }
 
-void lr1110_modem_wifi_read_basic_results( const uint8_t* buffer, const uint16_t buffer_len,
-                                           lr1110_modem_wifi_basic_mac_type_channel_result_t* results,
-                                           uint8_t*                                           nb_results )
+void lr1110_modem_wifi_read_basic_mac_type_channel_results( const uint8_t* buffer, const uint16_t buffer_len,
+                                                            lr1110_modem_wifi_basic_mac_type_channel_result_t* results,
+                                                            uint8_t* nb_results )
 {
     *nb_results = buffer_len / LR1110_WIFI_BASIC_MAC_TYPE_CHANNEL_RESULT_SIZE;
     interpret_basic_mac_type_channel_result_from_buffer( *nb_results, buffer, results );
 }
 
-void lr1110_modem_wifi_read_complete_results( const uint8_t* buffer, const uint16_t buffer_len,
-                                              lr1110_modem_wifi_basic_complete_result_t* results, uint8_t* nb_results )
+void lr1110_modem_wifi_read_basic_complete_results( const uint8_t* buffer, const uint16_t buffer_len,
+                                                    lr1110_modem_wifi_basic_complete_result_t* results,
+                                                    uint8_t*                                   nb_results )
 {
     *nb_results = buffer_len / LR1110_WIFI_BASIC_COMPLETE_RESULT_SIZE;
     interpret_basic_complete_result_from_buffer( *nb_results, buffer, results );
+}
+
+void lr1110_modem_wifi_read_extended_full_results( const uint8_t* buffer, const uint16_t buffer_len,
+                                                   lr1110_modem_wifi_extended_full_result_t* results,
+                                                   uint8_t*                                  nb_results )
+{
+    *nb_results = buffer_len / LR1110_WIFI_EXTENDED_FULL_RESULT_SIZE;
+    interpret_extended_full_result_from_buffer( *nb_results, buffer, results );
 }
 
 lr1110_modem_wifi_channel_t lr1110_modem_extract_channel_from_info_byte(
@@ -409,6 +384,40 @@ static void interpret_basic_mac_type_channel_result_from_buffer(
         result[result_index].channel_info_byte   = buffer[local_index_start + 1];
         result[result_index].rssi                = buffer[local_index_start + 2];
         lr1110_wifi_read_mac_address_from_buffer( buffer, local_index_start + 3, result[result_index].mac_address );
+    }
+}
+
+static void interpret_extended_full_result_from_buffer( const uint8_t nb_results, const uint8_t* buffer,
+                                                        lr1110_modem_wifi_extended_full_result_t* result )
+{
+    for( uint8_t result_index = 0; result_index < nb_results; result_index++ )
+    {
+        const uint16_t local_index_start = LR1110_WIFI_EXTENDED_FULL_RESULT_SIZE * result_index;
+        lr1110_modem_wifi_extended_full_result_t* local_wifi_result = &result[result_index];
+
+        local_wifi_result->data_rate_info_byte = buffer[local_index_start + 0];
+        local_wifi_result->channel_info_byte   = buffer[local_index_start + 1];
+        local_wifi_result->rssi                = buffer[local_index_start + 2];
+        local_wifi_result->rate                = buffer[local_index_start + 3];
+        local_wifi_result->service             = uint16_from_array( buffer, local_index_start + 4 );
+        local_wifi_result->length              = uint16_from_array( buffer, local_index_start + 6 );
+        local_wifi_result->frame_control       = uint16_from_array( buffer, local_index_start + 8 );
+        lr1110_wifi_read_mac_address_from_buffer( buffer, local_index_start + 10, local_wifi_result->mac_address_1 );
+        lr1110_wifi_read_mac_address_from_buffer( buffer, local_index_start + 16, local_wifi_result->mac_address_2 );
+        lr1110_wifi_read_mac_address_from_buffer( buffer, local_index_start + 22, local_wifi_result->mac_address_3 );
+        local_wifi_result->timestamp_us     = uint64_from_array( buffer, local_index_start + 28 );
+        local_wifi_result->beacon_period_tu = uint16_from_array( buffer, local_index_start + 36 );
+        local_wifi_result->seq_control      = uint16_from_array( buffer, local_index_start + 38 );
+        for( uint8_t ssid_index = 0; ssid_index < LR1110_MODEM_WIFI_RESULT_SSID_LENGTH; ssid_index++ )
+        {
+            local_wifi_result->ssid_bytes[ssid_index] = buffer[local_index_start + ssid_index + 40];
+        }
+        local_wifi_result->current_channel = ( lr1110_modem_wifi_channel_t ) buffer[local_index_start + 72];
+        local_wifi_result->country_code    = uint16_from_array( buffer, local_index_start + 73 );
+        local_wifi_result->io_regulation   = buffer[local_index_start + 75];
+        local_wifi_result->fcs_check_byte.is_fcs_checked = ( ( buffer[local_index_start + 76] & 0x01 ) == 0x01 );
+        local_wifi_result->fcs_check_byte.is_fcs_ok      = ( ( buffer[local_index_start + 76] & 0x02 ) == 0x02 );
+        local_wifi_result->phi_offset                    = uint16_from_array( buffer, local_index_start + 77 );
     }
 }
 

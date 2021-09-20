@@ -53,16 +53,16 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- PUBLIC CONSTANTS --------------------------------------------------------
  */
- 
-/*!
- * \brief Active the MCU IRQ coming from the hall effect sensor
- */
-#define HALL_EFFECT_IRQ_ON          1
 
 /*!
- * \brief Deactive the MCU IRQ coming from the hall effect sensor
+ * @brief Active the MCU IRQ coming from the hall effect sensor
  */
-#define HALL_EFFECT_IRQ_OFF         0
+#define HALL_EFFECT_IRQ_ON 1
+
+/*!
+ * @brief Deactive the MCU IRQ coming from the hall effect sensor
+ */
+#define HALL_EFFECT_IRQ_OFF 0
 
 /*
  * -----------------------------------------------------------------------------
@@ -75,38 +75,36 @@ extern "C" {
  */
 
 /*!
- * \brief Init Hall Effect
+ * @brief Init Hall Effect
  *
- * \param [in] irq_enable active the IRQ or not
+ * @param [in] irq_enable active the IRQ or not
  */
 void hall_effect_init( bool irq_enable );
 
 /*!
- * \brief Deinit Hall Effect 
+ * @brief Deinit Hall Effect
  */
 void hall_effect_deinit( void );
 
 /*!
- * \brief Read Hall Effect output 
+ * @brief Read Hall Effect output
  */
 uint8_t read_hall_effect_output( void );
 
 /*!
- * \brief Get the Hall Effect IRQ state
- *
+ * @brief Get the Hall Effect IRQ state
  */
-bool get_hall_effect_irq_state ( void );
- 
- /*!
- * \brief Get the Hall Effect button IRQ state
- *
+bool get_hall_effect_irq_state( void );
+
+/*!
+ * @brief Get the Hall Effect button IRQ state
  */
-void clear_hall_effect_irq_state ( void );
+void clear_hall_effect_irq_state( void );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //__HALL_EFFECT_H__
+#endif  //__HALL_EFFECT_H__
 
 /* --- EOF ------------------------------------------------------------------ */

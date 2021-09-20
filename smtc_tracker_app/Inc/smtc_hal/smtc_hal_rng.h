@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_rng.h
+ * @file      smtc_hal_rng.h
  *
- * \brief     Board specific package RNG API definition.
+ * @brief     Board specific package RNG API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_RNG_H__
-#define __SMTC_HAL_RNG_H__
+#ifndef SMTC_HAL_RNG_H
+#define SMTC_HAL_RNG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,30 +63,30 @@ extern "C" {
  */
 
 /*!
- * \brief Returns an hardware generated random number.
+ * @brief Returns an hardware generated random number.
  *
- * \retval random Generated radom number
+ * @returns random Generated radom number
  */
 uint32_t hal_rng_get_random( void );
 
 /*!
- * \brief Returns an hardware generated unsigned random number between min and max
+ * @brief Returns an hardware generated unsigned random number between min and max
  *
- * \param [in] val_1 first range unsigned value
- * \param [in] val_2 second range unsigned value
+ * @param [in] val_1 first range unsigned value
+ * @param [in] val_2 second range unsigned value
  *
- * \retval random Generated random unsigned number between smallest value and biggest
+ * @returns random Generated random unsigned number between smallest value and biggest
  * value between val_1 and val_2
  */
 uint32_t hal_rng_get_random_in_range( const uint32_t val_1, const uint32_t val_2 );
 
 /*!
- * \brief Returns an hardware generated signed random number between min and max
+ * @brief Returns an hardware generated signed random number between min and max
  *
- * \param [in] val_1 first range signed value
- * \param [in] val_2 second range signed value
+ * @param [in] val_1 first range signed value
+ * @param [in] val_2 second range signed value
  *
- * \retval random Generated random signed number between smallest value and biggest
+ * @returns random Generated random signed number between smallest value and biggest
  * value between val_1 and val_2
  */
 int32_t hal_rng_get_signed_random_in_range( const int32_t val_1, const int32_t val_2 );
@@ -95,4 +95,4 @@ int32_t hal_rng_get_signed_random_in_range( const int32_t val_1, const int32_t v
 }
 #endif
 
-#endif  // __SMTC_HAL_RNG_H__
+#endif  // SMTC_HAL_RNG_H

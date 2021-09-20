@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_tmr.h
+ * @file      smtc_hal_tmr.h
  *
- * \brief     Board specific package HW timer API definition.
+ * @brief     Board specific package HW timer API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SMTC_HAL_TMR_H__
-#define __SMTC_HAL_TMR_H__
+#ifndef SMTC_HAL_TMR_H
+#define SMTC_HAL_TMR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +59,7 @@ extern "C" {
  */
 
 /*!
- * \brief Timer IRQ handling data context
+ * @brief Timer IRQ handling data context
  */
 typedef struct hal_tmr_irq_s
 {
@@ -73,39 +73,39 @@ typedef struct hal_tmr_irq_s
  */
 
 /*!
- *  \brief Initializes the MCU TMR peripheral
+ *  @brief Initializes the MCU TMR peripheral
  */
 void hal_tmr_init( void );
 
 /*!
- * \brief Starts the provided timer objet for the given time
+ * @brief Starts the provided timer objet for the given time
  *
- * \param [in] milliseconds Number of milliseconds
- * \param [in] tmr_irq      Timer IRQ handling data ontext
+ * @param [in] milliseconds Number of milliseconds
+ * @param [in] tmr_irq      Timer IRQ handling data ontext
  */
 void hal_tmr_start( const uint32_t milliseconds, const hal_tmr_irq_t* tmr_irq );
 
 /*!
- * \brief Starts the provided timer objet for the given time
+ * @brief Starts the provided timer objet for the given time
  */
 void hal_tmr_stop( void );
 
 /*!
- * \brief Returns the current TMR time in milliseconds
+ * @brief Returns the current TMR time in milliseconds
  *
- * \remark is used to timestamp radio events (end of TX), will also be used for
+ * @remark is used to timestamp radio events (end of TX), will also be used for
  *
- * \retval tmr_time_ms Current TMR time in milliseconds wraps every 49 days
+ * @returns tmr_time_ms Current TMR time in milliseconds wraps every 49 days
  */
 uint32_t hal_tmr_get_time_ms( void );
 
 /*!
- * \brief Enables timer interrupts (HW timer only)
+ * @brief Enables timer interrupts (HW timer only)
  */
 void hal_tmr_irq_enable( void );
 
 /*!
- * \brief Disables timer interrupts (HW timer only)
+ * @brief Disables timer interrupts (HW timer only)
  */
 void hal_tmr_irq_disable( void );
 
@@ -113,6 +113,6 @@ void hal_tmr_irq_disable( void );
 }
 #endif
 
-#endif  // __SMTC_HAL_TMR_H__
+#endif  // SMTC_HAL_TMR_H
 
 /* --- EOF ------------------------------------------------------------------ */

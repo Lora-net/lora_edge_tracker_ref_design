@@ -50,12 +50,15 @@ extern "C" {
  * --- PUBLIC MACROS -----------------------------------------------------------
  */
 
+/*!
+ * @brief Status reported by the HAL layer
+ */
 typedef enum lr1110_modem_hal_status_e
 {
-    LR1110_MODEM_HAL_STATUS_OK           = 0x00,
-    LR1110_MODEM_HAL_STATUS_ERROR        = 0x01,
-    LR1110_MODEM_HAL_STATUS_BAD_FRAME    = 0xF,
-    LR1110_MODEM_HAL_STATUS_BUSY_TIMEOUT = 0xFF,
+    LR1110_MODEM_HAL_STATUS_OK           = 0x00,  //!< Operation terminated successfully
+    LR1110_MODEM_HAL_STATUS_ERROR        = 0x01,  //!< Operation terminated with error
+    LR1110_MODEM_HAL_STATUS_BAD_FRAME    = 0x0F,  //!< Bad frame detected in the exchange
+    LR1110_MODEM_HAL_STATUS_BUSY_TIMEOUT = 0xFF,  //!< Timeout occured while waiting for Busy line state
 } lr1110_modem_hal_status_t;
 
 /*
@@ -73,7 +76,6 @@ typedef enum lr1110_modem_hal_status_e
  *
  * @returns CRC value
  */
-
 inline static uint8_t lr1110_modem_compute_crc( const uint8_t crc_initial_value, const uint8_t* buffer,
                                                 uint16_t length )
 {
@@ -83,7 +85,7 @@ inline static uint8_t lr1110_modem_compute_crc( const uint8_t crc_initial_value,
     for( int i = 0; i < length; i++ )
     {
         extract = *buffer;
-        for( uint8_t i = 8; i; i-- )
+        for( uint8_t j = 8; j; j-- )
         {
             sum = ( crc ^ extract ) & 0x01;
             crc >>= 1;
@@ -147,6 +149,24 @@ lr1110_modem_hal_status_t lr1110_modem_hal_read( const void* context, const uint
  */
 lr1110_modem_hal_status_t lr1110_modem_hal_write_read( const void* context, const uint8_t* command, uint8_t* data,
                                                        const uint16_t data_length );
+
+/*!
+ * Radio data transfer - write without wait the return code - this API is dedicated to the functions which reset the
+ * Modem-E
+ *
+ * @remark Must be implemented by the upper layer
+ *
+ * @param [in] context          Radio implementation parameters
+ * @param [in] command          Pointer to the buffer to be transmitted
+ * @param [in] command_length   Buffer size to be transmitted
+ * @param [in] data             Pointer to the buffer to be transmitted
+ * @param [in] data_length      Buffer size to be transmitted
+ *
+ * @returns Operation status
+ */
+lr1110_modem_hal_status_t lr1110_modem_hal_write_without_rc( const void* context, const uint8_t* command,
+                                                             const uint16_t command_length, const uint8_t* data,
+                                                             const uint16_t data_length );
 
 /*!
  * Reset the radio

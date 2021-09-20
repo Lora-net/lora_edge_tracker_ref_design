@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_rng.c
+ * @file      smtc_hal_rng.c
  *
- * \brief     Board specific package RNG API implementation
+ * @brief     Board specific package RNG API implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -77,7 +77,7 @@ uint32_t hal_rng_get_random( void )
 {
     uint32_t rand_nb = 0;
 
-    // Init and enable RNG
+    /* Init and enable RNG */
     rng_handle.Instance = RNG;
 
     if( HAL_RNG_Init( &rng_handle ) != HAL_OK )
@@ -85,10 +85,10 @@ uint32_t hal_rng_get_random( void )
         hal_mcu_panic( );
     }
 
-    // Wait for data ready interrupt: 42+4 RNG clock cycles
+    /* Wait for data ready interrupt: 42+4 RNG clock cycles */
     HAL_RNG_GenerateRandomNumber( &rng_handle, &rand_nb  );
 
-    // Disable RNG
+    /* Disable RNG */
     HAL_RNG_DeInit( &rng_handle );
 
     return rand_nb;
@@ -126,21 +126,21 @@ void HAL_RNG_MspInit( RNG_HandleTypeDef* hrng )
 {
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
-    /*Select MSI output as RNG clock source */
+    /* Select MSI output as RNG clock source */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RNG;
     PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_MSI;
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
     
-    // RNG Peripheral clock enable
+    /* RNG Peripheral clock enable */
     __RNG_CLK_ENABLE( );
 }
 
 void HAL_RNG_MspDeInit( RNG_HandleTypeDef* hrng )
 {
-    // Enable RNG reset state
+    /* Enable RNG reset state */
     __RNG_FORCE_RESET( );
 
-    // Release RNG from reset state
+    /* Release RNG from reset state */
     __RNG_RELEASE_RESET( );
 }
 

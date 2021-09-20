@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_adc.h
+ * @file      smtc_hal_adc.h
  *
- * \brief     Board specific package ADC API definition
+ * @brief     Board specific package ADC API definition
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,9 +28,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#ifndef __SMTC_HAL_ADC_H__
-#define __SMTC_HAL_ADC_H__
+
+#ifndef SMTC_HAL_ADC_H
+#define SMTC_HAL_ADC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,24 +65,31 @@ extern "C" {
  */
 
 /*!
- *  \brief Initializes the MCU ADC peripheral
+ *  @brief Initializes the MCU ADC peripheral
  */
 void hal_adc_init( void );
 
 /*!
- *  \brief Deinitialize the MCU ADC peripheral
+ *  @brief Deinitialize the MCU ADC peripheral
  */
 void hal_adc_deinit( void );
 
 /*!
- * \brief Read the internal board voltage
+ * @brief Read the internal board voltage
  *
- * \retval  Vref Int in mV
+ * @returns  Vref Int in mV
  */
-uint32_t hal_adc_get_vref_int( void );
+uint16_t hal_adc_get_vref_int( void );
+
+/*!
+ * @brief Read the internal temperature
+ *
+ * @param [in] vdda_appli Value of analog reference voltage (Vref+), connected to analog voltage
+ */
+int16_t hal_adc_get_temperature( uint16_t vdda_appli );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __SMTC_HAL_ADC_H__
+#endif  // SMTC_HAL_ADC_H

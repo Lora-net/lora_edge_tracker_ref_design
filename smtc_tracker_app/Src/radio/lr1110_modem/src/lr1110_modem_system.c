@@ -46,16 +46,49 @@
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
-#define LR1110_MODEM_SYSTEM_WRITE_AUXREG32_CMD_LEN ( 2 + 4 )
-#define LR1110_MODEM_SYSTEM_READ_AUXREG32_CMD_LEN ( 2 + 4 + 1 )
+/*!
+ * @brief Command buffer length for command Write Regmem32
+ */
 #define LR1110_MODEM_SYSTEM_WRITE_REGMEM32_CMD_LEN ( 2 + 4 )
+
+/*!
+ * @brief Command buffer length for command Read Regmem32
+ */
 #define LR1110_MODEM_SYSTEM_READ_REGMEM32_CMD_LEN ( 2 + 4 + 1 )
+
+/*!
+ * @brief Command buffer length for command System calibrate
+ */
+#define LR1110_MODEM_SYSTEM_CALIBRATE_CMD_LEN ( 2 + 1 )
+
+/*!
+ * @brief Command buffer length for command Set regulator mode
+ */
 #define LR1110_MODEM_SYSTEM_SET_REGMODE_CMD_LENGTH ( 2 + 1 )
+
+/*!
+ * @brief Command buffer length for command Set DIO as RF switch
+ */
 #define LR1110_MODEM_SYSTEM_SET_DIO_AS_RF_SWITCH_CMD_LENGTH ( 2 + 8 )
+
+/*!
+ * @brief Command buffer length for command Configuration LFCLK
+ */
 #define LR1110_MODEM_SYSTEM_CONFIG_LFCLK_CMD_LENGTH ( 2 + 1 )
+
+/*!
+ * @brief Command buffer length for command Set TCXO mode
+ */
 #define LR1110_MODEM_SYSTEM_SET_TCXO_MODE_CMD_LENGTH ( 2 + 4 )
+
+/*!
+ * @brief Command buffer length for command Reboot
+ */
 #define LR1110_MODEM_SYSTEM_REBOOT_CMD_LENGTH ( 2 + 1 )
 
+/*!
+ * @brief Size of data buffer for Write regmem32
+ */
 #define LR1110_MODEM_SYSTEM_REGMEM_BUFFER_SIZE_MAX ( 256 )
 
 /*
@@ -63,12 +96,14 @@
  * --- PRIVATE TYPES -----------------------------------------------------------
  */
 
+/*!
+ * @brief Operation code for system commands
+ */
 enum
 {
-    LR1110_MODEM_SYSTEM_WRITE_AUX_REG_32_CMD     = 0x03,
-    LR1110_MODEM_SYSTEM_READ_AUX_REG_32_CMD      = 0x04,
     LR1110_MODEM_SYSTEM_WRITE_REG_MEM_32_CMD     = 0x05,
     LR1110_MODEM_SYSTEM_READ_REG_MEM_32_CMD      = 0x06,
+    LR1110_MODEM_SYSTEM_CALIBRATE_CMD            = 0x0F,
     LR1110_MODEM_SYSTEM_SET_REG_MODE_CMD         = 0x10,
     LR1110_MODEM_SYSTEM_SET_DIO_AS_RF_SWITCH_CMD = 0x12,
     LR1110_MODEM_SYSTEM_CONFIG_LF_CLOCK_CMD      = 0x16,
@@ -91,69 +126,11 @@ enum
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
 
-lr1110_modem_response_code_t lr1110_modem_system_write_auxreg32( const void* context, const uint32_t address,
-                                                                 const uint32_t* buffer, const uint8_t length )
-{
-    uint8_t cbuffer[LR1110_MODEM_SYSTEM_WRITE_AUXREG32_CMD_LEN];
-    uint8_t cdata[LR1110_MODEM_SYSTEM_REGMEM_BUFFER_SIZE_MAX];
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_SYSTEM;
-    cbuffer[1] = LR1110_MODEM_SYSTEM_WRITE_AUX_REG_32_CMD;
-
-    cbuffer[2] = ( uint8_t )( address >> 24 );
-    cbuffer[3] = ( uint8_t )( address >> 16 );
-    cbuffer[4] = ( uint8_t )( address >> 8 );
-    cbuffer[5] = ( uint8_t )( address >> 0 );
-
-    for( uint16_t index = 0; index < length; index++ )
-    {
-        uint8_t* cdata_local = &cdata[index * sizeof( uint32_t )];
-
-        cdata_local[0] = ( uint8_t )( buffer[index] >> 24 );
-        cdata_local[1] = ( uint8_t )( buffer[index] >> 16 );
-        cdata_local[2] = ( uint8_t )( buffer[index] >> 8 );
-        cdata_local[3] = ( uint8_t )( buffer[index] >> 0 );
-    }
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_SYSTEM_WRITE_AUXREG32_CMD_LEN, cdata, length * sizeof( uint32_t ) );
-}
-
-lr1110_modem_response_code_t lr1110_modem_system_read_auxreg32( const void* context, const uint32_t address,
-                                                                uint32_t* buffer, const uint8_t length )
-{
-    uint8_t                      cbuffer[LR1110_MODEM_SYSTEM_READ_AUXREG32_CMD_LEN];
-    lr1110_modem_response_code_t rc;
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_SYSTEM;
-    cbuffer[1] = LR1110_MODEM_SYSTEM_READ_AUX_REG_32_CMD;
-
-    cbuffer[2] = ( uint8_t )( address >> 24 );
-    cbuffer[3] = ( uint8_t )( address >> 16 );
-    cbuffer[4] = ( uint8_t )( address >> 8 );
-    cbuffer[5] = ( uint8_t )( address >> 0 );
-
-    cbuffer[6] = length;
-
-    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
-        context, cbuffer, LR1110_MODEM_SYSTEM_READ_AUXREG32_CMD_LEN, ( uint8_t* ) buffer, length * sizeof( uint32_t ) );
-
-    for( uint8_t index = 0; index < length; index++ )
-    {
-        uint8_t* buffer_local = ( uint8_t* ) &buffer[index];
-
-        buffer[index] = ( ( uint32_t ) buffer_local[0] << 24 ) + ( ( uint32_t ) buffer_local[1] << 16 ) +
-                        ( ( uint32_t ) buffer_local[2] << 8 ) + ( ( uint32_t ) buffer_local[3] << 0 );
-    }
-
-    return rc;
-}
-
 lr1110_modem_response_code_t lr1110_modem_system_write_regmem32( const void* context, const uint32_t address,
                                                                  const uint32_t* buffer, const uint8_t length )
 {
     uint8_t cbuffer[LR1110_MODEM_SYSTEM_WRITE_REGMEM32_CMD_LEN];
-    uint8_t cdata[LR1110_MODEM_SYSTEM_REGMEM_BUFFER_SIZE_MAX];
+    uint8_t cdata[LR1110_MODEM_SYSTEM_REGMEM_BUFFER_SIZE_MAX] = { 0 };
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_SYSTEM;
     cbuffer[1] = LR1110_MODEM_SYSTEM_WRITE_REG_MEM_32_CMD;
@@ -205,6 +182,19 @@ lr1110_modem_response_code_t lr1110_modem_system_read_regmem32( const void* cont
     }
 
     return rc;
+}
+
+lr1110_modem_response_code_t lr1110_modem_system_calibrate( const void* context, const uint8_t calib_param )
+{
+    uint8_t cbuffer[LR1110_MODEM_SYSTEM_CALIBRATE_CMD_LEN];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_SYSTEM;
+    cbuffer[1] = LR1110_MODEM_SYSTEM_CALIBRATE_CMD;
+
+    cbuffer[2] = calib_param;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_SYSTEM_CALIBRATE_CMD_LEN, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_system_set_reg_mode( const void*                          context,
@@ -277,7 +267,7 @@ lr1110_modem_response_code_t lr1110_modem_system_set_tcxo_mode( const void*     
         context, cbuffer, LR1110_MODEM_SYSTEM_SET_TCXO_MODE_CMD_LENGTH, 0, 0 );
 }
 
-void lr1110_modem_system_reboot( const void* context, const bool stay_in_bootloader )
+lr1110_modem_response_code_t lr1110_modem_system_reboot( const void* context, const bool stay_in_bootloader )
 {
     uint8_t cbuffer[LR1110_MODEM_SYSTEM_REBOOT_CMD_LENGTH];
 
@@ -286,7 +276,8 @@ void lr1110_modem_system_reboot( const void* context, const bool stay_in_bootloa
 
     cbuffer[2] = ( stay_in_bootloader == true ) ? 0x03 : 0x00;
 
-    lr1110_modem_hal_write( context, cbuffer, LR1110_MODEM_SYSTEM_REBOOT_CMD_LENGTH, 0, 0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write_without_rc(
+        context, cbuffer, LR1110_MODEM_SYSTEM_REBOOT_CMD_LENGTH, 0, 0 );
 }
 
 /*

@@ -1,7 +1,7 @@
 /*!
- * \file      ble_thread.c
+ * @file      ble_thread.c
  *
- * \brief     BLE thread implementation
+ * @brief     BLE thread implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -52,15 +52,13 @@
  * --- PRIVATE MACROS-----------------------------------------------------------
  */
 
-
-
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
 /*!
- * \brief Defines the connection timeout
+ * @brief Defines the connection timeout
  */
 #define CONNECTION_TIMEOUT 120000
 
@@ -75,32 +73,32 @@
  */
 
 /*!
- * \brief Timer to handle the advertisement timeout
+ * @brief Timer to handle the advertisement timeout
  */
 static timer_event_t advertisement_timeout_timer;
 
 /*!
- * \brief Timer to handle the connection timeout
+ * @brief Timer to handle the connection timeout
  */
 static timer_event_t connection_timeout_timer;
 
 /*!
- * \brief advertisement timeout flag
+ * @brief advertisement timeout flag
  */
 bool advertisement_timeout = false;
 
 /*!
- * \brief connection timeout flag
+ * @brief connection timeout flag
  */
 bool connection_timeout = false;
 
 /*!
- * \brief BLE WPAN Initalized flag
+ * @brief BLE WPAN Initalized flag
  */
 bool ble_is_initialized = false;
 
 /*!
- * \brief Tracker context structure
+ * @brief Tracker context structure
  */
 extern tracker_ctx_t tracker_ctx;
 
@@ -109,7 +107,7 @@ extern tracker_ctx_t tracker_ctx;
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
  */
 
-void SystemClock_Config( void );
+void        SystemClock_Config( void );
 static void Reset_Device( void );
 static void Init_BLE_Exti( void );
 static void Deinit_BLE_Exti( void );
@@ -120,12 +118,12 @@ static void Reset_BackupDomain( void );
 #endif
 
 /*!
- * \brief Function executed on advertising timeout event
+ * @brief Function executed on advertising timeout event
  */
 static void on_advertisement_timeout_event( void* context );
 
 /*!
- * \brief Function executed on connection timeout event
+ * @brief Function executed on connection timeout event
  */
 static void on_connection_timeout_event( void* context );
 
@@ -137,15 +135,15 @@ static void on_connection_timeout_event( void* context );
 void start_ble_thread( uint32_t adv_timeout )
 {
     HAL_DBG_TRACE_INFO( "###### ===== START BLE THREAD ==== ######\r\n\r\n" );
-    
+
     /* Stop Hall Effect sensors while the tracker is in BLE mode */
-    lr1110_modem_board_hall_effect_enable( false );
+    lr1110_tracker_board_hall_effect_enable( false );
 
     Reset_Device( );
     Config_HSE( );
 
     /* Init BLE IRQ */
-    Init_BLE_Exti( ); 
+    Init_BLE_Exti( );
 
     /* Init code for STM32_WPAN */
     if( ble_is_initialized == false )
@@ -176,15 +174,18 @@ void start_ble_thread( uint32_t adv_timeout )
 
         timer_init( &connection_timeout_timer, on_connection_timeout_event );
         timer_set_value( &connection_timeout_timer, CONNECTION_TIMEOUT );
-        
+
         /* change the value of the watchog to BLE operation */
-        hal_mcu_set_software_watchdog_value( CONNECTION_TIMEOUT + tracker_ctx.app_scan_interval);
+        hal_mcu_set_software_watchdog_value( CONNECTION_TIMEOUT + tracker_ctx.app_scan_interval );
         hal_mcu_start_software_watchdog( );
     }
 
     /* Turn on the 2G4 SPDT and set it into the right direction */
     spdt_2g4_on( );
     set_ble_antenna( );
+
+    /* Start SMPS step down converter */
+    hal_mcu_smps_enable( true );
 
     while( ( tracker_ctx.ble_disconnected == false ) &&
            ( tracker_ctx.ble_connected == true || advertisement_timeout == false ) )
@@ -203,7 +204,7 @@ void start_ble_thread( uint32_t adv_timeout )
             }
             else
             {
-                if(tracker_ctx.ble_cmd_received == true)
+                if( tracker_ctx.ble_cmd_received == true )
                 {
                     tracker_ctx.ble_cmd_received = false;
 
@@ -226,6 +227,9 @@ void start_ble_thread( uint32_t adv_timeout )
         Adv_Cancel_Req( );
         UTIL_SEQ_Run( UTIL_SEQ_DEFAULT );
     }
+
+    /* Stop SMPS step down converter */
+    hal_mcu_smps_enable( false );
 
     leds_off( LED_TX_MASK );
 
@@ -256,17 +260,17 @@ void start_ble_thread( uint32_t adv_timeout )
 
     if( tracker_ctx.lorawan_parameters_have_changed == true )
     {
-        // reset device because of LoRaWAN Parameters
+        /* reset device because of LoRaWAN Parameters */
         HAL_DBG_TRACE_INFO( "###### ===== RESET TRACKER ==== ######\r\n\r\n" );
         hal_mcu_reset( );
     }
-    
+
     /* set the watchdog to the right value for application operation */
     hal_mcu_set_software_watchdog_value( tracker_ctx.app_scan_interval * 3 );
     hal_mcu_start_software_watchdog( );
-    
+
     /* Start Hall Effect sensors when the tracker leaves the BLE mode */
-    lr1110_modem_board_hall_effect_enable( true );
+    lr1110_tracker_board_hall_effect_enable( true );
 }
 
 /*
@@ -275,12 +279,12 @@ void start_ble_thread( uint32_t adv_timeout )
  */
 
 /*!
- * \brief Function executed on advertising timeout event
+ * @brief Function executed on advertising timeout event
  */
 static void on_advertisement_timeout_event( void* context ) { advertisement_timeout = true; }
 
 /*!
- * \brief Function executed on connection timeout event
+ * @brief Function executed on connection timeout event
  */
 static void on_connection_timeout_event( void* context ) { connection_timeout = true; }
 

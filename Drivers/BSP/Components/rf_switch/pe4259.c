@@ -1,7 +1,7 @@
 /*!
- * \file      pe4259.c
+ * @file      pe4259.c
  *
- * \brief     rf switch pe4259 driver implementation.
+ * @brief     rf switch pe4259 driver implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -33,7 +33,7 @@
  * -----------------------------------------------------------------------------
  * --- DEPENDENCIES ------------------------------------------------------------
  */
- 
+
 #include "smtc_hal.h"
 
 /*
@@ -66,39 +66,39 @@
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
 
-void pe4259_wifi_ble_init( void ){
-
-    hal_gpio_init_out( SWITCH_WIFI_BLE, 1 );// Wi-Fi by default
-    hal_gpio_init_out( GPS_SWITCH, 1 ); // Antenna Patch by default
+void pe4259_wifi_ble_init( void )
+{
+    hal_gpio_init_out( SWITCH_WIFI_BLE, 1 );  // Wi-Fi by default
+    hal_gpio_init_out( GPS_SWITCH, 1 );       // Antenna Patch by default
 }
 
-void pe4259_wifi_ble_deinit( void ){
-
+void pe4259_wifi_ble_deinit( void )
+{
     hal_gpio_deinit( SWITCH_WIFI_BLE );
     hal_gpio_deinit( GPS_SWITCH );
 }
 
-void set_wifi_antenna( void ){
-
-    // SWITCH_WIFI_BLE_Pin = 1 ==> Wi-Fi
+void set_wifi_antenna( void )
+{
+    /* SWITCH_WIFI_BLE_Pin = 1 ==> Wi-Fi */
     hal_gpio_set_value( SWITCH_WIFI_BLE, 1 );
 }
 
-void set_ble_antenna( void ){
-    
-    // SWITCH_WIFI_BLE_Pin = 0 ==> BLE
+void set_ble_antenna( void )
+{
+    /* SWITCH_WIFI_BLE_Pin = 0 ==> BLE */
     hal_gpio_set_value( SWITCH_WIFI_BLE, 0 );
 }
 
-void set_gnss_patch_antenna( void ){
-
-    // GPS_SWITCH = 1 ==> PATCH
+void set_gnss_patch_antenna( void )
+{
+    /* GPS_SWITCH = 1 ==> PATCH */
     hal_gpio_set_value( GPS_SWITCH, 1 );
 }
 
-void set_gnss_pcb_antenna( void ){
-
-    // GPS_SWITCH = 0 ==> PCB
+void set_gnss_pcb_antenna( void )
+{
+    /* GPS_SWITCH = 0 ==> PCB */
     hal_gpio_set_value( GPS_SWITCH, 0 );
 }
 

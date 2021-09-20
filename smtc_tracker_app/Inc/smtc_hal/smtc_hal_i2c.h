@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_i2c.h
+ * @file      smtc_hal_i2c.h
  *
- * \brief     Board specific package I2C API definition.
+ * @brief     Board specific package I2C API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SMTC_HAL_I2C_H__
-#define __SMTC_HAL_I2C_H__
+#ifndef SMTC_HAL_I2C_H
+#define SMTC_HAL_I2C_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +63,7 @@ extern "C" {
  */
 
 /*!
- * \brief I2C structure
+ * @brief I2C structure
  */
 typedef struct hal_i2c_s
 {
@@ -77,7 +77,7 @@ typedef struct hal_i2c_s
 } hal_i2c_t;
 
 /*!
- * \brief I2C peripheral ID
+ * @brief I2C peripheral ID
  */
 typedef enum
 {
@@ -86,7 +86,7 @@ typedef enum
 } i2c_id_t;
 
 /*!
- * \brief Operation Mode for the I2C
+ * @brief Operation Mode for the I2C
  */
 typedef enum
 {
@@ -96,7 +96,7 @@ typedef enum
 } i2c_mode;
 
 /*!
- * \brief I2C signal duty cycle
+ * @brief I2C signal duty cycle
  */
 typedef enum
 {
@@ -105,7 +105,7 @@ typedef enum
 } i_2c_duty_cycle;
 
 /*!
- * \brief I2C select if the acknowledge in after the 7th or 10th bit
+ * @brief I2C select if the acknowledge in after the 7th or 10th bit
  */
 typedef enum
 {
@@ -114,7 +114,7 @@ typedef enum
 } i2c_ack_addr_mode;
 
 /*!
- * \brief Internal device address size
+ * @brief Internal device address size
  */
 typedef enum
 {
@@ -128,67 +128,67 @@ typedef enum
  */
 
 /*!
- * \brief Initializes the I2C object and MCU peripheral
+ * @brief Initializes the I2C object and MCU peripheral
  *
- * \param [in] id   I2C interface id [1:N]
- * \param [in] sda  I2C SDA pin name to be used
- * \param [in] scl  I2C SCL pin name to be used
+ * @param [in] id   I2C interface id [1:N]
+ * @param [in] sda  I2C SDA pin name to be used
+ * @param [in] scl  I2C SCL pin name to be used
  */
 void hal_i2c_init( const uint32_t id, const hal_gpio_pin_names_t sda, const hal_gpio_pin_names_t scl );
 
 /*!
- * \brief DeInitializes the I2C object and MCU peripheral
+ * @brief DeInitializes the I2C object and MCU peripheral
  *
- * \param [in] id   I2C interface id [1:N]
+ * @param [in] id   I2C interface id [1:N]
  */
 void hal_i2c_deinit( const uint32_t id );
 
 /*!
- * \brief Write data to the I2C device
+ * @brief Write data to the I2C device
  *
- * \param [in] id           I2C interface id [1:N]
- * \param [in] device_addr  device address
- * \param [in] addr         data address
- * \param [in] data         data to write
+ * @param [in] id           I2C interface id [1:N]
+ * @param [in] device_addr  device address
+ * @param [in] addr         data address
+ * @param [in] data         data to write
  */
 uint8_t hal_i2c_write( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t data );
 
 /*!
- * \brief Write data buffer to the I2C device
+ * @brief Write data buffer to the I2C device
  *
- * \param [in] id   I2C interface   id [1:N]
- * \param [in] device_addr          device address
- * \param [in] addr                 data address
- * \param [in] buffer               data buffer to write
- * \param [in] size                 number of bytes to write
+ * @param [in] id   I2C interface   id [1:N]
+ * @param [in] device_addr          device address
+ * @param [in] addr                 data address
+ * @param [in] buffer               data buffer to write
+ * @param [in] size                 number of bytes to write
  */
 uint8_t hal_i2c_write_buffer( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t* buffer, uint16_t size );
 
 /*!
- * \brief Read data from the I2C device
+ * @brief Read data from the I2C device
  *
- * \param [in] id   I2C interface   id [1:N]
- * \param [in] device_addr          device address
- * \param [in] addr                 data address
- * \param [out] data                data to read
+ * @param [in] id   I2C interface   id [1:N]
+ * @param [in] device_addr          device address
+ * @param [in] addr                 data address
+ * @param [out] data                data to read
  */
 uint8_t hal_i2c_read( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t* data );
 
 /*!
- * \brief Read data buffer from the I2C device
+ * @brief Read data buffer from the I2C device
  *
- * \param [in] id   I2C interface   id [1:N]
- * \param [in] device_addr          device address
- * \param [in] addr                 data address
- * \param [out] buffer              data buffer to read
- * \param [in] size                 number of data bytes to read
+ * @param [in] id   I2C interface   id [1:N]
+ * @param [in] device_addr          device address
+ * @param [in] addr                 data address
+ * @param [out] buffer              data buffer to read
+ * @param [in] size                 number of data bytes to read
  */
 uint8_t hal_i2c_read_buffer( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t* buffer, uint16_t size );
 
 /*!
- * \brief Sets the internal device address size
+ * @brief Sets the internal device address size
  *
- * \param [in] addr_size Internal address size
+ * @param [in] addr_size Internal address size
  */
 void hal_i2c_set_addr_size( i2c_addr_size addr_size );
 
@@ -196,4 +196,4 @@ void hal_i2c_set_addr_size( i2c_addr_size addr_size );
 }
 #endif
 
-#endif  // __SMTC_HAL_I2C_H__
+#endif  // SMTC_HAL_I2C_H

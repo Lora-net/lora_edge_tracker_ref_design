@@ -79,8 +79,19 @@ extern "C" {
  * --- PUBLIC TYPES ------------------------------------------------------------
  */
 
+/*!
+ * @brief Type representing a hash bytestream
+ */
 typedef uint8_t lr1110_bootloader_hash_t[LR1110_BL_HASH_LENGTH];
+
+/*!
+ * @brief Type representing a device PIN bytestream
+ */
 typedef uint8_t lr1110_bootloader_pin_t[LR1110_BL_PIN_LENGTH];
+
+/*!
+ * @brief Type representing a chip EUI bytestream
+ */
 typedef uint8_t lr1110_bootloader_chip_eui_t[LR1110_BL_CHIP_EUI_LENGTH];
 
 /*!
@@ -88,9 +99,9 @@ typedef uint8_t lr1110_bootloader_chip_eui_t[LR1110_BL_CHIP_EUI_LENGTH];
  */
 typedef struct lr1110_bootloader_version_s
 {
-    uint8_t  hw;
-    uint8_t  type;
-    uint16_t fw;
+    uint8_t  hw;    //<! Hardware verion
+    uint8_t  type;  //!< Type version
+    uint16_t fw;    //!< Firmware version
 } lr1110_bootloader_version_t;
 
 /*

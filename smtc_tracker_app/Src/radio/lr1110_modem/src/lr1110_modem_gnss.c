@@ -43,6 +43,9 @@
  */
 
 #ifndef MIN
+/*!
+ * @brief Helper macro for min evaluation
+ */
 #define MIN( a, b ) ( ( a > b ) ? b : a )
 #endif  // MIN
 
@@ -51,43 +54,165 @@
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
+/*!
+ * @brief Command buffer length for command Set constellation
+ */
 #define LR1110_MODEM_GNSS_SET_CONSTALLATION_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_GNSS_READ_CONSTALLATION_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_SET_ALMANAC_UPDATE_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_GNSS_READ_ALMANAC_UPDATE_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_SET_FREQ_SEARCH_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_GNSS_READ_FREQ_SEARCH_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_READ_FW_VERSION_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_READ_SUPPORTED_CONSTELLATION_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_ALMANAC_FULL_UPDATE_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_SET_FREQ_SEARCH_SPACE_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_GNSS_READ_FREQ_SEARCH_SPACE_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_SET_ASSISTANCE_POSITION_CMD_LENGTH ( 2 + 4 )
-#define LR1110_MODEM_GNSS_READ_ASSISTANCE_POSITION_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_SET_XTAL_ERROR_CMD_LENGTH ( 2 + 2 )
-#define LR1110_MODEM_GNSS_READ_XTAL_ERROR_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_PUSH_SOLVER_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_GET_CONTEXT_STATUS_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_GET_NB_SV_SATELLITES_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_GET_SV_SATELLITES_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_GET_TIMINGS_CMD_LENGTH ( 2 )
-#define LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_CMD_LENGTH ( 2 + 2 )
-#define LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD_LENGTH ( 2 + 3 )
-#define LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD_LENGTH ( 2 + 3 )
 
+/*!
+ * @brief Command buffer length for command Read constellation
+ */
+#define LR1110_MODEM_GNSS_READ_CONSTALLATION_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Set almanac update
+ */
+#define LR1110_MODEM_GNSS_SET_ALMANAC_UPDATE_CMD_LENGTH ( 2 + 1 )
+
+/*!
+ * @brief Command buffer length for command Read almanac update
+ */
+#define LR1110_MODEM_GNSS_READ_ALMANAC_UPDATE_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Read firmware version
+ */
+#define LR1110_MODEM_GNSS_READ_FW_VERSION_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Read supported constellation
+ */
+#define LR1110_MODEM_GNSS_READ_SUPPORTED_CONSTELLATION_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Almanac full update
+ */
+#define LR1110_MODEM_GNSS_ALMANAC_FULL_UPDATE_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Set frequency search space
+ */
+#define LR1110_MODEM_GNSS_SET_FREQ_SEARCH_SPACE_CMD_LENGTH ( 2 + 1 )
+
+/*!
+ * @brief Command buffer length for command Read frequency search space
+ */
+#define LR1110_MODEM_GNSS_READ_FREQ_SEARCH_SPACE_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Set assistance position
+ */
+#define LR1110_MODEM_GNSS_SET_ASSISTANCE_POSITION_CMD_LENGTH ( 2 + 4 )
+
+/*!
+ * @brief Command buffer length for command Read assistance position
+ */
+#define LR1110_MODEM_GNSS_READ_ASSISTANCE_POSITION_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Set crystal error
+ */
+#define LR1110_MODEM_GNSS_SET_XTAL_ERROR_CMD_LENGTH ( 2 + 2 )
+
+/*!
+ * @brief Command buffer length for command Read crystal error
+ */
+#define LR1110_MODEM_GNSS_READ_XTAL_ERROR_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Push solver message
+ */
+#define LR1110_MODEM_GNSS_PUSH_SOLVER_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Get context status
+ */
+#define LR1110_MODEM_GNSS_GET_CONTEXT_STATUS_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Get number of satellites detected
+ */
+#define LR1110_MODEM_GNSS_GET_NB_SV_SATELLITES_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Get satellites detected
+ */
+#define LR1110_MODEM_GNSS_GET_SV_SATELLITES_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Get GNSS scan timings
+ */
+#define LR1110_MODEM_GNSS_GET_TIMINGS_CMD_LENGTH ( 2 )
+
+/*!
+ * @brief Command buffer length for command Read almanac by index
+ */
+#define LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_CMD_LENGTH ( 2 + 2 )
+
+/*!
+ * @brief Command buffer length for command Start autonomous scan
+ */
+#define LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_CMD_LENGTH ( 2 + 3 )
+
+/*!
+ * @brief Command buffer length for command Start assisted scan
+ */
+#define LR1110_MODEM_GNSS_SCAN_ASSISTED_CMD_LENGTH ( 2 + 3 )
+
+/*!
+ * @brief Maximal payload size to send during full almanac update
+ */
 #define LR1110_MODEM_GNSS_FULL_ALMANAC_UPDATE_PACKET_LENGTH ( 260 )
-#define LR1110_MODEM_GNSS_READ_ALMANAC_TEMPBUFFER_SIZE_BYTE ( 47 )
+
+/*!
+ * @brief Response buffer size for command GNSS get timings
+ */
 #define LR1110_MODEM_GNSS_SCAN_GET_TIMINGS_RBUFFER_LENGTH ( 8 )
+
+/*!
+ * @brief Response buffer size for command GNSS get context
+ */
 #define LR1110_MODEM_GNSS_SCAN_GET_CONTEXT_RBUFFER_LENGTH ( 9 )
+
+/*!
+ * @brief Maximal number of detectable satellites
+ */
 #define LR1110_MODEM_GNSS_MAX_DETECTED_SV ( 32 )
+
+/*!
+ * @brief Size of satellite information reported in Get satellites detected commands per satellite (in byte)
+ */
 #define LR1110_MODEM_GNSS_DETECTED_SV_SINGLE_SIZE ( 2 )
+
+/*!
+ * @brief Maximal response buffer size for command Get satellites detected
+ */
 #define LR1110_MODEM_GNSS_MAX_DETECTED_SV_BUFFER_SIZE \
     ( LR1110_MODEM_GNSS_MAX_DETECTED_SV * LR1110_MODEM_GNSS_DETECTED_SV_SINGLE_SIZE )
+
+/*!
+ * @brief Response buffer size for command Read firwmare version
+ */
 #define LR1110_MODEM_GNSS_READ_FIRMWARE_VERSION_RBUFFER_LENGTH ( 2 )
+
+/*!
+ * @brief Response buffer size for command Read almanac by index
+ */
 #define LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_RBUFFER_LENGTH ( LR1110_MODEM_GNSS_SINGLE_ALMANAC_READ_SIZE * 11 )
 
-#define LR1110_MODEM_GNSS_SCALING_LATITUDE 90
-#define LR1110_MODEM_GNSS_SCALING_LONGITUDE 180
+/*!
+ * @brief Scaling factor for latitude conversion
+ */
+#define LR1110_MODEM_GNSS_SCALING_LATITUDE ( 90 )
+
+/*!
+ * @brief Scaling factor for longitude conversion
+ */
+#define LR1110_MODEM_GNSS_SCALING_LONGITUDE ( 180 )
+
+/*!
+ * @brief Offset for SNR/CNR conversion
+ */
 #define LR1110_MODEM_GNSS_SNR_TO_CNR_OFFSET ( 31 )
 
 /*
@@ -95,6 +220,9 @@
  * --- PRIVATE TYPES -----------------------------------------------------------
  */
 
+/*!
+ * @brief Operation code for GNSS commands
+ */
 typedef enum
 {
     LR1110_MODEM_GNSS_SET_CONSTELLATION_CMD            = 0x00,  //!< set the constellation to use
@@ -116,8 +244,8 @@ typedef enum
     LR1110_MODEM_GNSS_GET_SV_DETECTED_CMD              = 0x18,  //!< read the informations of detected satellites
     LR1110_MODEM_GNSS_GET_TIMINGS_CMD                  = 0x19,  //!< read the meseaured timings during the scan
     LR1110_MODEM_GNSS_ALMANAC_READ_BY_INDEX_CMD        = 0x1A,  //!< read the almanac by index
-    LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD           = 0x30,  //!< start the scan autonomous
-    LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD             = 0x31,  //!< start the scan assisted
+    LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_CMD              = 0x30,  //!< start the scan autonomous
+    LR1110_MODEM_GNSS_SCAN_ASSISTED_CMD                = 0x31,  //!< start the scan assisted
 } lr1110_modem_api_command_gnss_t;
 
 /*
@@ -395,7 +523,7 @@ lr1110_modem_response_code_t lr1110_modem_gnss_get_context( const void*         
     gnss_context->gnss_firmware_version = rbuffer[2];
     gnss_context->global_almanac_crc    = ( ( uint32_t ) rbuffer[6] << 24 ) + ( ( uint32_t ) rbuffer[5] << 16 ) +
                                        ( ( uint32_t ) rbuffer[4] << 8 ) + ( ( uint32_t ) rbuffer[3] << 0 );
-    gnss_context->error_code              = ( lr1110_modem_gnss_dmc_error_code_t ) ( rbuffer[7] >> 4 );
+    gnss_context->error_code              = ( lr1110_modem_gnss_context_status_error_code_t )( rbuffer[7] >> 4 );
     gnss_context->almanac_update_bit_mask = ( rbuffer[7] >> 1 ) & 0x07;
     gnss_context->frequency_search_space =
         ( lr1110_modem_gnss_frequency_search_space_t )( ( ( rbuffer[7] & 0x01 ) << 1 ) | ( rbuffer[8] >> 7 ) );
@@ -504,40 +632,40 @@ lr1110_modem_response_code_t lr1110_modem_gnss_almanac_read_by_index( const void
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*                           context,
-                                                                   const lr1110_modem_gnss_search_mode_t effort_mode,
-                                                                   const uint8_t gnss_input_parameters,
-                                                                   const uint8_t nb_sat )
+lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous( const void*                           context,
+                                                                const lr1110_modem_gnss_search_mode_t effort_mode,
+                                                                const uint8_t gnss_result_mask,
+                                                                const uint8_t nb_sat )
 {
-    uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD_LENGTH];
+    uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_CMD_LENGTH];
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_GNSS;
-    cbuffer[1] = LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD;
+    cbuffer[1] = LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_CMD;
 
     cbuffer[2] = ( uint8_t ) effort_mode;
-    cbuffer[3] = gnss_input_parameters;
+    cbuffer[3] = gnss_result_mask;
     cbuffer[4] = nb_sat;
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_MD_CMD_LENGTH, 0, 0 );
+        context, cbuffer, LR1110_MODEM_GNSS_SCAN_AUTONOMOUS_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted_md( const void*                           context,
-                                                                 const lr1110_modem_gnss_search_mode_t effort_mode,
-                                                                 const uint8_t gnss_input_parameters,
-                                                                 const uint8_t nb_sat )
+lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted( const void*                           context,
+                                                              const lr1110_modem_gnss_search_mode_t effort_mode,
+                                                              const uint8_t gnss_result_mask,
+                                                              const uint8_t nb_sat )
 {
-    uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD_LENGTH];
+    uint8_t cbuffer[LR1110_MODEM_GNSS_SCAN_ASSISTED_CMD_LENGTH];
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_GNSS;
-    cbuffer[1] = LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD;
+    cbuffer[1] = LR1110_MODEM_GNSS_SCAN_ASSISTED_CMD;
 
     cbuffer[2] = ( uint8_t ) effort_mode;
-    cbuffer[3] = gnss_input_parameters;
+    cbuffer[3] = gnss_result_mask;
     cbuffer[4] = nb_sat;
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_GNSS_SCAN_ASSISTED_MD_CMD_LENGTH, 0, 0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_GNSS_SCAN_ASSISTED_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_gnss_push_solver_msg( const void* context, const uint8_t* payload,

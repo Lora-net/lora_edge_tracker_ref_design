@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_rtc.c
+ * @file      smtc_hal_rtc.c
  *
- * \brief     Board specific package RTC API implementation
+ * @brief     Board specific package RTC API implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -50,22 +50,22 @@
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
 
-// MCU Wake Up Time
+/* MCU Wake Up Time */
 #define MIN_ALARM_DELAY_IN_TICKS       3U              // in ticks
 
-// sub-second number of bits
+/* sub-second number of bits */
 #define N_PREDIV_S                     10U
 
-// Synchronous prediv
+/* Synchronous prediv */
 #define PREDIV_S                       ( ( 1U << N_PREDIV_S ) - 1U )
 
-// Asynchronous prediv
+/* Asynchronous prediv */
 #define PREDIV_A                       ( ( 1U << ( 15U - N_PREDIV_S ) ) - 1U )
 
-// Sub-second mask definition
+/* Sub-second mask definition */
 #define ALARM_SUBSECOND_MASK           ( N_PREDIV_S << RTC_ALRMASSR_MASKSS_Pos )
 
-// RTC Time base in us
+/* RTC Time base in us */
 #define USEC_NUMBER                    1000000U
 #define MSEC_NUMBER                    ( USEC_NUMBER / 1000 )
 
@@ -74,7 +74,7 @@
 #define CONV_DENOM                     ( 1U << ( N_PREDIV_S - COMMON_FACTOR ) )
 
 /*!
- * Days, Hours, Minutes and seconds
+ * @brief Days, Hours, Minutes and seconds
  */
 #define DAYS_IN_LEAP_YEAR              ( ( uint32_t ) 366U )
 #define DAYS_IN_YEAR                   ( ( uint32_t ) 365U )
@@ -85,13 +85,13 @@
 #define HOURS_IN_1DAY                  ( ( uint32_t ) 24U )
 
 /*!
- * Correction factors
+ * @brief Correction factors
  */
 #define DAYS_IN_MONTH_CORRECTION_NORM  ( ( uint32_t ) 0x99AAA0 )
 #define DAYS_IN_MONTH_CORRECTION_LEAP  ( ( uint32_t ) 0x445550 )
 
 /*!
- * Calculates ceiling( X / N )
+ * @brief Calculates ceiling( X / N )
  */
 #define DIVC( X, N )                   ( ( ( X ) + ( N ) -1 ) / ( N ) )
 
@@ -108,17 +108,17 @@
 hal_rtc_t hal_rtc;
 
 /*!
- * \brief RTC Alarm
+ * @brief RTC Alarm
  */
 static RTC_AlarmTypeDef rtc_alarm;
 
 /*!
- * \brief Number of days in each month on a normal year
+ * @brief Number of days in each month on a normal year
  */
 static const uint8_t days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 /*!
- * \brief Number of days in each month on a leap year
+ * @brief Number of days in each month on a leap year
  */
 static const uint8_t days_in_month_leap_year[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
@@ -128,37 +128,37 @@ static const uint8_t days_in_month_leap_year[] = { 31, 29, 31, 30, 31, 30, 31, 3
  */
 
 /*!
- * \brief Converts time in ms to time in wake up timer ticks
+ * @brief Converts time in ms to time in wake up timer ticks
  * Assuming WUCKSEL[2:0] = 000: RTCCLK/16 clock is selected
  *
- * \param [in] milliseconds Time in milliseconds
- * \retval ticks Time in wake up timer ticks
+ * @param [in] milliseconds Time in milliseconds
+ * @returns ticks Time in wake up timer ticks
  */
 static uint32_t hal_rtc_ms_2_wakeup_timer_tick( const uint32_t milliseconds );
 
 /*!
- * \brief Converts time in s to time in wake up timer ticks
+ * @brief Converts time in s to time in wake up timer ticks
  * When RTCCLK = 32768 Hz and ck_spre (Synchronous prescaler output clock) is
  * adjusted to 1 Hz
  *
- * \param [in] seconds Time in seconds
- * \retval ticks Time in wake up timer ticks
+ * @param [in] seconds Time in seconds
+ * @returns ticks Time in wake up timer ticks
  */
 static uint32_t hal_rtc_s_2_wakeup_timer_tick( const uint32_t seconds );
 
 /*!
- * \brief Get the elapsed time in seconds and milliseconds since RTC initialization
+ * @brief Get the elapsed time in seconds and milliseconds since RTC initialization
  *
- * \param [out] milliseconds Number of milliseconds elapsed since RTC
+ * @param [out] milliseconds Number of milliseconds elapsed since RTC
  *                           initialization
- * \retval seconds           Number of seconds elapsed since RTC initialization
+ * @returns seconds           Number of seconds elapsed since RTC initialization
  */
 static uint32_t hal_rtc_get_calendar_time( uint16_t* milliseconds );
 
 /*!
- * \brief Get current full resolution RTC timestamp in ticks
+ * @brief Get current full resolution RTC timestamp in ticks
  *
- * \retval timestamp_in_ticks Current timestamp in ticks
+ * @returns timestamp_in_ticks Current timestamp in ticks
  */
 static uint64_t rtc_get_timestamp_in_ticks( RTC_DateTypeDef* date, RTC_TimeTypeDef* time );
 
@@ -183,7 +183,7 @@ void hal_rtc_init( void )
         hal_mcu_panic( );
     }
 
-    // Initialize RTC counter to 0
+    /* Initialize RTC counter to 0 */
     date.Year    = 0;
     date.Month   = RTC_MONTH_JANUARY;
     date.Date    = 1;
@@ -200,14 +200,14 @@ void hal_rtc_init( void )
     time.DayLightSaving = RTC_STOREOPERATION_RESET;
     HAL_RTC_SetTime( &hal_rtc.handle, &time, RTC_FORMAT_BIN );
 
-    // Enable Direct Read of the calendar registers (not through Shadow
-    // registers)
+    /* Enable Direct Read of the calendar registers (not through Shadow
+       registers) */
     HAL_RTCEx_EnableBypassShadow( &hal_rtc.handle );
 
     HAL_NVIC_SetPriority( RTC_Alarm_IRQn, 1, 0 );
     HAL_NVIC_EnableIRQ( RTC_Alarm_IRQn );
 
-    // Init alarm.
+    /* Init alarm. */
     HAL_RTC_DeactivateAlarm( &hal_rtc.handle, RTC_ALARM_A );
 
     hal_rtc_set_time_ref_in_ticks( );
@@ -231,22 +231,22 @@ uint32_t hal_rtc_get_time_ms( void )
 
 void hal_rtc_stop_alarm( void )
 {
-    // Disable the Alarm A interrupt
+    /* Disable the Alarm A interrupt */
     HAL_RTC_DeactivateAlarm( &hal_rtc.handle, RTC_ALARM_A );
 
-    // Clear RTC Alarm Flag
+    /* Clear RTC Alarm Flag */
     __HAL_RTC_ALARM_CLEAR_FLAG( &hal_rtc.handle, RTC_FLAG_ALRAF );
 
-    // Clear the EXTI's line Flag for RTC Alarm
+    /* Clear the EXTI's line Flag for RTC Alarm */
     __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
 }
 
 /*!
- * \brief Sets the alarm
+ * @brief Sets the alarm
  *
- * \note The alarm is set at now (read in this function) + timeout
+ * @remark The alarm is set at now (read in this function) + timeout
  *
- * \param [in] timeout Duration of the Timer ticks
+ * @param [in] timeout Duration of the Timer ticks
  */
 void hal_rtc_start_alarm( uint32_t timeout )
 {
@@ -263,10 +263,10 @@ void hal_rtc_start_alarm( uint32_t timeout )
     /*reverse counter */
     rtc_alarm_sub_seconds = PREDIV_S - time.SubSeconds;
     rtc_alarm_sub_seconds += ( timeout & PREDIV_S );
-    // convert timeout  to seconds
+    /* convert timeout  to seconds */
     timeout >>= N_PREDIV_S;
 
-    // Convert microsecs to RTC format and add to 'Now'
+    /* Convert microsecs to RTC format and add to 'Now' */
     rtc_alarm_days = date.Date;
     while( timeout >= SECONDS_IN_1DAY )
     {
@@ -274,7 +274,7 @@ void hal_rtc_start_alarm( uint32_t timeout )
         rtc_alarm_days++;
     }
 
-    // Calc hours
+    /* Calc hours */
     rtc_alarm_hours = time.Hours;
     while( timeout >= SECONDS_IN_1HOUR )
     {
@@ -282,7 +282,7 @@ void hal_rtc_start_alarm( uint32_t timeout )
         rtc_alarm_hours++;
     }
 
-    // Calc minutes
+    /* Calc minutes */
     rtc_alarm_minutes = time.Minutes;
     while( timeout >= SECONDS_IN_1MINUTE )
     {
@@ -290,10 +290,10 @@ void hal_rtc_start_alarm( uint32_t timeout )
         rtc_alarm_minutes++;
     }
 
-    // Calc seconds
+    /* Calc seconds */
     rtc_alarm_seconds = time.Seconds + timeout;
 
-    //***** Correct for modulo********
+    /***** Correct for modulo*********/
     while( rtc_alarm_sub_seconds >= ( PREDIV_S + 1 ) )
     {
         rtc_alarm_sub_seconds -= ( PREDIV_S + 1 );
@@ -333,7 +333,7 @@ void hal_rtc_start_alarm( uint32_t timeout )
         }
     }
 
-    /* Set RTC_AlarmStructure with calculated values*/
+    /* Set RTC_AlarmStructure with calculated values */
     rtc_alarm.AlarmTime.SubSeconds     = PREDIV_S - rtc_alarm_sub_seconds;
     rtc_alarm.AlarmSubSecondMask       = ALARM_SUBSECOND_MASK;
     rtc_alarm.AlarmTime.Seconds        = rtc_alarm_seconds;
@@ -347,7 +347,7 @@ void hal_rtc_start_alarm( uint32_t timeout )
     rtc_alarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     rtc_alarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
 
-    // Set RTC_Alarm
+    /* Set RTC_Alarm */
     HAL_RTC_SetAlarm_IT( &hal_rtc.handle, &rtc_alarm, RTC_FORMAT_BIN );
 }
 
@@ -381,7 +381,7 @@ void hal_rtc_delay_in_ms( const uint32_t milliseconds )
 
     delay_in_ticks = hal_rtc_ms_2_tick( milliseconds );
 
-    // Wait delay ms
+    /* Wait delay ms */
     while( ( ( rtc_get_timestamp_in_ticks( &date, &time ) - ref_delay_in_ticks ) ) < delay_in_ticks )
     {
         __NOP( );
@@ -430,8 +430,8 @@ uint32_t hal_rtc_tick_2_ms( const uint32_t tick )
 static uint32_t hal_rtc_ms_2_wakeup_timer_tick( const uint32_t milliseconds )
 {
     uint32_t nb_tick = 0;
-    // Compute is done for LSE @ 32.768kHz
-    // Assuming that RTC_WAKEUPCLOCK_RTCCLK_DIV16 is used => tick is 488.281µs
+    /* Compute is done for LSE @ 32.768kHz
+       Assuming that RTC_WAKEUPCLOCK_RTCCLK_DIV16 is used => tick is 488.281µs */
     nb_tick = milliseconds * 2 + ( ( 6 * milliseconds ) >> 7 );
     return nb_tick;
 }
@@ -439,8 +439,8 @@ static uint32_t hal_rtc_ms_2_wakeup_timer_tick( const uint32_t milliseconds )
 static uint32_t hal_rtc_s_2_wakeup_timer_tick( const uint32_t seconds )
 {
     uint32_t nb_tick = 0;
-    // Compute is done for LSE @ 32.768kHz
-    // Assuming that RTC_WAKEUPCLOCK_CK_SPRE_16BITS is used => tick is 1s
+    /* Compute is done for LSE @ 32.768kHz
+       Assuming that RTC_WAKEUPCLOCK_CK_SPRE_16BITS is used => tick is 1s */
     nb_tick = seconds;
     return nb_tick;
 }
@@ -463,33 +463,33 @@ static uint32_t hal_rtc_get_calendar_time( uint16_t* milliseconds )
 }
 
 /*!
- * \brief RTC IRQ Handler of the RTC Alarm
+ * @brief RTC IRQ Handler of the RTC Alarm
  */
 void RTC_Alarm_IRQHandler( void )
 {
     RTC_HandleTypeDef* hrtc = &hal_rtc.handle;
 
-    // Clear the EXTI's line Flag for RTC Alarm
+    /* Clear the EXTI's line Flag for RTC Alarm */
     __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
 
-    // Gets the AlarmA interrupt source enable status
+    /* Gets the AlarmA interrupt source enable status */
     if( __HAL_RTC_ALARM_GET_IT_SOURCE( hrtc, RTC_IT_ALRA ) != RESET )
     {
-        // Gets the pending status of the AlarmA interrupt
+        /* Gets the pending status of the AlarmA interrupt */
         if( __HAL_RTC_ALARM_GET_FLAG( hrtc, RTC_FLAG_ALRAF ) != RESET )
         {
-            // Clear the AlarmA interrupt pending bit
+            /* Clear the AlarmA interrupt pending bit */
             __HAL_RTC_ALARM_CLEAR_FLAG( hrtc, RTC_FLAG_ALRAF );
-            // AlarmA callback
+            /* AlarmA callback */
             HAL_RTC_AlarmAEventCallback( hrtc );
         }
     }
 }
 
 /*!
- * \brief  Alarm A callback.
+ * @brief  Alarm A callback.
  *
- * \param [in] hrtc RTC handle
+ * @param [in] hrtc RTC handle
  */
 void HAL_RTC_AlarmAEventCallback( RTC_HandleTypeDef* hrtc ) { timer_irq_handler( ); }
 
@@ -499,7 +499,7 @@ static uint64_t rtc_get_timestamp_in_ticks( RTC_DateTypeDef* date, RTC_TimeTypeD
     uint32_t correction;
     uint32_t seconds;
 
-    // Make sure it is correct due to asynchronous nature of RTC
+    /* Make sure it is correct due to asynchronous nature of RTC */
     volatile uint32_t ssr;
 
     do
@@ -509,7 +509,7 @@ static uint64_t rtc_get_timestamp_in_ticks( RTC_DateTypeDef* date, RTC_TimeTypeD
         HAL_RTC_GetTime( &hal_rtc.handle, time, RTC_FORMAT_BIN );
     } while( ssr != RTC->SSR );
 
-    // Calculate amount of elapsed days since 01/01/2000
+    /* Calculate amount of elapsed days since 01/01/2000 */
     seconds = DIVC( ( DAYS_IN_YEAR * 3 + DAYS_IN_LEAP_YEAR ) * date->Year, 4 );
 
     correction = ( ( date->Year % 4 ) == 0 ) ? DAYS_IN_MONTH_CORRECTION_LEAP : DAYS_IN_MONTH_CORRECTION_NORM;
@@ -519,7 +519,7 @@ static uint64_t rtc_get_timestamp_in_ticks( RTC_DateTypeDef* date, RTC_TimeTypeD
 
     seconds += ( date->Date - 1 );
 
-    // Convert from days to seconds
+    /* Convert from days to seconds */
     seconds *= SECONDS_IN_1DAY;
 
     seconds += ( ( uint32_t ) time->Seconds + ( ( uint32_t ) time->Minutes * SECONDS_IN_1MINUTE ) +
@@ -567,9 +567,9 @@ uint32_t hal_rtc_temp_compensation( uint32_t period, float temperature )
     interim = ( temperature - ( t - t_dev ) );
     ppm *= interim * interim;
 
-    // Calculate the drift in time
+    /* Calculate the drift in time */
     interim = ( ( float ) period * ppm ) / ( ( float ) 1e6 );
-    // Calculate the resulting time period
+    /* Calculate the resulting time period */
     interim += period;
     interim = floor( interim );
 
@@ -578,6 +578,6 @@ uint32_t hal_rtc_temp_compensation( uint32_t period, float temperature )
         interim = ( float ) period;
     }
 
-    // Calculate the resulting period
+    /* Calculate the resulting period */
     return ( uint32_t ) interim;
 }

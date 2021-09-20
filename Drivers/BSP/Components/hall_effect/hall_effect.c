@@ -1,7 +1,7 @@
 /*!
- * \file      hall_effect.c
+ * @file      hall_effect.c
  *
- * \brief     Hall effect sensor driver implementation.
+ * @brief     Hall effect sensor driver implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -40,8 +40,8 @@
  * -----------------------------------------------------------------------------
  * --- PRIVATE MACROS-----------------------------------------------------------
  */
- 
- /*
+
+/*
  * -----------------------------------------------------------------------------
  * --- PRIVATE CONSTANTS -------------------------------------------------------
  */
@@ -50,14 +50,14 @@
  * -----------------------------------------------------------------------------
  * --- PRIVATE TYPES -----------------------------------------------------------
  */
- 
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
  */
 
 /*!
- * \brief Hardware INT IRQ callback initialization
+ * @brief Hardware INT IRQ callback initialization
  */
 void hall_effect_irq_handler( void* obj );
 
@@ -65,20 +65,19 @@ void hall_effect_irq_handler( void* obj );
  * -----------------------------------------------------------------------------
  * --- PRIVATE VARIABLES -------------------------------------------------------
  */
- 
- /*!
- * \brief Hall Effect interrupt flag state
+
+/*!
+ * @brief Hall Effect interrupt flag state
  */
 static bool hall_effect_irq_state = false;
 
 /*!
- * \brief Hall Effect gpio irq definition
+ * @brief Hall Effect gpio irq definition
  */
-hal_gpio_irq_t hall_effect=
-{
-    .pin = EFFECT_HALL_OUT,
+hal_gpio_irq_t hall_effect = {
+    .pin      = EFFECT_HALL_OUT,
     .callback = hall_effect_irq_handler,
-    .context = NULL,
+    .context  = NULL,
 };
 
 /*
@@ -86,11 +85,11 @@ hal_gpio_irq_t hall_effect=
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
 
-void hall_effect_init( bool irq_enable ){
-    
+void hall_effect_init( bool irq_enable )
+{
     if( irq_enable == true )
     {
-        hal_gpio_init_in( hall_effect.pin , HAL_GPIO_PULL_MODE_UP, HAL_GPIO_IRQ_MODE_FALLING, &hall_effect );
+        hal_gpio_init_in( hall_effect.pin, HAL_GPIO_PULL_MODE_UP, HAL_GPIO_IRQ_MODE_FALLING, &hall_effect );
     }
     else
     {
@@ -98,23 +97,17 @@ void hall_effect_init( bool irq_enable ){
     }
 }
 
-void hall_effect_deinit( void ){
-
+void hall_effect_deinit( void )
+{
     hal_gpio_irq_deatach( &hall_effect );
     hal_gpio_deinit( hall_effect.pin );
 }
 
-uint8_t read_hall_effect_output( void ){
-    
-    return hal_gpio_get_value( hall_effect.pin );
-}
+uint8_t read_hall_effect_output( void ) { return hal_gpio_get_value( hall_effect.pin ); }
 
-bool get_hall_effect_irq_state ( void )
-{
-    return hall_effect_irq_state;
-}
+bool get_hall_effect_irq_state( void ) { return hall_effect_irq_state; }
 
-void clear_hall_effect_irq_state ( void )
+void clear_hall_effect_irq_state( void )
 {
     leds_off( LED_RX_MASK );
     hall_effect_irq_state = false;
@@ -125,7 +118,7 @@ void clear_hall_effect_irq_state ( void )
  * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------
  */
 
-void hall_effect_irq_handler ( void* context )
+void hall_effect_irq_handler( void* context )
 {
     leds_on( LED_RX_MASK );
     hall_effect_irq_state = true;

@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_options.h
+ * @file      smtc_hal_options.h
  *
- * \brief     SMTC Hardware abstraction layer OPTIONS management API definition.
+ * @brief     SMTC Hardware abstraction layer OPTIONS management API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_OPTIONS_H__
-#define __SMTC_HAL_OPTIONS_H__
+#ifndef SMTC_HAL_OPTIONS_H
+#define SMTC_HAL_OPTIONS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,38 +53,37 @@ extern "C" {
  * --- PUBLIC CONSTANTS --------------------------------------------------------
  */
 
-#define HAL_FEATURE_OFF                             0
-#define HAL_FEATURE_ON                              !HAL_FEATURE_OFF
+#define HAL_FEATURE_OFF 0
+#define HAL_FEATURE_ON !HAL_FEATURE_OFF
 
-#define HAL_DBG_TRACE                               HAL_FEATURE_ON
-#define HAL_DBG_TRACE_COLOR                         HAL_FEATURE_ON
+#define HAL_DBG_TRACE HAL_FEATURE_ON
+#define HAL_DBG_TRACE_COLOR HAL_FEATURE_ON
 
-// HAL_FEATURE_ON to activate sleep mode
+/* HAL_FEATURE_ON to activate sleep mode */
 
-// HAL_FEATURE_OFF to deactivate sleep mode
-#define HAL_LOW_POWER_MODE                          HAL_FEATURE_ON
+/* HAL_FEATURE_OFF to deactivate sleep mode */
+#define HAL_LOW_POWER_MODE HAL_FEATURE_ON
 
-// HAL_FEATURE_ON to enable debug probe, not disallocating corresponding pins
-#define HAL_HW_DEBUG_PROBE                          HAL_FEATURE_OFF
+/* HAL_FEATURE_ON to enable debug probe, not disallocating corresponding pins */
+#define HAL_HW_DEBUG_PROBE HAL_FEATURE_OFF
 
+#define HAL_USE_PRINTF_UART HAL_FEATURE_ON
+#define HAL_PRINTF_UART_ID 1
+#define HAL_PRINT_BUFFER_SIZE 255
 
-#define HAL_USE_PRINTF_UART                         HAL_FEATURE_ON
-#define HAL_PRINTF_UART_ID                          1
-#define HAL_PRINT_BUFFER_SIZE                       255
+#define HAL_RADIO_SPI_ID 1
 
-#define HAL_RADIO_SPI_ID                            1
+#define HAL_I2C_ID 1
 
-#define HAL_I2C_ID                                  1
-
-// HAL_FEATURE_OFF to not use watchdog
-#define HAL_USE_WATCHDOG                            HAL_FEATURE_OFF
+/* HAL_FEATURE_OFF to not use watchdog */
+#define HAL_USE_WATCHDOG HAL_FEATURE_ON
 
 /*!
  * Watchdog counter reload value
  *
- * \remark The period must be lower than MCU watchdog period
+ * @remark The period must be lower than MCU watchdog period
  */
-#define HAL_WATCHDOG_RELOAD_PERIOD_SECONDS          20
+#define HAL_WATCHDOG_RELOAD_PERIOD_SECONDS 20
 
 /*
  * -----------------------------------------------------------------------------
@@ -100,4 +99,4 @@ extern "C" {
 }
 #endif
 
-#endif  // __SMTC_HAL_OPTIONS_H__
+#endif  // SMTC_HAL_OPTIONS_H

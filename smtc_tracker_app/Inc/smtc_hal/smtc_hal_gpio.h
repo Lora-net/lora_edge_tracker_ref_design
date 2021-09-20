@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_gpio.h
+ * @file      smtc_hal_gpio.h
  *
- * \brief     Board specific package GPIO API definition.
+ * @brief     Board specific package GPIO API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_GPIO_H__
-#define __SMTC_HAL_GPIO_H__
+#ifndef SMTC_HAL_GPIO_H
+#define SMTC_HAL_GPIO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +60,7 @@ extern "C" {
  */
 
 /*!
- * \brief GPIO setup data structure
+ * @brief GPIO setup data structure
  */
 typedef struct hal_gpio_s
 {
@@ -72,7 +72,7 @@ typedef struct hal_gpio_s
 } hal_gpio_t;
 
 /*!
- * \brief GPIO IRQ data context
+ * @brief GPIO IRQ data context
  */
 typedef struct hal_gpio_irq_s
 {
@@ -82,7 +82,7 @@ typedef struct hal_gpio_irq_s
 } hal_gpio_irq_t;
 
 /*!
- * \brief GPIO Pull modes
+ * @brief GPIO Pull modes
  */
 typedef enum gpio_pull_mode_e
 {
@@ -92,7 +92,7 @@ typedef enum gpio_pull_mode_e
 } gpio_pull_mode_t;
 
 /*!
- * \brief GPIO IRQ modes
+ * @brief GPIO IRQ modes
  */
 typedef enum gpio_irq_mode_e
 {
@@ -108,34 +108,34 @@ typedef enum gpio_irq_mode_e
  */
 
 /*!
- * \brief Initializes given pin as output with given initial value
+ * @brief Initializes given pin as output with given initial value
  *
- * \param [in] pin   MCU pin to be initialized
- * \param [in] value MCU initial pit state
+ * @param [in] pin   MCU pin to be initialized
+ * @param [in] value MCU initial pit state
  *
  */
 void hal_gpio_init_out( const hal_gpio_pin_names_t pin, const uint32_t value );
 
 /*!
- * \brief Deinitializes given pin
+ * @brief Deinitializes given pin
  *
- * \param [in] pin   MCU pin to be deinitialized
+ * @param [in] pin   MCU pin to be deinitialized
  *
  */
 void hal_gpio_deinit( const hal_gpio_pin_names_t pin );
 
 /*!
- * \brief Initializes given pin as input
+ * @brief Initializes given pin as input
  *
- * \param [in] pin MCU pin to be initialized
- * \param [in] pull_mode MCU pin pull mode [HAL_GPIO_PULL_MODE_NONE,
+ * @param [in] pin MCU pin to be initialized
+ * @param [in] pull_mode MCU pin pull mode [HAL_GPIO_PULL_MODE_NONE,
  *                                          HAL_GPIO_PULL_MODE_UP,
  *                                          HAL_GPIO_PULL_MODE_DOWN]
- * \param [in] irq_mode MCU IRQ mode [HAL_GPIO_IRQ_MODE_OFF,
+ * @param [in] irq_mode MCU IRQ mode [HAL_GPIO_IRQ_MODE_OFF,
  *                                     HAL_GPIO_IRQ_MODE_RISING,
  *                                     HAL_GPIO_IRQ_MODE_FALLING,
  *                                     HAL_GPIO_IRQ_MODE_RISING_FALLING]
- * \param [in] irq Pointer to IRQ data context.
+ * @param [in] irq Pointer to IRQ data context.
  *                 NULL when HAL_GPIO_IRQ_MODE_OFF
  *                 pin parameter is initialized
  */
@@ -143,63 +143,63 @@ void hal_gpio_init_in( const hal_gpio_pin_names_t pin, const gpio_pull_mode_t pu
                        hal_gpio_irq_t* irq );
 
 /*!
- * \brief Attaches given callback to the MCU IRQ handler
+ * @brief Attaches given callback to the MCU IRQ handler
  *
- * \param [in] irq Pointer to IRQ data context
+ * @param [in] irq Pointer to IRQ data context
  */
 void hal_gpio_irq_attach( const hal_gpio_irq_t* irq );
 
 /*!
- * \brief Detattaches callback from the MCU IRQ handler
+ * @brief Detattaches callback from the MCU IRQ handler
  *
- * \param [in] irq     Pointer to IRQ data context
+ * @param [in] irq     Pointer to IRQ data context
  */
 void hal_gpio_irq_deatach( const hal_gpio_irq_t* irq );
 
 /*!
- * \brief Enables all GPIO MCU interrupts
+ * @brief Enables all GPIO MCU interrupts
  */
 void hal_gpio_irq_enable( void );
 
 /*!
- * \brief Disables all GPIO MCU interrupts
+ * @brief Disables all GPIO MCU interrupts
  */
 void hal_gpio_irq_disable( void );
 
 /*!
- * \brief Sets MCU pin to given value
+ * @brief Sets MCU pin to given value
  *
- * \param [in] pin   MCU pin to be set
- * \param [in] value MCU pin state to be set
+ * @param [in] pin   MCU pin to be set
+ * @param [in] value MCU pin state to be set
  */
 void hal_gpio_set_value( const hal_gpio_pin_names_t pin, const uint32_t value );
 
 /*!
- * \brief Toggles MCU pin state value
+ * @brief Toggles MCU pin state value
  *
- * \param [in] pin   MCU pin to be toggled
+ * @param [in] pin   MCU pin to be toggled
  */
 void hal_gpio_toggle( const hal_gpio_pin_names_t pin );
 
 /*!
- * \brief Gets MCU pin state value
+ * @brief Gets MCU pin state value
  *
- * \param [in] pin   MCU pin to be read
+ * @param [in] pin   MCU pin to be read
  *
- * \retval value Current MCU pin state
+ * @returns value Current MCU pin state
  */
 uint32_t hal_gpio_get_value( const hal_gpio_pin_names_t pin );
 
 /*!
- * \brief Indicates if there are gpio IRQs pending.
+ * @brief Indicates if there are gpio IRQs pending.
  *
- * \retval pendig [true: IRQ pending
+ * @returns pendig [true: IRQ pending
  *                 false: No IRQ pending]
  */
 bool hal_gpio_is_pending_irq( void );
 
 /*!
- * \brief EXTI IRQ Handler.
+ * @brief EXTI IRQ Handler.
  */
 void EXTI0_IRQHandler( void );
 void EXTI1_IRQHandler( void );
@@ -213,4 +213,4 @@ void EXTI15_10_IRQHandler( void );
 }
 #endif
 
-#endif  // __SMTC_HAL_GPIO_H__
+#endif  // SMTC_HAL_GPIO_H

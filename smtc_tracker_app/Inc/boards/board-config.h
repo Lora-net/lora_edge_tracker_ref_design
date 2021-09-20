@@ -1,7 +1,7 @@
 /*!
- * \file      board-config.h
+ * @file      board-config.h
  *
- * \brief     board specific pinout
+ * @brief     board specific pinout
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __BOARD_CONFIG_H__
-#define __BOARD_CONFIG_H__
+#ifndef BOARD_CONFIG_H
+#define BOARD_CONFIG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,12 +52,12 @@ extern "C" {
  */
 
 /*!
- * \brief Defines the time required for the TCXO to wakeup [ms].
+ * @brief Defines the time required for the TCXO to wakeup [ms].
  */
 #define BOARD_TCXO_WAKEUP_TIME 5
 
 /*!
- * \brief Board MCU pins definitions
+ * @brief Board MCU pins definitions
  */
 
 /* LR1110 */
@@ -122,6 +122,6 @@ extern "C" {
 }
 #endif
 
-#endif  // __BOARD_CONFIG_H__
+#endif  // BOARD_CONFIG_H
 
 /* --- EOF ------------------------------------------------------------------ */

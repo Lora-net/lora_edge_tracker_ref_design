@@ -220,11 +220,11 @@ static void APPE_SysUserEvtRx( void * pPayload )
 void UTIL_SEQ_Idle( void )
 {
 #if ( CFG_LPM_SUPPORTED == 1)
-	// Go on low power only when Advertisement or Connection are ON
-	if(tracker_ctx.ble_advertisement_on == true)
-	{
-	  UTIL_LPM_EnterLowPower( );
-	}
+    // Go on low power only when Advertisement
+    if( (tracker_ctx.ble_advertisement_on == true ) && (tracker_ctx.ble_connected == false) )
+    {
+    UTIL_LPM_EnterLowPower( );
+    }
 #endif
   return;
 }

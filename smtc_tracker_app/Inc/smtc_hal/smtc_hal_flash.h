@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_flash.h
+ * @file      smtc_hal_flash.h
  *
- * \brief     Board specific package FLASH API definition.
+ * @brief     Board specific package FLASH API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SMTC_HAL_FLASH_H__
-#define __SMTC_HAL_FLASH_H__
+#ifndef SMTC_HAL_FLASH_H
+#define SMTC_HAL_FLASH_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,13 +58,14 @@ extern "C" {
 #define FLASH_BYTE_EMPTY_CONTENT ( ( uint8_t ) 0xFF )
 #define FLASH_PAGE_EMPTY_CONTENT ( ( uint64_t ) 0xFFFFFFFFFFFFFFFF )
 
-#define FLASH_USER_START_PAGE ( 7 )                                            /* Start nb page of user Flash area, 8 because of the bootloader */
+#define FLASH_USER_START_PAGE ( 7 ) /* Start nb page of user Flash area, 8 because of the bootloader */
 
 #define FLASH_USER_END_ADDR ( ADDR_FLASH_PAGE_200 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user Flash area */
 #define FLASH_USER_END_PAGE ( 200 )                                            /* End nb page of user Flash area */
 
 #define FLASH_USER_INTERNAL_LOG_CTX_START_ADDR ADDR_FLASH_PAGE_201
-#define FLASH_USER_INTERNAL_LOG_CTX_END_ADDR ( ADDR_FLASH_PAGE_201 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user ctx Flash area */
+#define FLASH_USER_INTERNAL_LOG_CTX_END_ADDR \
+    ( ADDR_FLASH_PAGE_201 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user ctx Flash area */
 
 #define FLASH_USER_TRACKER_CTX_START_ADDR ADDR_FLASH_PAGE_202
 #define FLASH_USER_TRACKER_CTX_END_ADDR \
@@ -288,61 +289,61 @@ extern "C" {
  */
 
 /*!
- * \brief Initializes the FLASH module and find the first empty page.
+ * @brief Initializes the FLASH module and find the first empty page.
  *
- * \retval User flash start address
+ * @returns User flash start address
  */
 uint32_t flash_init( void );
 
 /*!
- * \brief Erase a given nb page to the FLASH at the specified address.
+ * @brief Erase a given nb page to the FLASH at the specified address.
  *
- * \param [in] addr FLASH address to start the erase
- * \param [in] nb_page the number of page to erase.
- * \retval status [SUCCESS, FAIL]
+ * @param [in] addr FLASH address to start the erase
+ * @param [in] nb_page the number of page to erase.
+ * @returns status [SUCCESS, FAIL]
  */
 uint8_t flash_erase_page( uint32_t addr, uint8_t nb_page );
 
 /*!
- * \brief Force erasing of a given nb page to the FLASH at the specified address.
+ * @brief Force erasing of a given nb page to the FLASH at the specified address.
  *
- * \param [in] addr FLASH address to start the erase
- * \param [in] nb_page the number of page to erase.
- * \retval status [SUCCESS, FAIL]
+ * @param [in] addr FLASH address to start the erase
+ * @param [in] nb_page the number of page to erase.
+ * @returns status [SUCCESS, FAIL]
  */
 uint8_t flash_force_erase_page( uint32_t addr, uint8_t nb_page );
 
 /*!
- * \brief Writes the given buffer to the FLASH at the specified address.
+ * @brief Writes the given buffer to the FLASH at the specified address.
  *
- * \param [in] addr FLASH address to write to
- * \param [in] buffer Pointer to the buffer to be written.
- * \param [in] size Size of the buffer to be written.
- * \retval status [Real_size_written, FAIL]
+ * @param [in] addr FLASH address to write to
+ * @param [in] buffer Pointer to the buffer to be written.
+ * @param [in] size Size of the buffer to be written.
+ * @returns status [Real_size_written, FAIL]
  */
 uint32_t flash_write_buffer( uint32_t addr, uint8_t* buffer, uint32_t size );
 
 /*!
- * \brief Reads the FLASH at the specified address to the given buffer.
+ * @brief Reads the FLASH at the specified address to the given buffer.
  *
- * \param [in] addr FLASH address to read from
- * \param [out] buffer Pointer to the buffer to be written with read data.
- * \param [in] size Size of the buffer to be read.
- * \retval status [SUCCESS, FAIL]
+ * @param [in] addr FLASH address to read from
+ * @param [out] buffer Pointer to the buffer to be written with read data.
+ * @param [in] size Size of the buffer to be read.
+ * @returns status [SUCCESS, FAIL]
  */
 void flash_read_buffer( uint32_t addr, uint8_t* buffer, uint32_t size );
 
 /*!
- * \brief Reads the FLASH at the specified address to the given buffer.
+ * @brief Reads the FLASH at the specified address to the given buffer.
  *
- * \retval User flash start address.
+ * @returns User flash start address.
  */
 uint32_t flash_get_user_start_addr( void );
 
 /*!
- * \brief Set the FLASH user start addr.
+ * @brief Set the FLASH user start addr.
  *
- * \param [in] addr User flash start address.
+ * @param [in] addr User flash start address.
  */
 void flash_set_user_start_addr( uint32_t addr );
 
@@ -350,6 +351,6 @@ void flash_set_user_start_addr( uint32_t addr );
 }
 #endif
 
-#endif  // __SMTC_HAL_FLASH_H__
+#endif  // SMTC_HAL_FLASH_H
 
 /* --- EOF ------------------------------------------------------------------ */

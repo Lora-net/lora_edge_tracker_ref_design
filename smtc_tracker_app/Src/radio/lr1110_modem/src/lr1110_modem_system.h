@@ -111,58 +111,20 @@ typedef enum
  */
 typedef struct
 {
-    uint8_t enable;
-    uint8_t standby;
-    uint8_t rx;
-    uint8_t tx;
-    uint8_t tx_hp;
-    uint8_t tx_hf;
-    uint8_t gnss;
-    uint8_t wifi;
+    uint8_t enable;   //!< Bit mask of enabled switches
+    uint8_t standby;  //!< Bit mask of switches that are on in standby mode
+    uint8_t rx;       //!< Bit mask of switches that are on in rx mode
+    uint8_t tx;       //!< Bit mask of switches that are on in tx mode
+    uint8_t tx_hp;    //!< Bit mask of switches that are on in tx_hp mode
+    uint8_t tx_hf;    //!< Bit mask of switches that are on in tx_hf mode
+    uint8_t gnss;     //!< Bit mask of switches that are on in gnss mode
+    uint8_t wifi;     //!< Bit mask of switches that are on in wifi mode
 } lr1110_modem_system_rf_switch_cfg_t;
 
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
  */
-
-/*!
- * @brief Write words into auxiliary memory space of LR1110.
- *
- * The words are 32 bits long. The writing operations write contiguously in auxiliary memory, starting at the address
- * provided.
- *
- * @param [in] context Chip implementation context
- * @param [in] address The auxiliary memory address to start writing operation
- * @param [in] buffer The buffer of words to write into memory. Its size must be enough to contain length words. A word
- * is 32 bits long
- * @param [in] length Number of words to write into memory
- *
- * @returns Operation status
- *
- * @see lr1110_modem_system_read_auxreg32
- */
-lr1110_modem_response_code_t lr1110_modem_system_write_auxreg32( const void* context, const uint32_t address,
-                                                                 const uint32_t* buffer, const uint8_t length );
-
-/*!
- * @brief Read words into auxiliary memory space of LR1110.
- *
- * The words are 32 bits long. The reading operations read contiguously from auxiliary memory, starting at the address
- * provided.
- *
- * @param [in] context Chip implementation context
- * @param [in] address The auxiliary memory address to start reading operation
- * @param [out] buffer Pointer to a words array to be filled with content from memory. Its size must be enough to
- * contain at least length words. A word is 32 bits long
- * @param [in] length Number of words to read from memory
- *
- * @returns Operation status
- *
- * @see lr1110_modem_system_write_auxreg32
- */
-lr1110_modem_response_code_t lr1110_modem_system_read_auxreg32( const void* context, const uint32_t address,
-                                                                uint32_t* buffer, const uint8_t length );
 
 /*!
  * @brief Write words into register memory space of LR1110.
@@ -201,6 +163,18 @@ lr1110_modem_response_code_t lr1110_modem_system_write_regmem32( const void* con
  */
 lr1110_modem_response_code_t lr1110_modem_system_read_regmem32( const void* context, const uint32_t address,
                                                                 uint32_t* buffer, const uint8_t length );
+
+/*!
+ * @brief lr1110_modem_system_calibrate the requested blocks
+ *
+ * This function can be called in any mode of the chip.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] calib_param Structure holding the reference to blocks to be calibrated
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_system_calibrate( const void* context, const uint8_t calib_param );
 
 /*!
  * @brief Configure the regulator mode to be used in specific modes
@@ -279,7 +253,7 @@ lr1110_modem_response_code_t lr1110_modem_system_set_tcxo_mode( const void*     
  *
  * @returns Operation status
  */
-void lr1110_modem_system_reboot( const void* context, const bool stay_in_bootloader );
+lr1110_modem_response_code_t lr1110_modem_system_reboot( const void* context, const bool stay_in_bootloader );
 
 #ifdef __cplusplus
 }

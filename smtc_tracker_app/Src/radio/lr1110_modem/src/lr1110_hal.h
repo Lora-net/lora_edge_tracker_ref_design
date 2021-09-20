@@ -49,10 +49,13 @@ extern "C" {
  * --- PUBLIC MACROS -----------------------------------------------------------
  */
 
+/*!
+ * @brief Status code of HAL operation
+ */
 typedef enum lr1110_hal_status_e
 {
-    LR1110_HAL_STATUS_OK    = 0,
-    LR1110_HAL_STATUS_ERROR = 3,
+    LR1110_HAL_STATUS_OK    = 0,  //!< HAL operation executed successfuly
+    LR1110_HAL_STATUS_ERROR = 3,  //!< HAL operation failed
 } lr1110_hal_status_t;
 
 /*
@@ -62,7 +65,7 @@ typedef enum lr1110_hal_status_e
  */
 
 /*!
- * Radio data transfer - write
+ * @brief Radio data transfer - write
  *
  * @remark Must be implemented by the upper layer
  *
@@ -78,14 +81,14 @@ lr1110_hal_status_t lr1110_hal_write( const void* context, const uint8_t* comman
                                       const uint8_t* data, const uint16_t data_length );
 
 /*!
- * Radio data transfer - read
+ * @brief Radio data transfer - read
  *
  * @remark Must be implemented by the upper layer
  *
  * @param [in] context          Radio implementation parameters
  * @param [in] command          Pointer to the buffer to be transmitted
  * @param [in] command_length   Buffer size to be transmitted
- * @param [out] data             Pointer to the buffer to be received
+ * @param [out] data            Pointer to the buffer to be received
  * @param [in] data_length      Buffer size to be received
  *
  * @returns Operation status
@@ -101,7 +104,7 @@ lr1110_hal_status_t lr1110_hal_read( const void* context, const uint8_t* command
  *
  * @param [in] context          Radio implementation parameters
  * @param [in] command          Pointer to the buffer to be transmitted
- * @param [out] data             Pointer to the buffer to be received
+ * @param [out] data            Pointer to the buffer to be received
  * @param [in] data_length      Buffer size to be received
  *
  * @returns Operation status
@@ -110,7 +113,7 @@ lr1110_hal_status_t lr1110_hal_write_read( const void* context, const uint8_t* c
                                            const uint16_t data_length );
 
 /*!
- * Reset the radio
+ * @brief Reset the radio
  *
  * @remark Must be implemented by the upper layer
  *
@@ -121,7 +124,7 @@ lr1110_hal_status_t lr1110_hal_write_read( const void* context, const uint8_t* c
 lr1110_hal_status_t lr1110_hal_reset( const void* context );
 
 /*!
- * Wake the radio up.
+ * @brief Wake the radio up.
  *
  * @remark Must be implemented by the upper layer
  *

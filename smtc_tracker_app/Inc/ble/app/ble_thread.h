@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __BLE_THREAD_H__
-#define __BLE_THREAD_H__
+#ifndef BLE_THREAD_H
+#define BLE_THREAD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +54,7 @@ extern "C" {
  */
 
 /*!
- * \brief  Activate the advertisement timeout
+ * @brief  Activate the advertisement timeout
  */
 #define NO_ADV_TIMEOUT 0
 
@@ -69,9 +69,9 @@ extern "C" {
  */
 
 /*!
- * \brief  The thread executing the BLE task.
+ * @brief  The thread executing the BLE task.
  *
- * \param [in] adv_timeout advertisement timeout in ms, task timeout when no connection occurs
+ * @param [in] adv_timeout advertisement timeout in ms, task timeout when no connection occurs
  */
 void start_ble_thread( uint32_t adv_timeout );
 
@@ -79,6 +79,6 @@ void start_ble_thread( uint32_t adv_timeout );
 }
 #endif
 
-#endif /*__BLE_THREAD_H__ */
+#endif  // BLE_THREAD_H
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

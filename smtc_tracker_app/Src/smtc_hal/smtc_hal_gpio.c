@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_gpio.c
+ * @file      smtc_hal_gpio.c
  *
- * \brief     Implements the gpio HAL functions
+ * @brief     Implements the gpio HAL functions
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -62,7 +62,7 @@
  */
 
 /*!
- * \brief Array holding attached IRQ gpio data context
+ * @brief Array holding attached IRQ gpio data context
  */
 static hal_gpio_irq_t const* gpio_irq[16];
 
@@ -74,9 +74,9 @@ static hal_gpio_irq_t const* gpio_irq[16];
 /*!
  * Generic gpio initialization
  *
- * \param [in/out] gpio  Holds MCU gpio parameters
- * \param [in]     value Initial MCU pit value
- * \param [in/out] irq   Pointer to IRQ data context.
+ * @param [in/out] gpio  Holds MCU gpio parameters
+ * @param [in]     value Initial MCU pit value
+ * @param [in/out] irq   Pointer to IRQ data context.
  *                         NULL when setting gpio as output
  */
 static void hal_gpio_init( const hal_gpio_t* gpio, const uint32_t value, const hal_gpio_irq_t* irq );

@@ -1,7 +1,7 @@
 /*!
- * \file      pe4259.h
+ * @file      pe4259.h
  *
- * \brief     rf switch PE4259 driver definition.
+ * @brief     rf switch PE4259 driver definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -60,34 +60,34 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
  */
- 
+
 /*!
- * \brief Init RF Switch
+ * @brief Init RF Switch
  */
 void pe4259_wifi_ble_init( void );
 
 /*!
- * \brief Deinit RF Switch
+ * @brief Deinit RF Switch
  */
 void pe4259_wifi_ble_deinit( void );
 
 /*!
- * \brief Enable WiFi path
+ * @brief Enable WiFi path
  */
 void set_wifi_antenna( void );
 
 /*!
- * \brief Enable BLE path
+ * @brief Enable BLE path
  */
 void set_ble_antenna( void );
 
 /*!
- * \brief Enable GNSS patch antenna
+ * @brief Enable GNSS patch antenna
  */
 void set_gnss_patch_antenna( void );
 
 /*!
- * \brief Enable GNSS PCB antenna
+ * @brief Enable GNSS PCB antenna
  */
 void set_gnss_pcb_antenna( void );
 
@@ -95,6 +95,6 @@ void set_gnss_pcb_antenna( void );
 }
 #endif
 
-#endif //__PE4259_H__
+#endif  //__PE4259_H__
 
 /* --- EOF ------------------------------------------------------------------ */

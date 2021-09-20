@@ -1,7 +1,7 @@
 /*!
- * \file      main_read_internal_log.c
+ * @file      main_read_internal_log.c
  *
- * \brief     read Internal Log implementation
+ * @brief     read Internal Log implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -59,9 +59,14 @@
  */
 
 /*!
- * \brief Tracker context structure
+ * @brief Tracker context structure
  */
 extern tracker_ctx_t tracker_ctx;
+
+/*!
+ * @brief Radio hardware and global parameters
+ */
+extern lr1110_t lr1110;
 
 /*
  * -----------------------------------------------------------------------------
@@ -74,15 +79,18 @@ extern tracker_ctx_t tracker_ctx;
  */
 
 /**
- * \brief Main application entry point.
+ * @brief Main application entry point.
  */
 int main( void )
 {
-    // Init board
+    /* Init board */
     hal_mcu_init( );
-
     hal_mcu_init_periph( );
 
+    /* LR1110 modem-e version */
+    lr1110_modem_get_version( &lr1110, &tracker_ctx.modem_version );
+
+    tracker_restore_app_ctx( );
     tracker_restore_internal_log_ctx( );
 
     HAL_DBG_TRACE_MSG( "Scan : \r\n\r\n" );

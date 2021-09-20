@@ -56,36 +56,19 @@ extern "C" {
  */
 
 /*!
- * @brief DM Message length
- */
-#define LR1110_MODEM_DM_MESSAGE_STATUS_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_CHARGE_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_VOLTAGE_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_TEMPERATURE_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_SIGNAL_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_UPTIME_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_RXTIME_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_FIRMWARE_LENGTH ( 8 )
-#define LR1110_MODEM_DM_MESSAGE_ADR_MODE_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_JOIN_EUI_LENGTH ( 8 )
-#define LR1110_MODEM_DM_MESSAGE_INTERVAL_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_REGION_LENGTH ( 1 )
-#define LR1110_MODEM_DM_MESSAGE_RESET_COUNT_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_DEV_EUI_LENGTH ( 8 )
-#define LR1110_MODEM_DM_MESSAGE_SESSION_ID_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_CHIP_EUI ( 8 )
-#define LR1110_MODEM_DM_MESSAGE_STREAM_PARAMETERS_LENGTH ( 2 )
-#define LR1110_MODEM_DM_MESSAGE_APPLICATION_SPECIFIC_STATUS_LENGTH ( 8 )
-
-/*!
  * @brief Length in bytes of a chip eui
  */
-#define LR1110_MODEM_CHIP_EUI_LENGTH 0x08
+#define LR1110_MODEM_CHIP_EUI_LENGTH ( 8 )
 
 /*!
- * @brief Length in bytes of a LoRaWAN network key
+ * @brief Length in bytes of a LoRaWAN device eui
  */
-#define LR1110_MODEM_NWK_KEY_LENGTH ( 16 )
+#define LR1110_MODEM_DEV_EUI_LENGTH ( 8 )
+
+/*!
+ * @brief Length in bytes of a LoRaWAN join eui
+ */
+#define LR1110_MODEM_JOIN_EUI_LENGTH ( 8 )
 
 /*!
  * @brief Length in bytes of a LoRaWAN application key
@@ -95,7 +78,17 @@ extern "C" {
 /*!
  * @brief Number of regions available
  */
-#define LR1110_MODEM_REGIONS_NUMBER ( 2 )
+#define LR1110_MODEM_REGIONS_NUMBER ( 10 )
+
+/*!
+ * @brief Number of output power config blocks
+ */
+#define LR1110_MODEM_NB_OUTPUT_POWER_CONFIG_BLOCKS ( 6 )
+
+/*!
+ * @brief Power config block length
+ */
+#define LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ( 5 )
 
 /*
  * -----------------------------------------------------------------------------
@@ -140,14 +133,13 @@ typedef enum
  */
 typedef enum
 {
-    LR1110_LORAWAN_BROWNOUT = 0x01,
-    LR1110_LORAWAN_CRASH    = 0x02,
-    LR1110_LORAWAN_MUTE     = 0x04,
-    LR1110_LORAWAN_JOINED   = 0x08,
-    LR1110_LORAWAN_SUSPEND  = 0x10,
-    LR1110_LORAWAN_UPLOAD   = 0x20,
-    LR1110_LORAWAN_JOINING  = 0x40,
-    LR1110_LORAWAN_STREAM   = 0x80,
+    LR1110_LORAWAN_CRASH   = 0x02,
+    LR1110_LORAWAN_MUTE    = 0x04,
+    LR1110_LORAWAN_JOINED  = 0x08,
+    LR1110_LORAWAN_SUSPEND = 0x10,
+    LR1110_LORAWAN_UPLOAD  = 0x20,
+    LR1110_LORAWAN_JOINING = 0x40,
+    LR1110_LORAWAN_STREAM  = 0x80,
 } lr1110_modem_status_t;
 
 /*!
@@ -155,8 +147,16 @@ typedef enum
  */
 typedef enum
 {
-    LR1110_LORAWAN_REGION_EU868 = 0x01,
-    LR1110_LORAWAN_REGION_US915 = 0x03,
+    LR1110_LORAWAN_REGION_EU868      = 0x01,
+    LR1110_LORAWAN_REGION_AS923_GRP1 = 0x02,
+    LR1110_LORAWAN_REGION_US915      = 0x03,
+    LR1110_LORAWAN_REGION_AU915      = 0x04,
+    LR1110_LORAWAN_REGION_CN470      = 0x05,
+    LR1110_LORAWAN_REGION_AS923_GRP2 = 0x07,
+    LR1110_LORAWAN_REGION_AS923_GRP3 = 0x08,
+    LR1110_LORAWAN_REGION_IN865      = 0x09,
+    LR1110_LORAWAN_REGION_KR920      = 0x0A,
+    LR1110_LORAWAN_REGION_RU864      = 0x0B,
 } lr1110_modem_regions_t;
 
 /*!
@@ -205,7 +205,6 @@ typedef enum
     LR1110_MODEM_DM_INFO_TYPE_UPLOAD                                  = 0x0E,
     LR1110_MODEM_DM_INFO_TYPE_RESET_COUNT                             = 0x0F,
     LR1110_MODEM_DM_INFO_TYPE_DEV_EUI                                 = 0x10,
-    LR1110_MODEM_DM_INFO_TYPE_OWNER_COUNTER                           = 0x11,
     LR1110_MODEM_DM_INFO_TYPE_SESSION_ID                              = 0x12,
     LR1110_MODEM_DM_INFO_TYPE_CHIP_EUI                                = 0x13,
     LR1110_MODEM_DM_INFO_TYPE_STREAM                                  = 0x14,
@@ -238,12 +237,9 @@ typedef enum
     LR1110_MODEM_TEST_MODE_TST_TX_CONT                     = 0x03,
     LR1110_MODEM_TEST_MODE_TST_CW                          = 0x06,
     LR1110_MODEM_TEST_MODE_TST_RX_CONT                     = 0x07,
-    LR1110_MODEM_TEST_MODE_TST_RSSI                        = 0x08,
+    LR1110_MODEM_TEST_MODE_TST_RSSI_SUBGHZ                 = 0x08,
     LR1110_MODEM_TEST_MODE_TST_RADIO_RST                   = 0x09,
     LR1110_MODEM_TEST_MODE_TST_EXIT                        = 0x0B,
-    LR1110_MODEM_TEST_MODE_TST_BUSY_LOOP                   = 0x0C,
-    LR1110_MODEM_TEST_MODE_TST_PANIC                       = 0x0D,
-    LR1110_MODEM_TEST_MODE_TST_WATCHDOG                    = 0x0E,
     LR1110_MODEM_TEST_MODE_TST_TX_SINGLE_PREAM             = 0x14,
     LR1110_MODEM_TEST_MODE_READ_RSSI                       = 0x15,
     LR1110_MODEM_TEST_MODE_TST_RSSI_2G4                    = 0x16,
@@ -303,8 +299,8 @@ typedef enum
  */
 typedef enum
 {
-    LR1110_MODEM_FILE_ENCRYPTION_DISABLE = 0x00,
-    LR1110_MODEM_FILE_ENCRYPTION_ENABLE  = 0x01,
+    LR1110_MODEM_SERVICES_ENCRYPTION_DISABLE = 0x00,
+    LR1110_MODEM_SERVICES_ENCRYPTION_ENABLE  = 0x01,
 } lr1110_modem_encryption_mode_t;
 
 /*!
@@ -312,8 +308,8 @@ typedef enum
  */
 typedef enum
 {
-    LR1110_MODEM_LORWAN_IDLE = 0x00,
-    LR1110_MODEM_LORWAN_BUSY = 0x10,
+    LR1110_MODEM_LORAWAN_IDLE = 0x00,
+    LR1110_MODEM_LORAWAN_BUSY,
 } lr1110_modem_lorawan_state_t;
 
 /*!
@@ -321,9 +317,9 @@ typedef enum
  */
 typedef enum
 {
+    LR1110_MODEM_TX_ERROR       = 0x00,
     LR1110_MODEM_UNCONFIRMED_TX = 0x01,
     LR1110_MODEM_CONFIRMED_TX   = 0x02,
-    LR1110_MODEM_TX_ERROR       = 0x03,
 } lr1110_modem_tx_done_event_t;
 
 /*!
@@ -333,7 +329,17 @@ typedef enum
 {
     LR1110_MODEM_DOWN_DATA_EVENT_DNW1 = 0x01,  //!< received in 1st DN slot
     LR1110_MODEM_DOWN_DATA_EVENT_DNW2 = 0x02,  //!< received in 2dn DN slot
+    LR1110_MODEM_DOWN_DATA_EVENT_RXC  = 0x03,  //!< received in Class C DN slot
 } lr1110_modem_down_data_flag_t;
+
+/*!
+ * @brief Upload status values
+ */
+typedef enum
+{
+    LR1110_MODEM_UPLOAD_ERROR   = 0x00,
+    LR1110_MODEM_UPLOAD_SUCCESS = 0x01,
+} lr1110_modem_upload_event_t;
 
 /*!
  * @brief Modem charge type
@@ -398,15 +404,77 @@ typedef enum
     LR1110_MODEM_SUSPEND = 0x01,
 } lr1110_modem_suspend_t;
 
+/**
+ * @brief Modem set conf type
+ */
+typedef enum
+{
+    LR1110_MODEM_EVENT_SETCONF_ADR_MODE_UPDATED    = LR1110_MODEM_DM_INFO_TYPE_ADR_MODE,
+    LR1110_MODEM_EVENT_SETCONF_JOIN_EUI_UPDATED    = LR1110_MODEM_DM_INFO_TYPE_JOIN_EUI,
+    LR1110_MODEM_EVENT_SETCONF_DM_INTERVAL_UPDATED = LR1110_MODEM_DM_INFO_TYPE_INTERVAL,
+} lr1110_modem_event_setconf_tag_t;
+
+/*!
+ * @brief Ramping time for PA
+ *
+ * This parameter is the ramping time of the PA. A high value improves spectral quality.
+ */
+typedef enum
+{
+    LR1110_MODEM_RAMP_16_US  = 0x00,  //!< 16 us Ramp Time
+    LR1110_MODEM_RAMP_32_US  = 0x01,  //!< 32 us Ramp Time
+    LR1110_MODEM_RAMP_48_US  = 0x02,  //!< 48 us Ramp Time (Default)
+    LR1110_MODEM_RAMP_64_US  = 0x03,  //!< 64 us Ramp Time
+    LR1110_MODEM_RAMP_80_US  = 0x04,  //!< 80 us Ramp Time
+    LR1110_MODEM_RAMP_96_US  = 0x05,  //!< 96 us Ramp Time
+    LR1110_MODEM_RAMP_112_US = 0x06,  //!< 112 us Ramp Time
+    LR1110_MODEM_RAMP_128_US = 0x07,  //!< 128 us Ramp Time
+    LR1110_MODEM_RAMP_144_US = 0x08,  //!< 144 us Ramp Time
+    LR1110_MODEM_RAMP_160_US = 0x09,  //!< 160 us Ramp Time
+    LR1110_MODEM_RAMP_176_US = 0x0A,  //!< 176 us Ramp Time
+    LR1110_MODEM_RAMP_192_US = 0x0B,  //!< 192 us Ramp Time
+    LR1110_MODEM_RAMP_208_US = 0x0C,  //!< 208 us Ramp Time
+    LR1110_MODEM_RAMP_240_US = 0x0D,  //!< 240 us Ramp Time
+    LR1110_MODEM_RAMP_272_US = 0x0E,  //!< 272 us Ramp Time
+    LR1110_MODEM_RAMP_304_US = 0x0F,  //!< 304 us Ramp Time
+} lr1110_modem_ramp_time_t;
+
+/*!
+ * @brief Select power amplifier supply source
+ */
+typedef enum
+{
+    LR1110_MODEM_PA_REG_SUPPLY_VREG = 0x00,  //!< Power amplifier supplied by the main regulator
+    LR1110_MODEM_PA_REG_SUPPLY_VBAT = 0x01   //!< Power amplifier supplied by the battery
+} lr1110_modem_pa_reg_supply_t;
+
+/*!
+ * @brief Select the LoRaWAN network type
+ */
+typedef enum
+{
+    LR1110_MODEM_LORAWAN_PRIVATE_NETWORK = 0x00,  //!< LoRaWAN private network
+    LR1110_MODEM_LORAWAN_PUBLIC_NETWORK  = 0x01   //!< LoRaWAN public network
+} lr1110_modem_network_type_t;
+
+/*!
+ * @brief Listen Before Talk (LBT) activation type
+ */
+typedef enum
+{
+    LR1110_MODEM_LBT_MODE_DISABLE = 0x00,
+    LR1110_MODEM_LBT_MODE_ENABLE  = 0x01,
+} lr1110_modem_lbt_mode_t;
+
 /*!
  * @brief modem event fields structure
  */
 typedef struct
 {
-    lr1110_modem_lorawan_event_type_t event_type;
-    uint8_t                           event_count;
-    uint8_t                           buffer[LR1110_MODEM_EVENT_MAX_LENGTH_BUFFER];
-    uint16_t                          buffer_len;
+    lr1110_modem_lorawan_event_type_t event_type;           //!< Event type
+    uint8_t                           missed_events_count;  //!< Counter of missed events of type event_type
+    uint8_t                           buffer[LR1110_MODEM_EVENT_MAX_LENGTH_BUFFER];  //!< Buffer if the current event
+    uint16_t                          buffer_len;                                    //!< Length of buffer
 } lr1110_modem_event_fields_t;
 
 /*!
@@ -414,10 +482,10 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t                     bootloader;
-    lr1110_modem_functionality_t functionality;
-    uint32_t                     firmware;
-    uint16_t                     lorawan;
+    uint32_t                     bootloader;     //!< Bootloader version
+    lr1110_modem_functionality_t functionality;  //!< Functionality identifier
+    uint32_t                     firmware;       //!< Firmware version
+    uint16_t                     lorawan;        //!< LoRaWAN version
 } lr1110_modem_version_t;
 
 /*!
@@ -427,8 +495,8 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t  dm_info_field[20];
-    uint16_t dm_info_length;
+    uint8_t  dm_info_field[20];  //!< Array of DM info field values
+    uint16_t dm_info_length;     //!< Length of the DM info field array
 } lr1110_modem_dm_info_fields_t;
 
 /*!
@@ -441,14 +509,61 @@ typedef struct
 } lr1110_modem_stream_status_t;
 
 /*!
+ * @brief Output Power Config structure
+ *
+ * @ref pa_duty_cycle controls the duty cycle of Power Amplifier according to:
+ * \f$ dutycycle = 0.2 + 0.04 \times pa_duty_cycle \f$
+ * It can be used to adapt the TX multi-band operation using a single-matching network.
+ *
+ * The allowed duty cycle values for LPA are from 0.2 to 0.48 (by step of 0.04). Therefore possible values for
+ * pa_duty_cycle go from 0 to 7.
+ *
+ * The allowed duty cycle values for HPA go from 0.2 to 0.36 (by step of 0.04). Therefore in this case, the possible
+ * values for pa_duty_cycle go from 0 to 4.
+ *
+ * @ref pa_hp_sel controls the number of slices for HPA according to: \f$ \#slices = pa_hp_sel + 1 \f$
+ */
+typedef struct
+{
+    uint8_t                      expected_power;    //!< Expected power in dBm
+    uint8_t                      configured_power;  //!< Configured power in dBm
+    uint8_t                      pa_sel;            //!< Power Amplifier selection
+    lr1110_modem_pa_reg_supply_t pa_supply;         //!< Power Amplifier regulator supply source
+    uint8_t                      pa_duty_cycle;     //!< Power Amplifier duty cycle (Default 0x04)
+    uint8_t                      pa_hp_sel;         //!< Number of slices for HPA (Default 0x07)
+    lr1110_modem_ramp_time_t     pa_ramp_time;      //!< Power amplifier ramp time
+} lr1110_modem_output_power_config_t;
+
+/*!
  * @brief Chip EUI type
  */
 typedef uint8_t lr1110_modem_chip_eui_t[LR1110_MODEM_CHIP_EUI_LENGTH];
 
 /*!
+ * @brief Join EUI type
+ */
+typedef uint8_t lr1110_modem_join_eui_t[LR1110_MODEM_JOIN_EUI_LENGTH];
+
+/*!
+ * @brief Device EUI type
+ */
+typedef uint8_t lr1110_modem_dev_eui_t[LR1110_MODEM_DEV_EUI_LENGTH];
+
+/*!
+ * @brief Application key type
+ */
+typedef uint8_t lr1110_modem_app_key_t[LR1110_MODEM_APP_KEY_LENGTH];
+
+/*!
  * @brief LoRaWAN list of regions type
  */
 typedef lr1110_modem_regions_t lr1110_modem_regions_list_t[LR1110_MODEM_REGIONS_NUMBER];
+
+/*!
+ * @brief Output power config type
+ */
+typedef lr1110_modem_output_power_config_t
+    lr1110_modem_output_power_config_list_t[LR1110_MODEM_NB_OUTPUT_POWER_CONFIG_BLOCKS];
 
 /*
  * -----------------------------------------------------------------------------
@@ -499,7 +614,7 @@ lr1110_modem_response_code_t lr1110_modem_reset_charge( const void* context );
 
 /*!
  * @brief This command returns the total charge counter of the modem in mAh. This value includes the accumulated charge
- * since the production of the modem or since the last invocation of the ResetCharge command.
+ * since the last reset of the modem or since the last invocation of the ResetCharge command.
  *
  * @param [in] context Chip implementation context
  * @param [out] charge Charge counter in mAh
@@ -625,7 +740,7 @@ lr1110_modem_response_code_t lr1110_modem_test_read_packet_counter_rx_cont( cons
                                                                             uint32_t*   rx_packet_counter );
 
 /*!
- * @brief Continuously receive packets.
+ * @brief Continuously receive packets on Sub-GHz radio path.
  *
  * @param [in] context Chip implementation context
  * @param [in] frequency Frequency in Hz
@@ -634,8 +749,8 @@ lr1110_modem_response_code_t lr1110_modem_test_read_packet_counter_rx_cont( cons
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_test_rssi( const void* context, uint32_t frequency, uint16_t time_ms,
-                                                     lr1110_modem_tst_mode_bw_t bw );
+lr1110_modem_response_code_t lr1110_modem_test_rssi_subghz( const void* context, uint32_t frequency, uint16_t time_ms,
+                                                            lr1110_modem_tst_mode_bw_t bw );
 
 /*!
  * @brief Reset the LR1110 radio.
@@ -654,39 +769,6 @@ lr1110_modem_response_code_t lr1110_modem_test_radio_rst( const void* context );
  * @returns Operation status
  */
 lr1110_modem_response_code_t lr1110_modem_test_exit( const void* context );
-
-/*!
- * @brief Causes to modem to enter an endless loop with interrupts enabled. Eventually, the software watchdog will save
- * a crashlog and reset the device. Note that this command will render the modem completely unresponsive until it is
- * reset.
- *
- * @param [in] context Chip implementation context
- *
- * @returns Operation status
- */
-lr1110_modem_response_code_t lr1110_modem_test_busy_loop( const void* context );
-
-/*!
- * @brief Causes an unrecoverable fault condition (panic). The modem will immediately save a crashlog and halt, the
- * diagnostics LED (if available) will flash for some time, and then the modem will reset. Note that this command will
- * render the modem completely unresponsive until it is reset.
- *
- * @param [in] context Chip implementation context
- *
- * @returns Operation status
- */
-lr1110_modem_response_code_t lr1110_modem_test_panic( const void* context );
-
-/*!
- * @brief Causes to modem to enter an endless loop with interrupts disabled. Eventually, the hardware watchdog will
- * reset the device. No crashlog will be written. Note that this command will render the modem completely unresponsive
- * until it is reset.
- *
- * @param [in] context Chip implementation context
- *
- * @returns Operation status
- */
-lr1110_modem_response_code_t lr1110_modem_test_watchdog( const void* context );
 
 /*!
  * @brief Transmit a single packet with the number of preamble configurable.
@@ -816,7 +898,7 @@ lr1110_modem_response_code_t lr1110_modem_get_chip_eui( const void* context, lr1
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, uint8_t* join_eui );
+lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, lr1110_modem_join_eui_t join_eui );
 
 /*!
  * @brief This command sets the Join EUI.
@@ -828,7 +910,7 @@ lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, uin
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, const uint8_t* join_eui );
+lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, const lr1110_modem_join_eui_t join_eui );
 
 /*!
  * @brief This command returns the DeviceEUI.
@@ -838,7 +920,7 @@ lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, con
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, uint8_t* dev_eui );
+lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, lr1110_modem_dev_eui_t dev_eui );
 
 /*!
  * @brief This command sets the DeviceEUI.
@@ -848,7 +930,7 @@ lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, uint
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, const uint8_t* dev_eui );
+lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, const lr1110_modem_dev_eui_t dev_eui );
 
 /*!
  * @brief This command sets the LoRaWAN 1.0.3 application key. Note that a factory reset will erase this information.
@@ -859,13 +941,13 @@ lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, cons
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_set_app_key( const void* context, const uint8_t* app_key );
+lr1110_modem_response_code_t lr1110_modem_set_app_key( const void* context, const lr1110_modem_app_key_t app_key );
 
 /*!
  * @brief This command gets the LoRaWAN device class.
  *
  * @param [in] context Chip implementation context
- * @param [out] modem_class LoRaWAN device class
+ * @param [out] modem_class LoRaWAN device class @ref lr1110_modem_classes_t
  *
  * @returns Operation status
  */
@@ -969,11 +1051,14 @@ lr1110_modem_response_code_t lr1110_modem_set_dm_port( const void* context, cons
  * hours or days.
  *
  * @param [in] context Chip implementation context
+ * @param [out] format reporting interval format @ref lr1110_modem_reporting_interval_format_t
  * @param [out] interval interval specified in seconds, minutes, hours or days
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_get_dm_info_interval( const void* context, uint8_t* interval );
+lr1110_modem_response_code_t lr1110_modem_get_dm_info_interval( const void*                               context,
+                                                                lr1110_modem_reporting_interval_format_t* format,
+                                                                uint8_t*                                  interval );
 
 /*!
  * @brief This command sets the device management reporting interval. The interval is specified in seconds, minutes,
@@ -1027,8 +1112,8 @@ lr1110_modem_response_code_t lr1110_modem_set_dm_info_field( const void*        
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_send_dm_status( const void*                   context,
-                                                          lr1110_modem_dm_info_fields_t dm_info_fields );
+lr1110_modem_response_code_t lr1110_modem_send_dm_status( const void*                    context,
+                                                          lr1110_modem_dm_info_fields_t* dm_info_fields );
 
 /*!
  * @brief This commands sets application-specific status information to be reported to the DM service. This information
@@ -1290,9 +1375,10 @@ lr1110_modem_response_code_t lr1110_modem_set_alc_sync_mode( const void*        
 lr1110_modem_response_code_t lr1110_modem_get_alc_sync_mode( const void* context, lr1110_modem_alc_sync_mode_t* mode );
 
 /*!
- * @brief Set the number of uplink without ack from network before Modem changes it's ADR or resets @note It is
- * recommended to have the first counter smaller than the second one. The value 0 deactivate the recovery function.
- * Default values are 255 for nb_uplink_mobile_static and 2400 for nb_uplink_reset.
+ * @brief Set the number of uplink without ack from network before Modem changes it's ADR or resets
+ *
+ * @note It is recommended to have the first counter smaller than the second one. The value 0 deactivate the recovery
+ * function. Default values are 255 for nb_uplink_mobile_static and 2400 for nb_uplink_reset.
  *
  * @param [in] context Chip implementation context
  * @param [in] nb_uplink_mobile_static number of uplink without ack from network before by then the modem adr profile
@@ -1318,11 +1404,26 @@ lr1110_modem_response_code_t lr1110_modem_set_connection_timeout( const void*   
 lr1110_modem_response_code_t lr1110_modem_get_connection_timeout( const void* context,
                                                                   uint16_t*   nb_uplink_mobile_static,
                                                                   uint16_t*   nb_uplink_reset );
+
+/*!
+ * @brief Get the status of the number of uplink without ack from network before Modem changes it's ADR or resets
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] nb_uplink_mobile_static number of uplink without ack from network before by then the modem adr profile
+ * will switch from mobile to static
+ * @param [out] nb_uplink_reset number of uplink without ack from network before Modem resets
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_connection_timeout_status( const void* context,
+                                                                         uint16_t*   nb_uplink_mobile_static,
+                                                                         uint16_t*   nb_uplink_reset );
+
 /*!
  * @brief Returns the LoRaWAN state Idle or Not Idle.
  *
  * @param [in] context Chip implementation context
- * @param [out] lorawan_state LoRaWAN state
+ * @param [out] lorawan_state LoRaWAN state @ref lr1110_modem_lorawan_state_t
  *
  * @returns Operation status
  */
@@ -1365,11 +1466,17 @@ lr1110_modem_response_code_t lr1110_modem_select_charge_uplink( const void*     
  * @brief Get Duty cycle status info.
  *
  * @param [in] context Chip implementation context
- * @param [out] duty_cycle time in milli sec befote the possibility to transmit again
+ * @param [out] duty_cycle Time in milliseconds (see notes for explanations)
+ *
+ * @note The sign determines the meaning of the value:
+ * - duty_cycle >= 0: duty_cycle is the time budget in millisecond still available for transmission
+ * - duty_cycle < 0: Abs(duty_cycle) is the time in millisecond before it can start transmitting again
+ *
+ * @note When duty cycle is deactivated, the returned value is 0.
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_get_duty_cycle_status( const void* context, uint32_t* duty_cycle );
+lr1110_modem_response_code_t lr1110_modem_get_duty_cycle_status( const void* context, int32_t* duty_cycle );
 
 /*!
  * @brief Activate/deactivate Duty cycle.
@@ -1403,6 +1510,144 @@ lr1110_modem_response_code_t lr1110_modem_set_certification_mode( const void*   
  */
 lr1110_modem_response_code_t lr1110_modem_get_certification_mode( const void*                        context,
                                                                   lr1110_modem_certification_mode_t* enable );
+
+/*!
+ * @brief Get the available data rate mask. One bit indicates one data rate. Bit n = 1 mean Data Rate n is available.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] available_data_rate Available data rate bit mask
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_available_data_rate( const void* context, uint16_t* available_data_rate );
+
+/*!
+ * @brief This command sets 6 blocks (at most 6 dedicated power levels) of Tx output power configurations: expected
+ * power, configured power, PA, Tx parameters and PA ramp time. For the Tx power levels not defined in the 6 levels with
+ * this command, the modem always selects automatically the appropriate PA and Tx parameters configurations.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] output_power_config Tx output power configuration block list, \see
+ * lr1110_modem_output_power_config_list_t
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_set_output_power_config(
+    const void* context, const lr1110_modem_output_power_config_list_t output_power_config );
+
+/*!
+ * @brief This command gets 6 blocks of Tx output power configurations: expected
+ * power, configured power, PA, Tx parameters and PA ramp time. For the Tx power levels not defined in the 6 levels with
+ * this command, the modem always selects automatically the appropriate PA and Tx parameters configurations.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] output_power_config Tx output power configuration block list, \see
+ * lr1110_modem_output_power_config_list_t
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_output_power_config(
+    const void* context, lr1110_modem_output_power_config_list_t output_power_config );
+
+/*!
+ * @brief Get the LoRaWAN network type.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] network_type @ref lr1110_modem_network_type_t
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_network_type( const void*                  context,
+                                                            lr1110_modem_network_type_t* network_type );
+
+/*!
+ * @brief Set the LoRaWAN network type.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] network_type @ref lr1110_modem_network_type_t
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_set_network_type( const void*                       context,
+                                                            const lr1110_modem_network_type_t network_type );
+
+/*!
+ * @brief Activate the listen before talk
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] enable @ref lr1110_modem_lbt_mode_t
+ * @param [in] threshold LBT treshold in dBm, default value is -80 dBm
+ * @param [in] duration LBT duration in ms, default value is 5 ms
+ * @param [in] bandwidth LBT bandwidth in Hz, default value is 200000 Hz
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_activate_lbt( const void* context, const lr1110_modem_lbt_mode_t enable,
+                                                        const int16_t threshold, const uint32_t duration,
+                                                        const uint32_t bandwidth );
+
+/*!
+ * @brief Set the LoRaWAN number of retransmission.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] nb_trans number of retransmission, the values are allowed between 0 and 15
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_set_nb_trans( const void* context, const uint8_t nb_trans );
+
+/*!
+ * @brief Get the LoRaWAN number of retransmission.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] nb_trans number of retransmission
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_nb_trans( const void* context, uint8_t* nb_trans );
+
+/*!
+ * @brief Set the stream redundancy rate.
+ *
+ * @param [in] context Chip implementation context
+ * @param [in] stream_redundancy_rate Streaming redundancy rate, the values are allowed between 0 and 110%
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_set_stream_redundancy_rate( const void*   context,
+                                                                      const uint8_t stream_redundancy_rate );
+
+/*!
+ * @brief Get the stream redundancy rate.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] stream_redundancy_rate Streaming redundancy rate
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_stream_redundancy_rate( const void* context,
+                                                                      uint8_t*    stream_redundancy_rate );
+
+/*!
+ * @brief Set the Crystal error of the MCU to fine adjust the rx window for lorawan ( ex: set 30 for a crystal error =
+ * 0.3% ).
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] crystal_error Crystal error
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_set_crystal_error( const void* context, const uint32_t crystal_error );
+
+/*!
+ * @brief Get the Crystal error.
+ *
+ * @param [in] context Chip implementation context
+ * @param [out] crystal_error Crystal error
+ *
+ * @returns Operation status
+ */
+lr1110_modem_response_code_t lr1110_modem_get_crystal_error( const void* context, uint32_t* crystal_error );
 
 #ifdef __cplusplus
 }

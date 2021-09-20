@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110.c
+ * @file      lr1110.c
  *
- * \brief     LR1110 top level implementation
+ * @brief     LR1110 top level implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -58,9 +58,9 @@
  */
 
 /*!
- * \brief lr1110 modem event callback functions
+ * @brief lr1110 modem-e event callback functions
  */
-lr1110_modem_event_t* lr1110_modem_event;
+lr1110_modem_event_callback_t* lr1110_modem_event_callback;
 
 /*
  * -----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ lr1110_modem_event_t* lr1110_modem_event;
  */
 
 /*!
- * \brief Hardware INT IRQ callback initialization
+ * @brief Hardware INT IRQ callback initialization
  */
 void radio_event_callback( void* obj );
 
@@ -76,140 +76,142 @@ void radio_event_callback( void* obj );
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
- 
-void radio_event_init( lr1110_modem_event_t* event ) { lr1110_modem_event = event; }
+
+void radio_event_init( lr1110_modem_event_callback_t* event ) { lr1110_modem_event_callback = event; }
 
 void lr1110_modem_event_process( const void* context )
 {
-    if( lr1110_modem_board_read_event_line( context ) == 1 )
+    if( lr1110_tracker_board_read_event_line( context ) == 1 )
     {
-        lr1110_modem_response_code_t modem_response_code = LR1110_MODEM_RESPONSE_CODE_OK;
-        lr1110_modem_event_fields_t  event_fields;
+        lr1110_modem_helper_status_t modem_response_code = LR1110_MODEM_HELPER_STATUS_OK;
+        lr1110_modem_event_t         modem_event;
 
         do
         {
-            modem_response_code = lr1110_modem_get_event( context, &event_fields );
+            modem_response_code = lr1110_modem_helper_get_event_data( context, &modem_event );
 
-            if( modem_response_code == LR1110_MODEM_RESPONSE_CODE_OK )
+            if( modem_response_code == LR1110_MODEM_HELPER_STATUS_OK )
             {
-                switch( event_fields.event_type )
+                switch( modem_event.event_type )
                 {
                 case LR1110_MODEM_LORAWAN_EVENT_RESET:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->reset != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->reset != NULL ) )
                     {
-                        lr1110_modem_event->reset( ( event_fields.buffer[0] << 8 ) + event_fields.buffer[1] );
+                        lr1110_modem_event_callback->reset( modem_event.event_data.reset.count );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_ALARM:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->alarm != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->alarm != NULL ) )
                     {
-                        lr1110_modem_event->alarm( );
+                        lr1110_modem_event_callback->alarm( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_JOINED:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->joined != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->joined != NULL ) )
                     {
-                        lr1110_modem_event->joined( );
+                        lr1110_modem_event_callback->joined( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_JOIN_FAIL:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->join_fail != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->join_fail != NULL ) )
                     {
-                        lr1110_modem_event->join_fail( );
+                        lr1110_modem_event_callback->join_fail( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_TX_DONE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->tx_done != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->tx_done != NULL ) )
                     {
-                        lr1110_modem_event->tx_done( ( lr1110_modem_tx_done_event_t ) event_fields.buffer[0] );
+                        lr1110_modem_event_callback->tx_done( modem_event.event_data.txdone.status );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_DOWN_DATA:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->down_data != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->down_data != NULL ) )
                     {
-                        int8_t  rssi  = ( ( int8_t ) event_fields.buffer[0] ) - 64;
-                        int8_t  snr   = ( ( ( int8_t ) event_fields.buffer[1] ) >> 2 );
-                        uint8_t flags = event_fields.buffer[2];
-                        uint8_t port  = event_fields.buffer[3];
-                        uint8_t buffer_size = event_fields.buffer_len - 4;  // remove rssi/snr/flags and port from buffer
-
-                        for( uint8_t i = 0; i < buffer_size; i++ )
-                        {
-                            event_fields.buffer[i] = event_fields.buffer[i + 4];
-                        }
-
-                        lr1110_modem_event->down_data( rssi, snr, ( lr1110_modem_down_data_flag_t ) flags, port, event_fields.buffer, buffer_size );
+                        lr1110_modem_event_callback->down_data(
+                            modem_event.event_data.downdata.rssi, modem_event.event_data.downdata.snr,
+                            modem_event.event_data.downdata.flag, modem_event.event_data.downdata.fport,
+                            modem_event.event_data.downdata.data, modem_event.event_data.downdata.length );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_UPLOAD_DONE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->upload_done != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->upload_done != NULL ) )
                     {
-                        uint8_t session_id      = ( event_fields.buffer[0] >> 4 ) & 0x03;
-                        uint8_t session_counter = event_fields.buffer[0] & 0x0F;
-
-                        lr1110_modem_event->upload_done( session_id, session_counter );
+                        lr1110_modem_event_callback->upload_done( modem_event.event_data.upload.status );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_SET_CONF:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->set_conf != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->set_conf != NULL ) )
                     {
-                        lr1110_modem_event->set_conf( event_fields.buffer[0] );
+                        lr1110_modem_event_callback->set_conf( modem_event.event_data.setconf.tag );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_MUTE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->mute != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->mute != NULL ) )
                     {
-                        lr1110_modem_event->mute( ( lr1110_modem_mute_t ) event_fields.buffer[0] );
+                        lr1110_modem_event_callback->mute( modem_event.event_data.mute.status );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_STREAM_DONE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->stream_done != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->stream_done != NULL ) )
                     {
-                        lr1110_modem_event->stream_done( );
+                        lr1110_modem_event_callback->stream_done( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_WIFI_SCAN_DONE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->wifi_scan_done != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->wifi_scan_done != NULL ) )
                     {
-                        lr1110_modem_event->wifi_scan_done( event_fields.buffer, event_fields.buffer_len );
+                        lr1110_modem_event_callback->wifi_scan_done( modem_event.event_data.wifi.buffer,
+                                                                     modem_event.event_data.wifi.len );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_GNSS_SCAN_DONE:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->gnss_scan_done != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->gnss_scan_done != NULL ) )
                     {
-                        lr1110_modem_event->gnss_scan_done( event_fields.buffer, event_fields.buffer_len );
+                        lr1110_modem_event_callback->gnss_scan_done( modem_event.event_data.gnss.nav_message,
+                                                                     modem_event.event_data.gnss.len );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_TIME_UPDATED_ALC_SYNC:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->time_updated_alc_sync != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->time_updated_alc_sync != NULL ) )
                     {
-                        uint8_t sync_state = event_fields.buffer[0];
-                        lr1110_modem_event->time_updated_alc_sync( ( lr1110_modem_alc_sync_state_t ) sync_state );
+                        lr1110_modem_event_callback->time_updated_alc_sync( modem_event.event_data.time.status );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_ADR_MOBILE_TO_STATIC:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->adr_mobile_to_static != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->adr_mobile_to_static != NULL ) )
                     {
-                        lr1110_modem_event->adr_mobile_to_static( );
+                        lr1110_modem_event_callback->adr_mobile_to_static( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_NEW_LINK_ADR:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->new_link_adr != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) &&
+                        ( lr1110_modem_event_callback->new_link_adr != NULL ) )
                     {
-                        lr1110_modem_event->new_link_adr( );
+                        lr1110_modem_event_callback->new_link_adr( );
                     }
                     break;
                 case LR1110_MODEM_LORAWAN_EVENT_NO_EVENT:
-                    if( ( lr1110_modem_event != NULL ) && ( lr1110_modem_event->no_event != NULL ) )
+                    if( ( lr1110_modem_event_callback != NULL ) && ( lr1110_modem_event_callback->no_event != NULL ) )
                     {
-                        lr1110_modem_event->no_event( );
+                        lr1110_modem_event_callback->no_event( );
                     }
                     break;
                 default:
                     break;
                 }
             }
-        } while( ( lr1110_modem_board_read_event_line( context ) == 1 ) && ( modem_response_code == LR1110_MODEM_RESPONSE_CODE_OK ) );
+            else
+            {
+                HAL_DBG_TRACE_ERROR( "lr1110_modem_helper_get_event_data RC = %d\r\n\r\n", modem_response_code );
+            }
+        } while( ( lr1110_tracker_board_read_event_line( context ) == 1 ) &&
+                 ( modem_response_code == LR1110_MODEM_HELPER_STATUS_OK ) );
     }
 }
 

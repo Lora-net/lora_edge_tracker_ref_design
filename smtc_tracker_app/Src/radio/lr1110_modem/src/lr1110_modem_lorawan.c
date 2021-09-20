@@ -53,20 +53,16 @@
 #define LR1110_MODEM_GET_CHARGE_CMD_LENGTH ( 2 )
 #define LR1110_MODEM_GET_TX_POWER_OFFSET_CMD_LENGTH ( 2 )
 #define LR1110_MODEM_SET_TX_POWER_OFFSET_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_TEST_MODE_TST_START_CMD_LENGTH ( 2 + 9 )
+#define LR1110_MODEM_TEST_MODE_TST_START_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_TEST_MODE_TST_NOP_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_TEST_MODE_TST_TX_SINGLE_CMD_LENGTH ( 2 + 10 )
 #define LR1110_MODEM_TEST_MODE_TST_TX_CONT_CMD_LENGTH ( 2 + 10 )
-#define LR1110_MODEM_TEST_MODE_TST_HOP_CMD_LENGTH ( 2 + 5 )
 #define LR1110_MODEM_TEST_MODE_TST_CW_CMD_LENGTH ( 2 + 6 )
 #define LR1110_MODEM_TEST_MODE_TST_RX_CONT_CMD_LENGTH ( 2 + 8 )
 #define LR1110_MODEM_TEST_MODE_TST_READ_PKT_COUNTER_RX_CONT_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_TEST_MODE_TST_RSSI_CMD_LENGTH ( 2 + 8 )
+#define LR1110_MODEM_TEST_MODE_TST_RSSI_SUBGHZ_CMD_LENGTH ( 2 + 8 )
 #define LR1110_MODEM_TEST_MODE_TST_RADIO_RST_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_TEST_MODE_TST_EXIT_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_TEST_MODE_TST_BUSY_LOOP_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_TEST_MODE_TST_PANIC_CMD_LENGTH ( 2 + 1 )
-#define LR1110_MODEM_TEST_MODE_TST_WATCHDOG_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_TEST_MODE_TST_TX_SINGLE_PREAM_CMD_LENGTH ( 2 + 12 )
 #define LR1110_MODEM_TEST_MODE_READ_RSSI_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_TEST_MODE_TST_RSSI_2G4_CMD_LENGTH ( 2 + 5 )
@@ -118,7 +114,6 @@
 #define LR1110_MODEM_SET_ALC_SYNC_MODE_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_GET_ALC_SYNC_MODE_CMD_LENGTH ( 2 )
 #define LR1110_MODEM_SET_CONNECTION_TIMEOUT_CMD_LENGTH ( 2 + 4 )
-#define LR1110_MODEM_GET_CONNECTION_TIMEOUT_CMD_LENGTH ( 2 )
 #define LR1110_MODEM_GET_LORAWAN_STATE_CMD_LENGTH ( 2 )
 #define LR1110_MODEM_WRITE_USER_DEFINED_CHARGE_COUNTER_CMD_LENGTH ( 2 + 2 )
 #define LR1110_MODEM_READ_USER_DEFINED_CHARGE_COUNTER_CMD_LENGTH ( 2 )
@@ -127,22 +122,38 @@
 #define LR1110_MODEM_ACTIVATE_DUTY_CYCLE_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_SET_CERTIFICATION_MODE_CMD_LENGTH ( 2 + 1 )
 #define LR1110_MODEM_GET_CERTIFICATION_MODE_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_GET_CONNECTION_TIMEOUT_GENERIC_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_GET_AVAILABLE_DATA_RATE_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_SET_OUTPUT_POWER_CONFIG_CMD_LENGTH ( 2 + 30 )
+#define LR1110_MODEM_GET_OUTPUT_POWER_CONFIG_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_GET_NETWORK_TYPE_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_SET_NETWORK_TYPE_CMD_LENGTH ( 2 + 1 )
+#define LR1110_MODEM_ACTIVATE_LBT_CMD_LENGTH ( 2 + 11 )
+#define LR1110_MODEM_SET_NB_TRANS_CMD_LENGTH ( 2 + 1 )
+#define LR1110_MODEM_GET_NB_TRANS_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_SET_STREAM_REDUNDANCY_RATE_CMD_LENGTH ( 2 + 1 )
+#define LR1110_MODEM_GET_STREAM_REDUNDANCY_RATE_CMD_LENGTH ( 2 )
+#define LR1110_MODEM_SET_CRYSTAL_ERROR_CMD_LENGTH ( 2 + 4 )
+#define LR1110_MODEM_GET_CRYSTAL_ERROR_CMD_LENGTH ( 2 )
 
 #define LR1110_MODEM_INFO_FIELDS_RBUFFER_MAX_LENGTH ( 20 )
 #define LR1110_MODEM_CHIP_EUI_RBUFFER_LENGTH ( 8 )
 #define LR1110_MODEM_JOIN_EUI_BUFFER_LENGTH ( 8 )
 #define LR1110_MODEM_DEV_EUI_BUFFER_LENGTH ( 8 )
-#define LR1110_MODEM_LIST_REGIONS_BUFFER_LENGTH ( 5 )
 #define LR1110_MODEM_GET_VERSION_RBUFFER_LENGTH ( 10 )
 #define LR1110_MODEM_GET_STREAM_STATUS_RBUFFER_LENGTH ( 4 )
 #define LR1110_MODEM_EVENT_HEADER_LENGTH ( 2 )
 #define LR1110_MODEM_TEST_MODE_TST_READ_PKT_COUNTER_RX_CONT_RBUFFER_LENGTH ( 4 )
+#define LR1110_MODEM_MODEM_GET_OUTPUT_POWER_CONFIG_RBUFFER_LENGTH ( 30 )
 
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE TYPES -----------------------------------------------------------
  */
 
+/*!
+ * @brief Operation code command
+ */
 enum
 {
     LR1110_MODEM_GET_EVENT_CMD                         = 0x00,
@@ -209,6 +220,19 @@ enum
     LR1110_MODEM_SELECT_CHARGE_UPLINK_CMD              = 0x43,
     LR1110_MODEM_GET_DUTY_CYCLE_STATUS_CMD             = 0x44,
     LR1110_MODEM_ACTIVATE_DUTY_CYCLE_CMD               = 0x45,
+    LR1110_MODEM_GET_CONNECTION_TIMEOUT_STATUS_CMD     = 0x48,
+    LR1110_MODEM_GET_AVAILABLE_DATA_RATE_CMD           = 0x49,
+    LR1110_MODEM_SET_OUTPUT_POWER_CONFIG_CMD           = 0x4A,
+    LR1110_MODEM_GET_OUTPUT_POWER_CONFIG_CMD           = 0x4B,
+    LR1110_MODEM_GET_NETWORK_TYPE_CMD                  = 0x4C,
+    LR1110_MODEM_SET_NETWORK_TYPE_CMD                  = 0x4D,
+    LR1110_MODEM_ACTIVATE_LBT_CMD                      = 0x4E,
+    LR1110_MODEM_SET_NB_TRANS_CMD                      = 0x4F,
+    LR1110_MODEM_GET_NB_TRANS_CMD                      = 0x50,
+    LR1110_MODEM_SET_STREAM_REDUNDANCY_RATE_CMD        = 0x51,
+    LR1110_MODEM_GET_STREAM_REDUNDANCY_RATE_CMD        = 0x52,
+    LR1110_MODEM_SET_CRYSTAL_ERROR_CMD                 = 0x53,
+    LR1110_MODEM_GET_CRYSTAL_ERROR_CMD                 = 0x54,
 };
 
 /*
@@ -246,6 +270,26 @@ lr1110_modem_response_code_t lr1110_modem_get_event_size( const void* context, u
  */
 lr1110_modem_response_code_t lr1110_modem_get_cmd_rsp_size( const void* context, uint8_t cmd, uint8_t* cmd_rsp_size );
 
+/*!
+ * @brief Generic command for modem timeout getters
+ *
+ * It is to be used for both get connection timeout and get connection timeout status command.
+ *
+ * @param [in] opcode The opcode of the command to call
+ *
+ * @param [in] context Chip implementation context
+ *
+ * @param [out] nb_uplink_mobile_static number of uplink without ack from network before modem adr profile switch from
+ * mobile to static
+ *
+ * @param [out] nb_uplink_reset number of uplink without ack from network before modem reset
+ *
+ * @returns Operation status
+ */
+static lr1110_modem_response_code_t lr1110_modem_get_timeout_generic( const uint8_t opcode, const void* context,
+                                                                      uint16_t* nb_uplink_mobile_static,
+                                                                      uint16_t* nb_uplink_reset );
+
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
@@ -268,9 +312,9 @@ lr1110_modem_response_code_t lr1110_modem_get_event( const void* context, lr1110
         rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
             context, cbuffer, LR1110_MODEM_GET_EVENT_CMD_LENGTH, event_fields->buffer, event_size );
 
-        event_fields->event_type  = ( lr1110_modem_lorawan_event_type_t ) event_fields->buffer[0];
-        event_fields->event_count = event_fields->buffer[1];
-        event_fields->buffer_len  = event_size - LR1110_MODEM_EVENT_HEADER_LENGTH;  // Remove type and count
+        event_fields->event_type          = ( lr1110_modem_lorawan_event_type_t ) event_fields->buffer[0];
+        event_fields->missed_events_count = event_fields->buffer[1];
+        event_fields->buffer_len          = event_size - LR1110_MODEM_EVENT_HEADER_LENGTH;  // Remove type and count
 
         for( uint16_t i = 0; i < event_fields->buffer_len; i++ )
         {
@@ -310,8 +354,8 @@ lr1110_modem_response_code_t lr1110_modem_reset( const void* context )
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
     cbuffer[1] = LR1110_MODEM_RESET_CMD;
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer, LR1110_MODEM_RESET_CMD_LENGTH, 0,
-                                                                    0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write_without_rc( context, cbuffer,
+                                                                               LR1110_MODEM_RESET_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_reset_charge( const void* context )
@@ -376,13 +420,8 @@ lr1110_modem_response_code_t lr1110_modem_test_mode_start( const void* context )
     cbuffer[1] = LR1110_MODEM_TEST_CMD;
     cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_START;
 
-    for( uint8_t i = 0; i < sizeof( test_msg ); i++ )
-    {
-        cbuffer[i + 3] = test_msg[i];
-    }
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
-                                                                    LR1110_MODEM_TEST_MODE_TST_START_CMD_LENGTH, 0, 0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
+        context, cbuffer, LR1110_MODEM_TEST_MODE_TST_START_CMD_LENGTH, test_msg, 8 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_test_nop( const void* context )
@@ -410,7 +449,7 @@ lr1110_modem_response_code_t lr1110_modem_test_tx_single( const void* context, u
     cbuffer[4]  = ( uint8_t )( ( frequency & 0x00FF0000 ) >> 16 );
     cbuffer[5]  = ( uint8_t )( ( frequency & 0x0000FF00 ) >> 8 );
     cbuffer[6]  = ( uint8_t )( frequency & 0x000000FF );
-    cbuffer[7]  = tx_power;
+    cbuffer[7]  = ( uint8_t ) tx_power;
     cbuffer[8]  = ( uint8_t ) sf;
     cbuffer[9]  = ( uint8_t ) bw;
     cbuffer[10] = ( uint8_t ) cr;
@@ -433,7 +472,7 @@ lr1110_modem_response_code_t lr1110_modem_test_tx_cont( const void* context, uin
     cbuffer[4]  = ( uint8_t )( ( frequency & 0x00FF0000 ) >> 16 );
     cbuffer[5]  = ( uint8_t )( ( frequency & 0x0000FF00 ) >> 8 );
     cbuffer[6]  = ( uint8_t )( frequency & 0x000000FF );
-    cbuffer[7]  = tx_power;
+    cbuffer[7]  = ( uint8_t ) tx_power;
     cbuffer[8]  = ( uint8_t ) sf;
     cbuffer[9]  = ( uint8_t ) bw;
     cbuffer[10] = ( uint8_t ) cr;
@@ -454,7 +493,7 @@ lr1110_modem_response_code_t lr1110_modem_test_tx_cw( const void* context, uint3
     cbuffer[4] = ( uint8_t )( ( frequency & 0x00FF0000 ) >> 16 );
     cbuffer[5] = ( uint8_t )( ( frequency & 0x0000FF00 ) >> 8 );
     cbuffer[6] = ( uint8_t )( frequency & 0x000000FF );
-    cbuffer[7] = tx_power;
+    cbuffer[7] = ( uint8_t ) tx_power;
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
                                                                     LR1110_MODEM_TEST_MODE_TST_CW_CMD_LENGTH, 0, 0 );
@@ -501,14 +540,14 @@ lr1110_modem_response_code_t lr1110_modem_test_read_packet_counter_rx_cont( cons
     return response_code;
 }
 
-lr1110_modem_response_code_t lr1110_modem_test_rssi( const void* context, uint32_t frequency, uint16_t time_ms,
-                                                     lr1110_modem_tst_mode_bw_t bw )
+lr1110_modem_response_code_t lr1110_modem_test_rssi_subghz( const void* context, uint32_t frequency, uint16_t time_ms,
+                                                            lr1110_modem_tst_mode_bw_t bw )
 {
-    uint8_t cbuffer[LR1110_MODEM_TEST_MODE_TST_RSSI_CMD_LENGTH];
+    uint8_t cbuffer[LR1110_MODEM_TEST_MODE_TST_RSSI_SUBGHZ_CMD_LENGTH];
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
     cbuffer[1] = LR1110_MODEM_TEST_CMD;
-    cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_RSSI;
+    cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_RSSI_SUBGHZ;
     cbuffer[3] = ( uint8_t )( ( frequency & 0xFF000000 ) >> 24 );
     cbuffer[4] = ( uint8_t )( ( frequency & 0x00FF0000 ) >> 16 );
     cbuffer[5] = ( uint8_t )( ( frequency & 0x0000FF00 ) >> 8 );
@@ -517,8 +556,8 @@ lr1110_modem_response_code_t lr1110_modem_test_rssi( const void* context, uint32
     cbuffer[8] = ( uint8_t )( time_ms );
     cbuffer[9] = bw;
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
-                                                                    LR1110_MODEM_TEST_MODE_TST_RSSI_CMD_LENGTH, 0, 0 );
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
+        context, cbuffer, LR1110_MODEM_TEST_MODE_TST_RSSI_SUBGHZ_CMD_LENGTH, 0, 0 );
 }
 
 lr1110_modem_response_code_t lr1110_modem_test_radio_rst( const void* context )
@@ -545,42 +584,6 @@ lr1110_modem_response_code_t lr1110_modem_test_exit( const void* context )
                                                                     LR1110_MODEM_TEST_MODE_TST_EXIT_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_test_busy_loop( const void* context )
-{
-    uint8_t cbuffer[LR1110_MODEM_TEST_MODE_TST_BUSY_LOOP_CMD_LENGTH];
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
-    cbuffer[1] = LR1110_MODEM_TEST_CMD;
-    cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_BUSY_LOOP;
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_TEST_MODE_TST_BUSY_LOOP_CMD_LENGTH, 0, 0 );
-}
-
-lr1110_modem_response_code_t lr1110_modem_test_panic( const void* context )
-{
-    uint8_t cbuffer[LR1110_MODEM_TEST_MODE_TST_PANIC_CMD_LENGTH];
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
-    cbuffer[1] = LR1110_MODEM_TEST_CMD;
-    cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_PANIC;
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
-                                                                    LR1110_MODEM_TEST_MODE_TST_PANIC_CMD_LENGTH, 0, 0 );
-}
-
-lr1110_modem_response_code_t lr1110_modem_test_watchdog( const void* context )
-{
-    uint8_t cbuffer[LR1110_MODEM_TEST_MODE_TST_WATCHDOG_CMD_LENGTH];
-
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
-    cbuffer[1] = LR1110_MODEM_TEST_CMD;
-    cbuffer[2] = LR1110_MODEM_TEST_MODE_TST_WATCHDOG;
-
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_TEST_MODE_TST_WATCHDOG_CMD_LENGTH, 0, 0 );
-}
-
 lr1110_modem_response_code_t lr1110_modem_test_tx_single_preamble( const void* context, uint32_t frequency,
                                                                    int8_t tx_power, lr1110_modem_tst_mode_sf_t sf,
                                                                    lr1110_modem_tst_mode_bw_t bw,
@@ -596,7 +599,7 @@ lr1110_modem_response_code_t lr1110_modem_test_tx_single_preamble( const void* c
     cbuffer[4]  = ( uint8_t )( ( frequency & 0x00FF0000 ) >> 16 );
     cbuffer[5]  = ( uint8_t )( ( frequency & 0x0000FF00 ) >> 8 );
     cbuffer[6]  = ( uint8_t )( frequency & 0x000000FF );
-    cbuffer[7]  = tx_power;
+    cbuffer[7]  = ( uint8_t ) tx_power;
     cbuffer[8]  = ( uint8_t ) sf;
     cbuffer[9]  = ( uint8_t ) bw;
     cbuffer[10] = ( uint8_t ) cr;
@@ -746,7 +749,7 @@ lr1110_modem_response_code_t lr1110_modem_get_chip_eui( const void* context, lr1
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, uint8_t* join_eui )
+lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, lr1110_modem_join_eui_t join_eui )
 {
     uint8_t                      cbuffer[LR1110_MODEM_GET_JOIN_EUI_CMD_LENGTH];
     uint8_t                      rbuffer[LR1110_MODEM_JOIN_EUI_BUFFER_LENGTH] = { 0x00 };
@@ -766,7 +769,7 @@ lr1110_modem_response_code_t lr1110_modem_get_join_eui( const void* context, uin
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, const uint8_t* join_eui )
+lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, const lr1110_modem_join_eui_t join_eui )
 {
     uint8_t cbuffer[LR1110_MODEM_SET_JOIN_EUI_CMD_LENGTH];
 
@@ -782,7 +785,7 @@ lr1110_modem_response_code_t lr1110_modem_set_join_eui( const void* context, con
                                                                     LR1110_MODEM_SET_JOIN_EUI_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, uint8_t* dev_eui )
+lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, lr1110_modem_dev_eui_t dev_eui )
 {
     uint8_t                      cbuffer[LR1110_MODEM_GET_DEV_EUI_CMD_LENGTH];
     uint8_t                      rbuffer[LR1110_MODEM_DEV_EUI_BUFFER_LENGTH] = { 0x00 };
@@ -802,7 +805,7 @@ lr1110_modem_response_code_t lr1110_modem_get_dev_eui( const void* context, uint
     return rc;
 }
 
-lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, const uint8_t* dev_eui )
+lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, const lr1110_modem_dev_eui_t dev_eui )
 {
     uint8_t cbuffer[LR1110_MODEM_SET_DEV_EUI_CMD_LENGTH];
 
@@ -818,7 +821,7 @@ lr1110_modem_response_code_t lr1110_modem_set_dev_eui( const void* context, cons
                                                                     LR1110_MODEM_SET_DEV_EUI_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_set_app_key( const void* context, const uint8_t* app_key )
+lr1110_modem_response_code_t lr1110_modem_set_app_key( const void* context, const lr1110_modem_app_key_t app_key )
 {
     uint8_t cbuffer[LR1110_MODEM_SET_APP_KEY_CMD_LENGTH];
 
@@ -886,7 +889,7 @@ lr1110_modem_response_code_t lr1110_modem_list_regions( const void* context, lr1
                                                         uint8_t* region_codes_size )
 {
     uint8_t                      cbuffer[LR1110_MODEM_GET_LIST_REGION_CMD_LENGTH];
-    uint8_t                      rbuffer[LR1110_MODEM_REGIONS_NUMBER];
+    uint8_t                      rbuffer[LR1110_MODEM_REGIONS_NUMBER] = { 0 };
     lr1110_modem_response_code_t rc;
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
@@ -896,17 +899,19 @@ lr1110_modem_response_code_t lr1110_modem_list_regions( const void* context, lr1
 
     if( rc == LR1110_MODEM_RESPONSE_CODE_OK )
     {
-        if( *region_codes_size == LR1110_MODEM_REGIONS_NUMBER )
+        if( *region_codes_size <= LR1110_MODEM_REGIONS_NUMBER )
         {
             rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
                 context, cbuffer, LR1110_MODEM_GET_LIST_REGION_CMD_LENGTH, rbuffer, *region_codes_size );
 
-            for( uint8_t i = 0; i < *region_codes_size; i++ )
+            if( rc == LR1110_MODEM_RESPONSE_CODE_OK )
             {
-                region_codes[i] = ( lr1110_modem_regions_t ) rbuffer[i];
+                for( uint8_t i = 0; i < *region_codes_size; i++ )
+                {
+                    region_codes[i] = ( lr1110_modem_regions_t ) rbuffer[i];
+                }
             }
         }
-
         else
         {
             rc = LR1110_MODEM_RESPONSE_CODE_INVALID;
@@ -973,15 +978,25 @@ lr1110_modem_response_code_t lr1110_modem_set_dm_port( const void* context, cons
                                                                     LR1110_MODEM_SET_DM_PORT_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_get_dm_info_interval( const void* context, uint8_t* interval )
+lr1110_modem_response_code_t lr1110_modem_get_dm_info_interval( const void*                               context,
+                                                                lr1110_modem_reporting_interval_format_t* format,
+                                                                uint8_t*                                  interval )
 {
+    lr1110_modem_response_code_t rc;
+
     uint8_t cbuffer[LR1110_MODEM_GET_DM_INTERVAL_CMD_LENGTH];
+    uint8_t rbuffer[1] = { 0x00 };
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
     cbuffer[1] = LR1110_MODEM_GET_DM_INFO_INTERVAL_CMD;
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
-        context, cbuffer, LR1110_MODEM_GET_DM_INTERVAL_CMD_LENGTH, interval, sizeof( uint8_t ) );
+    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_DM_INTERVAL_CMD_LENGTH, rbuffer, sizeof( uint8_t ) );
+
+    *format   = ( lr1110_modem_reporting_interval_format_t )( rbuffer[0] >> 6 );
+    *interval = rbuffer[0] & 0x3F;
+
+    return rc;
 }
 
 lr1110_modem_response_code_t lr1110_modem_set_dm_info_interval( const void*                                    context,
@@ -1041,8 +1056,8 @@ lr1110_modem_response_code_t lr1110_modem_set_dm_info_field( const void*        
         context, cbuffer, LR1110_MODEM_SET_DM_FIELDS_CMD_LENGTH + dm_info_fields->dm_info_length, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_send_dm_status( const void*                   context,
-                                                          lr1110_modem_dm_info_fields_t dm_info_fields )
+lr1110_modem_response_code_t lr1110_modem_send_dm_status( const void*                    context,
+                                                          lr1110_modem_dm_info_fields_t* dm_info_fields )
 {
     uint8_t cbuffer[LR1110_MODEM_SEND_DM_STATUS_CMD_LENGTH];
 
@@ -1050,8 +1065,8 @@ lr1110_modem_response_code_t lr1110_modem_send_dm_status( const void*           
     cbuffer[1] = LR1110_MODEM_DM_STATUS_CMD;
 
     return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
-        context, cbuffer, LR1110_MODEM_SEND_DM_STATUS_CMD_LENGTH, ( uint8_t* ) dm_info_fields.dm_info_field,
-        dm_info_fields.dm_info_length );
+        context, cbuffer, LR1110_MODEM_SEND_DM_STATUS_CMD_LENGTH, dm_info_fields->dm_info_field,
+        dm_info_fields->dm_info_length );
 }
 
 lr1110_modem_response_code_t lr1110_modem_set_app_status( const void* context, uint8_t* app_status )
@@ -1388,33 +1403,36 @@ lr1110_modem_response_code_t lr1110_modem_get_connection_timeout( const void* co
                                                                   uint16_t*   nb_uplink_mobile_static,
                                                                   uint16_t*   nb_uplink_reset )
 {
-    uint8_t                      cbuffer[LR1110_MODEM_GET_CONNECTION_TIMEOUT_CMD_LENGTH];
-    uint8_t                      rbuffer[sizeof( uint32_t )] = { 0x00 };
-    lr1110_modem_response_code_t rc;
+    return lr1110_modem_get_timeout_generic( LR1110_MODEM_GET_CONNECTION_TIMEOUT_CMD, context, nb_uplink_mobile_static,
+                                             nb_uplink_reset );
+}
 
-    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
-    cbuffer[1] = LR1110_MODEM_GET_CONNECTION_TIMEOUT_CMD;
-
-    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
-        context, cbuffer, LR1110_MODEM_GET_CONNECTION_TIMEOUT_CMD_LENGTH, rbuffer, sizeof( uint32_t ) );
-
-    *nb_uplink_mobile_static = ( ( uint16_t ) rbuffer[0] << 8 ) + ( uint16_t ) rbuffer[1];
-
-    *nb_uplink_reset = ( ( uint16_t ) rbuffer[2] << 8 ) + ( uint16_t ) rbuffer[3];
-
-    return rc;
+lr1110_modem_response_code_t lr1110_modem_get_connection_timeout_status( const void* context,
+                                                                         uint16_t*   nb_uplink_mobile_static,
+                                                                         uint16_t*   nb_uplink_reset )
+{
+    return lr1110_modem_get_timeout_generic( LR1110_MODEM_GET_CONNECTION_TIMEOUT_STATUS_CMD, context,
+                                             nb_uplink_mobile_static, nb_uplink_reset );
 }
 
 lr1110_modem_response_code_t lr1110_modem_get_lorawan_state( const void*                   context,
                                                              lr1110_modem_lorawan_state_t* lorawan_state )
 {
     uint8_t cbuffer[LR1110_MODEM_GET_LORAWAN_STATE_CMD_LENGTH];
+    uint8_t state = 0;
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
     cbuffer[1] = LR1110_MODEM_GET_LORAWAN_STATUS_CMD;
 
-    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
-        context, cbuffer, LR1110_MODEM_GET_LORAWAN_STATE_CMD_LENGTH, ( uint8_t* ) lorawan_state, sizeof( uint8_t ) );
+    const lr1110_modem_hal_status_t hal_status =
+        lr1110_modem_hal_read( context, cbuffer, LR1110_MODEM_GET_LORAWAN_STATE_CMD_LENGTH, &state, 1 );
+
+    if( hal_status == LR1110_MODEM_HAL_STATUS_OK )
+    {
+        *lorawan_state = ( state == 0 ) ? LR1110_MODEM_LORAWAN_IDLE : LR1110_MODEM_LORAWAN_BUSY;
+    }
+
+    return ( lr1110_modem_response_code_t ) hal_status;
 }
 
 lr1110_modem_response_code_t lr1110_modem_write_user_defined_charge_counter( const void*    context,
@@ -1463,20 +1481,20 @@ lr1110_modem_response_code_t lr1110_modem_select_charge_uplink( const void*     
         context, cbuffer, LR1110_MODEM_SELECT_CHARGE_UPLINK_CMD_LENGTH, 0, 0 );
 }
 
-lr1110_modem_response_code_t lr1110_modem_get_duty_cycle_status( const void* context, uint32_t* duty_cycle )
+lr1110_modem_response_code_t lr1110_modem_get_duty_cycle_status( const void* context, int32_t* duty_cycle )
 {
     uint8_t                      cbuffer[LR1110_MODEM_GET_DUTY_CYCLE_STATUS_CMD_LENGTH];
-    uint8_t                      rbuffer[sizeof( uint32_t )] = { 0x00 };
+    uint8_t                      rbuffer[sizeof( int32_t )] = { 0x00 };
     lr1110_modem_response_code_t rc;
 
     cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
     cbuffer[1] = LR1110_MODEM_GET_DUTY_CYCLE_STATUS_CMD;
 
     rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
-        context, cbuffer, LR1110_MODEM_GET_DUTY_CYCLE_STATUS_CMD_LENGTH, rbuffer, sizeof( uint32_t ) );
+        context, cbuffer, LR1110_MODEM_GET_DUTY_CYCLE_STATUS_CMD_LENGTH, rbuffer, sizeof( int32_t ) );
 
-    *duty_cycle = ( ( uint32_t ) rbuffer[0] << 24 ) + ( ( uint32_t ) rbuffer[1] << 16 ) +
-                  ( ( uint32_t ) rbuffer[2] << 8 ) + rbuffer[3];
+    *duty_cycle = ( ( int32_t ) rbuffer[0] << 24 ) + ( ( int32_t ) rbuffer[1] << 16 ) +
+                  ( ( int32_t ) rbuffer[2] << 8 ) + ( int32_t ) rbuffer[3];
 
     return rc;
 }
@@ -1521,9 +1539,240 @@ lr1110_modem_response_code_t lr1110_modem_get_certification_mode( const void*   
         context, cbuffer, LR1110_MODEM_GET_CERTIFICATION_MODE_CMD_LENGTH, ( uint8_t* ) enable, sizeof( uint8_t ) );
 }
 
+lr1110_modem_response_code_t lr1110_modem_get_available_data_rate( const void* context, uint16_t* available_data_rate )
+{
+    uint8_t                      cbuffer[LR1110_MODEM_GET_AVAILABLE_DATA_RATE_CMD_LENGTH];
+    uint8_t                      rbuffer[sizeof( uint16_t )] = { 0x00 };
+    lr1110_modem_response_code_t rc;
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_AVAILABLE_DATA_RATE_CMD;
+
+    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_AVAILABLE_DATA_RATE_CMD_LENGTH, rbuffer, sizeof( uint16_t ) );
+
+    *available_data_rate = ( ( uint16_t ) rbuffer[0] << 8 ) + rbuffer[1];
+
+    return rc;
+}
+
+lr1110_modem_response_code_t lr1110_modem_set_output_power_config(
+    const void* context, const lr1110_modem_output_power_config_list_t output_power_config )
+{
+    uint8_t cbuffer[LR1110_MODEM_SET_OUTPUT_POWER_CONFIG_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_SET_OUTPUT_POWER_CONFIG_CMD;
+
+    for( uint8_t i = 0; i < LR1110_MODEM_NB_OUTPUT_POWER_CONFIG_BLOCKS; i++ )
+    {
+        cbuffer[2 + ( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH )] = output_power_config[i].expected_power;
+        cbuffer[2 + ( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 1] =
+            output_power_config[i].configured_power;
+        cbuffer[2 + ( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 2] =
+            ( ( output_power_config[i].pa_sel & 0x0F ) << 4 ) | ( ( uint8_t ) output_power_config[i].pa_supply & 0x0F );
+        cbuffer[2 + ( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 3] =
+            ( ( output_power_config[i].pa_duty_cycle & 0x0F ) << 4 ) | ( output_power_config[i].pa_hp_sel & 0x0F );
+        cbuffer[2 + ( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 4] =
+            ( uint8_t ) output_power_config[i].pa_ramp_time;
+    }
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
+        context, cbuffer, LR1110_MODEM_SET_OUTPUT_POWER_CONFIG_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_get_output_power_config(
+    const void* context, lr1110_modem_output_power_config_list_t output_power_config )
+{
+    uint8_t                      cbuffer[LR1110_MODEM_GET_OUTPUT_POWER_CONFIG_CMD_LENGTH];
+    uint8_t                      rbuffer[LR1110_MODEM_MODEM_GET_OUTPUT_POWER_CONFIG_RBUFFER_LENGTH] = { 0x00 };
+    lr1110_modem_response_code_t rc;
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_OUTPUT_POWER_CONFIG_CMD;
+
+    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_OUTPUT_POWER_CONFIG_CMD_LENGTH, rbuffer,
+        LR1110_MODEM_MODEM_GET_OUTPUT_POWER_CONFIG_RBUFFER_LENGTH );
+
+    for( uint8_t i = 0; i < LR1110_MODEM_NB_OUTPUT_POWER_CONFIG_BLOCKS; i++ )
+    {
+        output_power_config[i].expected_power   = rbuffer[i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH];
+        output_power_config[i].configured_power = rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 1];
+        output_power_config[i].pa_sel =
+            ( rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 2] & 0xF0 ) >> 4;
+        output_power_config[i].pa_supply = ( lr1110_modem_pa_reg_supply_t )(
+            rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 2] & 0x0F );
+        output_power_config[i].pa_duty_cycle =
+            ( rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 3] & 0xF0 ) >> 4;
+        output_power_config[i].pa_hp_sel = rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 3] & 0x0F;
+        output_power_config[i].pa_ramp_time =
+            ( lr1110_modem_ramp_time_t )( rbuffer[( i * LR1110_MODEM_OUTPUT_POWER_CONFIG_BLOCK_LENGTH ) + 4] );
+    }
+
+    return rc;
+}
+
+lr1110_modem_response_code_t lr1110_modem_get_network_type( const void*                  context,
+                                                            lr1110_modem_network_type_t* network_type )
+{
+    uint8_t cbuffer[LR1110_MODEM_GET_NETWORK_TYPE_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_NETWORK_TYPE_CMD;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_NETWORK_TYPE_CMD_LENGTH, ( uint8_t* ) network_type, sizeof( uint8_t ) );
+}
+
+lr1110_modem_response_code_t lr1110_modem_set_network_type( const void*                       context,
+                                                            const lr1110_modem_network_type_t network_type )
+{
+    uint8_t cbuffer[LR1110_MODEM_SET_NETWORK_TYPE_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_SET_NETWORK_TYPE_CMD;
+
+    cbuffer[2] = ( uint8_t ) network_type;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_SET_NETWORK_TYPE_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_activate_lbt( const void* context, const lr1110_modem_lbt_mode_t enable,
+                                                        const int16_t threshold, const uint32_t duration,
+                                                        const uint32_t bandwidth )
+{
+    uint8_t cbuffer[LR1110_MODEM_ACTIVATE_LBT_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_ACTIVATE_LBT_CMD;
+
+    cbuffer[2]  = ( uint8_t ) enable;
+    cbuffer[3]  = ( uint8_t )( threshold >> 8 );
+    cbuffer[4]  = ( uint8_t )( threshold );
+    cbuffer[5]  = ( uint8_t )( duration >> 24 );
+    cbuffer[6]  = ( uint8_t )( duration >> 16 );
+    cbuffer[7]  = ( uint8_t )( duration >> 8 );
+    cbuffer[8]  = ( uint8_t )( duration );
+    cbuffer[9]  = ( uint8_t )( bandwidth >> 24 );
+    cbuffer[10] = ( uint8_t )( bandwidth >> 16 );
+    cbuffer[11] = ( uint8_t )( bandwidth >> 8 );
+    cbuffer[12] = ( uint8_t )( bandwidth );
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_ACTIVATE_LBT_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_set_nb_trans( const void* context, const uint8_t nb_trans )
+{
+    uint8_t cbuffer[LR1110_MODEM_SET_NB_TRANS_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_SET_NB_TRANS_CMD;
+
+    cbuffer[2] = nb_trans;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_SET_NB_TRANS_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_get_nb_trans( const void* context, uint8_t* nb_trans )
+{
+    uint8_t cbuffer[LR1110_MODEM_GET_NB_TRANS_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_NB_TRANS_CMD;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_NB_TRANS_CMD_LENGTH, ( uint8_t* ) nb_trans, sizeof( uint8_t ) );
+}
+
+lr1110_modem_response_code_t lr1110_modem_set_stream_redundancy_rate( const void*   context,
+                                                                      const uint8_t stream_redundancy_rate )
+{
+    uint8_t cbuffer[LR1110_MODEM_SET_STREAM_REDUNDANCY_RATE_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_SET_STREAM_REDUNDANCY_RATE_CMD;
+
+    cbuffer[2] = stream_redundancy_rate;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write(
+        context, cbuffer, LR1110_MODEM_SET_STREAM_REDUNDANCY_RATE_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_get_stream_redundancy_rate( const void* context,
+                                                                      uint8_t*    stream_redundancy_rate )
+{
+    uint8_t cbuffer[LR1110_MODEM_GET_STREAM_REDUNDANCY_RATE_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_STREAM_REDUNDANCY_RATE_CMD;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_read( context, cbuffer,
+                                                                   LR1110_MODEM_GET_STREAM_REDUNDANCY_RATE_CMD_LENGTH,
+                                                                   stream_redundancy_rate, sizeof( uint8_t ) );
+}
+
+lr1110_modem_response_code_t lr1110_modem_set_crystal_error( const void* context, const uint32_t crystal_error )
+{
+    uint8_t cbuffer[LR1110_MODEM_SET_CRYSTAL_ERROR_CMD_LENGTH];
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_SET_CRYSTAL_ERROR_CMD;
+
+    cbuffer[2] = ( uint8_t )( crystal_error >> 24 );
+    cbuffer[3] = ( uint8_t )( crystal_error >> 16 );
+    cbuffer[4] = ( uint8_t )( crystal_error >> 8 );
+    cbuffer[5] = ( uint8_t ) crystal_error;
+
+    return ( lr1110_modem_response_code_t ) lr1110_modem_hal_write( context, cbuffer,
+                                                                    LR1110_MODEM_SET_CRYSTAL_ERROR_CMD_LENGTH, 0, 0 );
+}
+
+lr1110_modem_response_code_t lr1110_modem_get_crystal_error( const void* context, uint32_t* crystal_error )
+{
+    uint8_t                      cbuffer[LR1110_MODEM_GET_CRYSTAL_ERROR_CMD_LENGTH];
+    uint8_t                      rbuffer[sizeof( uint32_t )] = { 0x00 };
+    lr1110_modem_response_code_t rc;
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = LR1110_MODEM_GET_CRYSTAL_ERROR_CMD;
+
+    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_CRYSTAL_ERROR_CMD_LENGTH, rbuffer, sizeof( uint32_t ) );
+
+    *crystal_error = ( ( uint32_t ) rbuffer[0] << 24 ) + ( ( uint32_t ) rbuffer[1] << 16 ) +
+                     ( ( uint32_t ) rbuffer[2] << 8 ) + ( ( uint32_t ) rbuffer[3] );
+
+    return rc;
+}
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------
  */
+
+lr1110_modem_response_code_t lr1110_modem_get_timeout_generic( const uint8_t opcode, const void* context,
+                                                               uint16_t* nb_uplink_mobile_static,
+                                                               uint16_t* nb_uplink_reset )
+{
+    uint8_t                      cbuffer[LR1110_MODEM_GET_CONNECTION_TIMEOUT_GENERIC_CMD_LENGTH];
+    uint8_t                      rbuffer[sizeof( uint32_t )] = { 0x00 };
+    lr1110_modem_response_code_t rc;
+
+    cbuffer[0] = LR1110_MODEM_GROUP_ID_MODEM;
+    cbuffer[1] = opcode;
+
+    rc = ( lr1110_modem_response_code_t ) lr1110_modem_hal_read(
+        context, cbuffer, LR1110_MODEM_GET_CONNECTION_TIMEOUT_GENERIC_CMD_LENGTH, rbuffer, sizeof( uint32_t ) );
+
+    *nb_uplink_mobile_static = ( ( uint16_t ) rbuffer[0] << 8 ) + ( uint16_t ) rbuffer[1];
+
+    *nb_uplink_reset = ( ( uint16_t ) rbuffer[2] << 8 ) + ( uint16_t ) rbuffer[3];
+
+    return rc;
+}
 
 /* --- EOF ------------------------------------------------------------------ */

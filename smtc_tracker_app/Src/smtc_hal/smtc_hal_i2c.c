@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_i2c.c
+ * @file      smtc_hal_i2c.c
  *
- * \brief     Implements the i2c HAL functions
+ * @brief     Implements the i2c HAL functions
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -61,7 +61,7 @@ static hal_i2c_t hal_i2c[] = {
     [0] =
         {
             .interface = I2C1,
-            .handle    = NULL,
+            .handle    = { NULL },
             .pins =
                 {
                     .sda = NC,
@@ -71,7 +71,7 @@ static hal_i2c_t hal_i2c[] = {
     [2] =
         {
             .interface = I2C3,
-            .handle    = NULL,
+            .handle    = { NULL },
             .pins =
                 {
                     .sda = NC,
@@ -88,29 +88,29 @@ static i2c_addr_size i2c_internal_addr_size;
  */
 
 /*!
- * \brief Write data buffer to the I2C device
+ * @brief Write data buffer to the I2C device
  *
- * \param [in] id               I2C interface id [1:N]
- * \param [in] deviceAddr       device address
- * \param [in] addr             data address
- * \param [in] buffer           data buffer to write
- * \param [in] size             number of data bytes to write
+ * @param [in] id               I2C interface id [1:N]
+ * @param [in] deviceAddr       device address
+ * @param [in] addr             data address
+ * @param [in] buffer           data buffer to write
+ * @param [in] size             number of data bytes to write
  *
- * \retval status [SUCCESS, FAIL]
+ * @returns status [SUCCESS, FAIL]
  */
 static uint8_t i2c_write_buffer( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t* buffer,
                                  uint16_t size );
 
 /*!
- * \brief Write data buffer to the I2C device
+ * @brief Write data buffer to the I2C device
  *
- * \param [in] id               I2C interface id [1:N]
- * \param [in] deviceAddr       device address
- * \param [in] addr             data address
- * \param [in] buffer           data buffer to write
- * \param [in] size             number of data bytes to write
+ * @param [in] id               I2C interface id [1:N]
+ * @param [in] deviceAddr       device address
+ * @param [in] addr             data address
+ * @param [in] buffer           data buffer to write
+ * @param [in] size             number of data bytes to write
  *
- * \retval status [SUCCESS, FAIL]
+ * @returns status [SUCCESS, FAIL]
  */
 static uint8_t i2c_read_buffer( const uint32_t id, uint8_t device_addr, uint16_t addr, uint8_t* buffer, uint16_t size );
 

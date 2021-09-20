@@ -1,7 +1,7 @@
 /*!
- * \file      tracker_utility.c
+ * @file      tracker_utility.c
  *
- * \brief     tracker utility implementation.
+ * @brief     tracker utility implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -35,7 +35,6 @@
  */
 
 #include <time.h>
-#include "lorawan_config.h"
 #include "lr1110_tracker_board.h"
 #include "tracker_utility.h"
 #include "main_tracker.h"
@@ -56,6 +55,7 @@
 #define CHUNK_INTERNAL_LOG 145
 #define INTERNAL_LOG_BUFFER_LEN 3000
 #define ACCUMULATED_CHARGE_THRESHOLD 10000
+#define RESET_COUNTER_THRESHOLD 10000
 
 /*
  * -----------------------------------------------------------------------------
@@ -68,55 +68,72 @@
  */
 
 /*!
- * \brief Radio hardware and global parameters
+ * @brief Radio hardware and global parameters
  */
 extern lr1110_t lr1110;
 
 /*!
- * \brief Tracker context structure
+ * @brief Tracker context structure
  */
 tracker_ctx_t tracker_ctx;
 
 /*!
- * \brief Buffer containing chunk during lr1110 modem update
+ * @brief Buffer containing chunk during lr1110 modem update
  */
 static uint32_t chunk_buffer[128];
 
 /*!
- * \brief Buffer index pointing on the chunk last byte during lr1110 modem update
+ * @brief Buffer index pointing on the chunk last byte during lr1110 modem update
  */
 uint8_t chunk_buffer_index;
- 
+
 /*!
- * \brief LR1110 modem flash offset used during lr1110 modem update
+ * @brief LR1110 modem flash offset used during lr1110 modem update
  */
 uint32_t lr1110_modem_flash_offset;
 
 /*!
- * \brief Buffer containing internal logs scan during the read internal log command
+ * @brief Buffer containing internal logs scan during the read internal log command
  */
 static uint8_t internal_log_buffer[INTERNAL_LOG_BUFFER_LEN];
 
 /*!
- * \brief Scan len of the internal_log_buffer during the read internal log command
+ * @brief Scan len of the internal_log_buffer during the read internal log command
  */
 uint16_t internal_log_buffer_len;
 
 /*!
- * \brief scan index ongoing during the read internal log command
+ * @brief Scan index ongoing during the read internal log command
  */
 uint32_t internal_log_scan_index = 1;
+
+/*!
+ * @brief Internal Log tracker settings send status
+ */
+bool internal_log_tracker_settings_sent = false;
 
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DECLARATION -------------------------------------------
  */
 
+static void tracker_print_device_settings( void );
+
+/*!
+ *@brief Read 4 bytes from array buffer at index and interpret it as uint32_t LSB. Increment index so that
+ * it is position on the byte just after the uint32 read (so possibly after the end of array if the
+ * uint32 that is being read is at the end of the buffer).
+ * @param [in] dev_eui LoRaWAN Device Eui
+ * @param [in] join_eui LoRaWAN Join Eui
+ *
+ * @returns uint32_t value
+ */
+uint32_t get_uint32_from_array_at_index_and_inc( const uint8_t* array, uint16_t* index );
+
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
-
 
 uint8_t tracker_init_internal_log_ctx( void )
 {
@@ -143,9 +160,9 @@ uint8_t tracker_restore_internal_log_ctx( void )
 
     flash_read_buffer( FLASH_USER_INTERNAL_LOG_CTX_START_ADDR, ctx_buf, 32 );
 
-    tracker_ctx.internal_log_flush_request  = false;
-    tracker_ctx.internal_log_empty          = ctx_buf[0];
-    index                                   = 1;
+    tracker_ctx.internal_log_flush_request = false;
+    tracker_ctx.internal_log_empty         = ctx_buf[0];
+    index                                  = 1;
 
     if( tracker_ctx.internal_log_empty == FLASH_BYTE_EMPTY_CONTENT )
     {
@@ -215,10 +232,11 @@ void tracker_store_internal_log_ctx( void )
     ctx_buf[index++] = tracker_ctx.flash_addr_current >> 24;
 
     tracker_ctx.flash_remaining_space = tracker_ctx.flash_addr_end - tracker_ctx.flash_addr_current;
-    ctx_buf[index++]                  = tracker_ctx.flash_remaining_space;
-    ctx_buf[index++]                  = tracker_ctx.flash_remaining_space >> 8;
-    ctx_buf[index++]                  = tracker_ctx.flash_remaining_space >> 16;
-    ctx_buf[index++]                  = tracker_ctx.flash_remaining_space >> 24;
+
+    ctx_buf[index++] = tracker_ctx.flash_remaining_space;
+    ctx_buf[index++] = tracker_ctx.flash_remaining_space >> 8;
+    ctx_buf[index++] = tracker_ctx.flash_remaining_space >> 16;
+    ctx_buf[index++] = tracker_ctx.flash_remaining_space >> 24;
 
     flash_write_buffer( FLASH_USER_INTERNAL_LOG_CTX_START_ADDR, ctx_buf, index );
 }
@@ -226,10 +244,11 @@ void tracker_store_internal_log_ctx( void )
 void tracker_erase_internal_log( void )
 {
     uint8_t nb_page_to_erase = 0;
-    
-    if(tracker_ctx.nb_scan > 0)
+
+    if( tracker_ctx.nb_scan > 0 )
     {
-        nb_page_to_erase = ( ( tracker_ctx.flash_addr_current - tracker_ctx.flash_addr_start ) / ADDR_FLASH_PAGE_SIZE ) + 1;
+        nb_page_to_erase =
+            ( ( tracker_ctx.flash_addr_current - tracker_ctx.flash_addr_start ) / ADDR_FLASH_PAGE_SIZE ) + 1;
         /* Erase scan results */
         flash_erase_page( tracker_ctx.flash_addr_start, nb_page_to_erase );
     }
@@ -242,20 +261,17 @@ void tracker_reset_internal_log( void )
     if( tracker_ctx.internal_log_empty != FLASH_BYTE_EMPTY_CONTENT )
     {
         tracker_erase_internal_log( );
-        
+
         tracker_ctx.internal_log_empty = FLASH_BYTE_EMPTY_CONTENT;
     }
 
-    /* Init the new context only if internal log is enable */
-    if( tracker_ctx.internal_log_enable )
-    {
-        tracker_init_internal_log_ctx( );
-    }
+    /* Reinit the internal log context */
+    tracker_init_internal_log_ctx( );
 }
 
 uint8_t tracker_get_remaining_memory_space( void )
 {
-    return (tracker_ctx.flash_remaining_space * 100 ) / (tracker_ctx.flash_addr_end - tracker_ctx.flash_addr_start);
+    return ( tracker_ctx.flash_remaining_space * 100 ) / ( tracker_ctx.flash_addr_end - tracker_ctx.flash_addr_start );
 }
 
 uint8_t tracker_restore_app_ctx( void )
@@ -273,7 +289,7 @@ uint8_t tracker_restore_app_ctx( void )
     else
     {
         uint8_t tracker_ctx_buf_idx = 1;
-        int32_t   latitude = 0, longitude = 0;
+        int32_t latitude = 0, longitude = 0;
 
         memcpy( tracker_ctx.dev_eui, tracker_ctx_buf + tracker_ctx_buf_idx, SET_LORAWAN_DEVEUI_LEN );
         tracker_ctx_buf_idx += SET_LORAWAN_DEVEUI_LEN;
@@ -318,11 +334,12 @@ uint8_t tracker_restore_app_ctx( void )
         tracker_ctx.wifi_settings.max_results  = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.wifi_settings.timeout      = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.wifi_settings.timeout += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
-        tracker_ctx.wifi_settings.result_format = ( lr1110_modem_wifi_result_format_t )tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.wifi_settings.result_format =
+            ( lr1110_modem_wifi_result_format_t ) tracker_ctx_buf[tracker_ctx_buf_idx++];
 
         /* Application Parameters */
         tracker_ctx.accelerometer_used = tracker_ctx_buf[tracker_ctx_buf_idx++];
-        tracker_ctx.app_scan_interval     = tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.app_scan_interval  = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.app_scan_interval += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
         tracker_ctx.app_scan_interval += tracker_ctx_buf[tracker_ctx_buf_idx++] << 16;
         tracker_ctx.app_scan_interval += tracker_ctx_buf[tracker_ctx_buf_idx++] << 24;
@@ -332,28 +349,46 @@ uint8_t tracker_restore_app_ctx( void )
         tracker_ctx.app_keep_alive_frame_interval += tracker_ctx_buf[tracker_ctx_buf_idx++] << 16;
         tracker_ctx.app_keep_alive_frame_interval += tracker_ctx_buf[tracker_ctx_buf_idx++] << 24;
 
-        tracker_ctx.lorawan_region          = tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.lorawan_region          = ( lr1110_modem_regions_t ) tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.use_semtech_join_server = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.airplane_mode           = tracker_ctx_buf[tracker_ctx_buf_idx++];
-        tracker_ctx.gnss_scan_if_wifi_not_good_enough = tracker_ctx_buf[tracker_ctx_buf_idx++];
-        tracker_ctx.lorawan_adr_profile = tracker_ctx_buf[tracker_ctx_buf_idx++]; 
-        tracker_ctx.internal_log_enable  = tracker_ctx_buf[tracker_ctx_buf_idx++]; 
-        
+        tracker_ctx.scan_priority           = ( tracker_scan_priority_t ) tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.lorawan_adr_profile     = ( lr1110_modem_adr_profiles_t ) tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.internal_log_enable     = tracker_ctx_buf[tracker_ctx_buf_idx++];
+
         tracker_ctx.accumulated_charge = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 16;
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 24;
 
-        /* When a device is updated with an existing context. the accumulated_charge will be not 
-        properly set and the value will be read just from the flash which has a dummy value 
+        /* When a device is updated with an existing context. the accumulated_charge will be not
+        properly set and the value will be read just from the flash which has a dummy value
         (because not previously set in the flash).
-        a normal device provided by Semtech has two batteries which have 2.6Ah (total) capacity 
+        a normal device provided by Semtech has two batteries which have 2.6Ah (total) capacity
         so 2600 mAh. so a normal device can't cross 10 000 mAh.
         Avoid wrong value after update a device which didn't have this metric */
-        
+
         if( tracker_ctx.accumulated_charge > ACCUMULATED_CHARGE_THRESHOLD )
         {
             tracker_ctx.accumulated_charge = 0;
+        }
+
+        tracker_ctx.host_reset_cnt = tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.host_reset_cnt += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
+        tracker_ctx.modem_reset_by_itself_cnt = tracker_ctx_buf[tracker_ctx_buf_idx++];
+        tracker_ctx.modem_reset_by_itself_cnt += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
+
+        /* When a device is updated with an existing context. the reset counters will be not
+        properly set and the values will be read just from the flash which has a dummy value
+        (because not previously set in the flash).
+        a normal device provided by Semtech shouldn't have these counter greater than 10 000.
+        Avoid wrong value after update a device which didn't have this metric */
+
+        if( ( tracker_ctx.host_reset_cnt > RESET_COUNTER_THRESHOLD ) ||
+            ( tracker_ctx.modem_reset_by_itself_cnt > RESET_COUNTER_THRESHOLD ) )
+        {
+            tracker_ctx.host_reset_cnt            = 0;
+            tracker_ctx.modem_reset_by_itself_cnt = 0;
         }
     }
     return SUCCESS;
@@ -361,8 +396,8 @@ uint8_t tracker_restore_app_ctx( void )
 
 void tracker_store_app_ctx( void )
 {
-    uint8_t  tracker_ctx_buf[255];
-    uint8_t  tracker_ctx_buf_idx = 0;
+    uint8_t tracker_ctx_buf[255];
+    uint8_t tracker_ctx_buf_idx = 0;
     int32_t latitude = 0, longitude = 0;
 
     if( tracker_ctx.tracker_context_empty != FLASH_BYTE_EMPTY_CONTENT )
@@ -431,14 +466,19 @@ void tracker_store_app_ctx( void )
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.lorawan_region;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.use_semtech_join_server;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.airplane_mode;
-    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.gnss_scan_if_wifi_not_good_enough;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.scan_priority;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.lorawan_adr_profile;
-    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.internal_log_enable; 
-    
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.internal_log_enable;
+
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 8;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 16;
     tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.accumulated_charge >> 24;
+
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.host_reset_cnt;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.host_reset_cnt >> 8;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.modem_reset_by_itself_cnt;
+    tracker_ctx_buf[tracker_ctx_buf_idx++] = tracker_ctx.modem_reset_by_itself_cnt >> 8;
 
     flash_write_buffer( FLASH_USER_TRACKER_CTX_START_ADDR, tracker_ctx_buf, tracker_ctx_buf_idx );
 }
@@ -452,40 +492,50 @@ void tracker_init_app_ctx( uint8_t* dev_eui, uint8_t* join_eui, uint8_t* app_key
     memcpy( tracker_ctx.dev_eui, dev_eui, 8 );
     memcpy( tracker_ctx.join_eui, join_eui, 8 );
     memcpy( tracker_ctx.app_key, app_key, 16 );
-    tracker_ctx.lorawan_region = LORAWAN_REGION_USED;
+    tracker_ctx.lorawan_region          = LORAWAN_REGION_USED;
     tracker_ctx.use_semtech_join_server = USE_SEMTECH_JOIN_SERVER;
-    tracker_ctx.lorawan_adr_profile     = LR1110_MODEM_ADR_PROFILE_MOBILE_LOW_POWER;
+    if( ( LORAWAN_REGION_USED == LR1110_LORAWAN_REGION_EU868 ) ||
+        ( LORAWAN_REGION_USED == LR1110_LORAWAN_REGION_RU864 ) )
+    {
+        tracker_ctx.lorawan_adr_profile = LR1110_MODEM_ADR_PROFILE_CUSTOM;
+    }
+    else
+    {
+        tracker_ctx.lorawan_adr_profile = LR1110_MODEM_ADR_PROFILE_MOBILE_LONG_RANGE;
+    }
 
     /* GNSS Parameters */
     tracker_ctx.gnss_settings.enabled              = true;
     tracker_ctx.gnss_settings.constellation_to_use = LR1110_MODEM_GNSS_GPS_MASK | LR1110_MODEM_GNSS_BEIDOU_MASK;
-    tracker_ctx.gnss_antenna_sel                   = GNSS_PATCH_ANTENNA | GNSS_PCB_ANTENNA;
+    tracker_ctx.gnss_antenna_sel                   = GNSS_PCB_ANTENNA;
     tracker_ctx.gnss_settings.scan_type            = ASSISTED_MODE;
-    tracker_ctx.gnss_settings.search_mode          = LR1110_MODEM_GNSS_OPTION_DEFAULT;
+    tracker_ctx.gnss_settings.search_mode          = LR1110_MODEM_GNSS_OPTION_BEST_EFFORT;
     /* Set default position to Semtech France */
     tracker_ctx.gnss_settings.assistance_position.latitude  = 45.208;
     tracker_ctx.gnss_settings.assistance_position.longitude = 5.781;
     tracker_ctx.last_almanac_update                         = 0;
-    tracker_ctx.gnss_scan_if_wifi_not_good_enough           = false;
+    tracker_ctx.scan_priority                               = TRACKER_GNSS_PRIORITY;
 
     /* Wi-Fi Parameters */
     tracker_ctx.wifi_settings.enabled       = true;
-    tracker_ctx.wifi_settings.channels      = 0x3FFF;  // by default enable all channels
+    tracker_ctx.wifi_settings.channels      = 0x421;  // by default enable 1/6/1 channels
     tracker_ctx.wifi_settings.types         = LR1110_MODEM_WIFI_TYPE_SCAN_B;
-    tracker_ctx.wifi_settings.scan_mode     = LR1110_MODEM_WIFI_SCAN_MODE_BEACON_AND_PACKET;
+    tracker_ctx.wifi_settings.scan_mode     = LR1110_MODEM_WIFI_SCAN_MODE_BEACON_AND_PKT;
     tracker_ctx.wifi_settings.nbr_retrials  = WIFI_NBR_RETRIALS_DEFAULT;
     tracker_ctx.wifi_settings.max_results   = WIFI_MAX_RESULTS_DEFAULT;
     tracker_ctx.wifi_settings.timeout       = WIFI_TIMEOUT_IN_MS_DEFAULT;
     tracker_ctx.wifi_settings.result_format = LR1110_MODEM_WIFI_RESULT_FORMAT_BASIC_MAC_TYPE_CHANNEL;
 
     /* Application Parameters */
-    tracker_ctx.accelerometer_used = true;
-    tracker_ctx.app_scan_interval               = TRACKER_SCAN_INTERVAL;
-    tracker_ctx.app_keep_alive_frame_interval   = TRACKER_KEEP_ALIVE_FRAME_INTERVAL;
-    tracker_ctx.airplane_mode = true; 
-    tracker_ctx.internal_log_enable = false;
-    tracker_ctx.accumulated_charge = 0;
-    
+    tracker_ctx.accelerometer_used            = true;
+    tracker_ctx.app_scan_interval             = TRACKER_SCAN_INTERVAL;
+    tracker_ctx.app_keep_alive_frame_interval = TRACKER_KEEP_ALIVE_FRAME_INTERVAL;
+    tracker_ctx.airplane_mode                 = true;
+    tracker_ctx.internal_log_enable           = false;
+    tracker_ctx.accumulated_charge            = 0;
+    tracker_ctx.host_reset_cnt                = 0;
+    tracker_ctx.modem_reset_by_itself_cnt     = 0;
+
     if( store_in_flash == true )
     {
         tracker_store_app_ctx( );
@@ -515,7 +565,7 @@ void tracker_store_internal_log( void )
         scan_buf[index++] = tracker_ctx.timestamp >> 16;
         scan_buf[index++] = tracker_ctx.timestamp >> 24;
 
-        /* Acceleromter data */
+        /* Accelerometer data */
         scan_buf[index++] = tracker_ctx.accelerometer_x;
         scan_buf[index++] = tracker_ctx.accelerometer_x >> 8;
         scan_buf[index++] = tracker_ctx.accelerometer_y;
@@ -524,39 +574,83 @@ void tracker_store_internal_log( void )
         scan_buf[index++] = tracker_ctx.accelerometer_z >> 8;
 
         /* Temperature durring scan */
-        scan_buf[index++] = tracker_ctx.tout;
-        scan_buf[index++] = tracker_ctx.tout >> 8;
+        scan_buf[index++] = tracker_ctx.temperature;
+        scan_buf[index++] = tracker_ctx.temperature >> 8;
 
         /* GNSS scan on Patch Antenna */
-        if( ( tracker_ctx.patch_nav_message_len > 0 ) && ( GNSS_PATCH_ANTENNA_LOG_ACTIVATED == 1 ) )
+        if( ( tracker_ctx.patch_gnss_scan_result.nav_message_size > 0 ) && ( GNSS_PATCH_ANTENNA_LOG_ACTIVATED == 1 ) )
         {
-            scan_buf[index]     = TAG_GNSS_PATCH_ANTENNA;
-            scan_buf[index + 1] = tracker_ctx.patch_nav_message_len;
-            memcpy( &scan_buf[index + 2], tracker_ctx.patch_nav_message, tracker_ctx.patch_nav_message_len );
-            index += ( 2 + tracker_ctx.patch_nav_message_len );
+            scan_buf[index++] = TAG_GNSS_PATCH_ANTENNA;
+            scan_buf[index++] = GNSS_TIMING_LEN + tracker_ctx.patch_gnss_scan_result.nav_message_size;
+
+            /* Add timings */
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.radio_ms;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.radio_ms >> 8;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.radio_ms >> 16;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.radio_ms >> 24;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.computation_ms;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.computation_ms >> 8;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.computation_ms >> 16;
+            scan_buf[index++] = tracker_ctx.patch_gnss_scan_result.timings.computation_ms >> 24;
+
+            memcpy( &scan_buf[index], tracker_ctx.patch_gnss_scan_result.nav_message,
+                    tracker_ctx.patch_gnss_scan_result.nav_message_size );
+            index += tracker_ctx.patch_gnss_scan_result.nav_message_size;
             nb_variable_elements++;
         }
 
-        /* GNSS scan on Patch Antenna */
-        if( ( tracker_ctx.pcb_nav_message_len > 0 ) && ( GNSS_PCB_ANTENNA_LOG_ACTIVATED == 1 ) )
+        /* GNSS scan on PCB Antenna */
+        if( ( tracker_ctx.pcb_gnss_scan_result.nav_message_size > 0 ) && ( GNSS_PCB_ANTENNA_LOG_ACTIVATED == 1 ) )
         {
-            scan_buf[index]     = TAG_GNSS_PCB_ANTENNA;
-            scan_buf[index + 1] = tracker_ctx.pcb_nav_message_len;
-            memcpy( &scan_buf[index + 2], tracker_ctx.pcb_nav_message, tracker_ctx.pcb_nav_message_len );
-            index += ( 2 + tracker_ctx.pcb_nav_message_len );
+            scan_buf[index++] = TAG_GNSS_PCB_ANTENNA;
+            scan_buf[index++] = GNSS_TIMING_LEN + tracker_ctx.pcb_gnss_scan_result.nav_message_size;
+
+            /* Add timings */
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.radio_ms;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.radio_ms >> 8;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.radio_ms >> 16;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.radio_ms >> 24;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.computation_ms;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.computation_ms >> 8;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.computation_ms >> 16;
+            scan_buf[index++] = tracker_ctx.pcb_gnss_scan_result.timings.computation_ms >> 24;
+
+            memcpy( &scan_buf[index], tracker_ctx.pcb_gnss_scan_result.nav_message,
+                    tracker_ctx.pcb_gnss_scan_result.nav_message_size );
+            index += tracker_ctx.pcb_gnss_scan_result.nav_message_size;
             nb_variable_elements++;
         }
 
         /* WiFi scan */
         if( ( tracker_ctx.wifi_result.nbr_results > 0 ) && ( WIFI_LOG_ACTIVATED == 1 ) )
         {
-            scan_buf[index]     = TAG_WIFI;
-            scan_buf[index + 1] = WIFI_SINGLE_BEACON_LEN * tracker_ctx.wifi_result.nbr_results;
-            index += 2;
+            scan_buf[index++] = TAG_WIFI;
+            scan_buf[index++] = WIFI_TIMING_LEN + WIFI_SINGLE_BEACON_LEN * tracker_ctx.wifi_result.nbr_results;
+
+            /* Add timings */
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.demodulation_us;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.demodulation_us >> 8;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.demodulation_us >> 16;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.demodulation_us >> 24;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_capture_us;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_capture_us >> 8;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_capture_us >> 16;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_capture_us >> 24;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_correlation_us;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_correlation_us >> 8;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_correlation_us >> 16;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_correlation_us >> 24;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_detection_us;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_detection_us >> 8;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_detection_us >> 16;
+            scan_buf[index++] = tracker_ctx.wifi_result.timings.rx_detection_us >> 24;
+
             for( uint8_t i = 0; i < tracker_ctx.wifi_result.nbr_results; i++ )
             {
-                scan_buf[index] = tracker_ctx.wifi_result.results[i].rssi;
-                memcpy( &scan_buf[index + 1], tracker_ctx.wifi_result.results[i].mac_address, 6 );
+                scan_buf[index]     = tracker_ctx.wifi_result.results[i].rssi;
+                scan_buf[index + 1] = ( ( tracker_ctx.wifi_result.results[i].channel & 0x0F ) |
+                                        ( ( tracker_ctx.wifi_result.results[i].type & 0x03 ) << 4 ) );
+                memcpy( &scan_buf[index + 2], tracker_ctx.wifi_result.results[i].mac_address, 6 );
                 index += WIFI_SINGLE_BEACON_LEN;
             }
             nb_variable_elements++;
@@ -608,9 +702,10 @@ void tracker_restore_internal_log( void )
     struct tm epoch_time;
     uint32_t  job_counter = 0;
 
+    tracker_print_device_settings( );
+
     while( nb_scan_index <= tracker_ctx.nb_scan )
     {
-        HAL_Delay( 75 );  // Wait 75ms for UART
         /* read the scan lentgh */
         flash_read_buffer( next_scan_addr, scan_buf, 2 );
         scan_len = scan_buf[0];
@@ -626,10 +721,7 @@ void tracker_restore_internal_log( void )
         scan_number += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
 
         /* Scan Timestamp */
-        scan_timestamp = scan_buf[scan_buf_index++];
-        scan_timestamp += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
-        scan_timestamp += ( uint32_t ) scan_buf[scan_buf_index++] << 16;
-        scan_timestamp += ( uint32_t ) scan_buf[scan_buf_index++] << 24;
+        scan_timestamp = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
         memcpy( &epoch_time, localtime( &scan_timestamp ), sizeof( struct tm ) );
 
         /* Acceleromter data */
@@ -653,35 +745,34 @@ void tracker_restore_internal_log( void )
 
         while( nb_elements_index < nb_elements )
         {
-            uint8_t len       = 0;
-            int8_t  wifi_rssi = 0;
-            tag_element       = scan_buf[scan_buf_index++];  // get the element
-            len               = scan_buf[scan_buf_index++];  // get the size element
+            uint8_t len = 0;
+            tag_element = scan_buf[scan_buf_index++];  // get the element
+            len         = scan_buf[scan_buf_index++];  // get the size element
 
             switch( tag_element )
             {
             case TAG_GNSS_PATCH_ANTENNA:
                 if( GNSS_DISPLAY_PATCH_ANTENNA_LOG_ACTIVATED )
                 {
+                    uint32_t radio_ms;
+                    uint32_t computation_ms;
+                    uint16_t nav_len = len - GNSS_TIMING_LEN;
+
+                    /* Get Timings */
+                    radio_ms       = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                    computation_ms = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
                     /* Display Raw NAV Message*/
                     HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
                                           epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min,
                                           epoch_time.tm_sec );
                     HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, tag_element );
 
-                    if( len > 1 )
-                    {
-                        HAL_DBG_TRACE_MSG( "01" );
-                    }
-                    else
-                    {
-                        HAL_DBG_TRACE_MSG( "00" );
-                    }
-                    for( uint8_t i = 0; i < len; i++ )
+                    for( uint8_t i = 0; i < nav_len; i++ )
                     {
                         HAL_DBG_TRACE_PRINTF( "%02X", scan_buf[scan_buf_index++] );
                     }
-                    HAL_DBG_TRACE_MSG( ",0,0,0\r\n" );
+                    HAL_DBG_TRACE_PRINTF( ",0,%d,%d\r\n", radio_ms, computation_ms );
 
                     if( PAYLOAD_DISPLAY_LOG_ACTIVATED )
                     {
@@ -689,9 +780,9 @@ void tracker_restore_internal_log( void )
                         HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900,
                                               epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
                                               epoch_time.tm_min, epoch_time.tm_sec );
-                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, TAG_NAV_PATCH );
+                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, TLV_NAV_PATCH_TAG );
 
-                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TAG_NAV_PATCH, len );
+                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TLV_NAV_PATCH_TAG, len );
                         scan_buf_index -= len;
                         for( uint8_t i = 0; i < len; i++ )
                         {
@@ -708,25 +799,25 @@ void tracker_restore_internal_log( void )
             case TAG_GNSS_PCB_ANTENNA:
                 if( GNSS_DISPLAY_PCB_ANTENNA_LOG_ACTIVATED )
                 {
+                    uint32_t radio_ms;
+                    uint32_t computation_ms;
+                    uint16_t nav_len = len - GNSS_TIMING_LEN;
+
+                    /* Get Timings */
+                    radio_ms       = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                    computation_ms = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
                     /* Display Raw NAV Message*/
                     HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
                                           epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min,
                                           epoch_time.tm_sec );
                     HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, tag_element );
 
-                    if( len > 1 )
-                    {
-                        HAL_DBG_TRACE_MSG( "01" );
-                    }
-                    else
-                    {
-                        HAL_DBG_TRACE_MSG( "00" );
-                    }
-                    for( uint8_t i = 0; i < len; i++ )
+                    for( uint8_t i = 0; i < nav_len; i++ )
                     {
                         HAL_DBG_TRACE_PRINTF( "%02X", scan_buf[scan_buf_index++] );
                     }
-                    HAL_DBG_TRACE_MSG( ",0,0,0\r\n" );
+                    HAL_DBG_TRACE_PRINTF( ",0,%d,%d\r\n", radio_ms, computation_ms );
 
                     if( PAYLOAD_DISPLAY_LOG_ACTIVATED )
                     {
@@ -734,9 +825,9 @@ void tracker_restore_internal_log( void )
                         HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900,
                                               epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
                                               epoch_time.tm_min, epoch_time.tm_sec );
-                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, TAG_NAV_PCB );
+                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter++, TLV_NAV_PCB_TAG );
 
-                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TAG_NAV_PCB, len );
+                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TLV_NAV_PCB_TAG, len );
                         scan_buf_index -= len;
                         for( uint8_t i = 0; i < len; i++ )
                         {
@@ -753,7 +844,20 @@ void tracker_restore_internal_log( void )
             case TAG_WIFI:
                 if( WIFI_DISPLAY_LOG_ACTIVATED )
                 {
-                    for( uint8_t i = 0; i < len / WIFI_SINGLE_BEACON_LEN; i++ )
+                    int8_t                                 wifi_rssi;
+                    uint8_t                                wifi_data;
+                    lr1110_modem_wifi_channel_t            wifi_channel;
+                    lr1110_modem_wifi_signal_type_result_t wifi_type;
+                    char                                   wifi_type_char = 'B';
+                    lr1110_modem_wifi_cumulative_timings_t timings;
+
+                    /* Get Timings */
+                    timings.demodulation_us   = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                    timings.rx_capture_us     = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                    timings.rx_correlation_us = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                    timings.rx_detection_us   = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
+                    for( uint8_t i = 0; i < ( ( len - WIFI_TIMING_LEN ) / WIFI_SINGLE_BEACON_LEN ); i++ )
                     {
                         HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900,
                                               epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
@@ -761,6 +865,26 @@ void tracker_restore_internal_log( void )
                         HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter, tag_element );
 
                         wifi_rssi = scan_buf[scan_buf_index++];
+
+                        wifi_data    = scan_buf[scan_buf_index++];
+                        wifi_channel = ( lr1110_modem_wifi_channel_t )( wifi_data & 0x0F );
+                        wifi_type    = ( lr1110_modem_wifi_signal_type_result_t )( ( wifi_data & 0x30 ) >> 4 );
+
+                        switch( wifi_type )
+                        {
+                        case LR1110_MODEM_WIFI_TYPE_RESULT_B:
+                            wifi_type_char = 'B';
+                            break;
+                        case LR1110_MODEM_WIFI_TYPE_RESULT_G:
+                            wifi_type_char = 'G';
+                            break;
+                        case LR1110_MODEM_WIFI_TYPE_RESULT_N:
+                            wifi_type_char = 'N';
+                            break;
+                        default:
+                            break;
+                        }
+
                         /* Display MAC address */
                         for( uint8_t i = 0; i < 5; i++ )
                         {
@@ -769,9 +893,9 @@ void tracker_restore_internal_log( void )
                         HAL_DBG_TRACE_PRINTF( "%02X,", scan_buf[scan_buf_index++] );
 
                         /* Display RSSI */
-                        HAL_DBG_TRACE_PRINTF(
-                            "CHANNEL_1,TYPE_B,%d,0,0,0,0\r\n",
-                            wifi_rssi );  // add CHANNEL_1,TYPE_B just to be compliant with the python software
+                        HAL_DBG_TRACE_PRINTF( "CHANNEL_%d,TYPE_%c,%d,%d,%d,%d,%d\r\n", wifi_channel, wifi_type_char,
+                                              wifi_rssi, timings.demodulation_us, timings.rx_capture_us,
+                                              timings.rx_correlation_us, timings.rx_detection_us );
                     }
                     if( PAYLOAD_DISPLAY_LOG_ACTIVATED )
                     {
@@ -781,8 +905,8 @@ void tracker_restore_internal_log( void )
                         HAL_DBG_TRACE_PRINTF( "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900,
                                               epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
                                               epoch_time.tm_min, epoch_time.tm_sec );
-                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter, TAG_WIFI_SCAN );
-                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TAG_WIFI_SCAN, len );
+                        HAL_DBG_TRACE_PRINTF( "[%d - %d] ", job_counter, TLV_WIFI_SCAN_TAG );
+                        HAL_DBG_TRACE_PRINTF( "%02X%02X", TLV_WIFI_SCAN_TAG, len );
                         for( uint8_t i = 0; i < len / WIFI_SINGLE_BEACON_LEN; i++ )
                         {
                             HAL_DBG_TRACE_PRINTF( "%02X", scan_buf[scan_buf_index++] );
@@ -823,6 +947,236 @@ void tracker_restore_internal_log( void )
     }
 }
 
+void tracker_get_device_settings( uint8_t* buffer, uint16_t* buffer_len )
+{
+    struct tm epoch_time;
+    char      output_buffer_tmp[255];
+    uint8_t   output_buffer_len_tmp = 0;
+    uint8_t   nb_trans;
+
+    /* LoRaWAN settings */
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#LoRaWAN Settings :\r\n" );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf(
+        output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+        "#\tLR1110 MODEM-E VERSION : LORAWAN : %#04X | FIRMWARE : %#02X | BOOTLOADER : %#02X\r\n",
+        tracker_ctx.modem_version.lorawan, tracker_ctx.modem_version.firmware, tracker_ctx.modem_version.bootloader );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    /* Device EUI */
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tDevEui : %02X",
+                                      tracker_ctx.dev_eui[0] );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    for( int i = 1; i < 8; i++ )
+    {
+        output_buffer_len_tmp =
+            snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "-%02X", tracker_ctx.dev_eui[i] );
+        memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+        *buffer_len += output_buffer_len_tmp;
+    }
+
+    /* Join EUI */
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "\r\n#\tAppEui : %02X",
+                                      tracker_ctx.join_eui[0] );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    for( int i = 1; i < 8; i++ )
+    {
+        output_buffer_len_tmp =
+            snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "-%02X", tracker_ctx.join_eui[i] );
+        memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+        *buffer_len += output_buffer_len_tmp;
+    }
+
+    /* AppKey / Semtech JS */
+    if( tracker_ctx.use_semtech_join_server )
+    {
+        output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                          "\r\n#\tAppKey : Semtech join server used" );
+        memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+        *buffer_len += output_buffer_len_tmp;
+    }
+    else
+    {
+        output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                          "\r\n#\tAppKey : %02X", tracker_ctx.app_key[0] );
+        memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+        *buffer_len += output_buffer_len_tmp;
+
+        for( int i = 1; i < 16; i++ )
+        {
+            output_buffer_len_tmp =
+                snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "-%02X", tracker_ctx.app_key[i] );
+            memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+            *buffer_len += output_buffer_len_tmp;
+        }
+        HAL_DBG_TRACE_PRINTF( "\r\n" );
+    }
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "\r\n#\tADR profile : %d\r\n", tracker_ctx.lorawan_adr_profile );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    lr1110_modem_get_nb_trans( &lr1110, &nb_trans );
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tlorawan nb trans : %d\r\n", nb_trans );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tlorawan_region : %d\r\n", tracker_ctx.lorawan_region );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    /* GNSS settings */
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#GNSS Settings:\r\n" );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tenabled : %d\r\n",
+                                      tracker_ctx.gnss_settings.enabled );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tAntenna sel : %d\r\n", tracker_ctx.gnss_antenna_sel );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tassistance position latitude : %f\r\n",
+                  tracker_ctx.gnss_settings.assistance_position.latitude );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tassistance position longitude : %f\r\n",
+                  tracker_ctx.gnss_settings.assistance_position.longitude );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tconstellation_to_use : %d\r\n",
+                  tracker_ctx.gnss_settings.constellation_to_use );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tsearch_mode : %d\r\n", tracker_ctx.gnss_settings.search_mode );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tnb_sat : %d\r\n",
+                                      tracker_ctx.gnss_settings.nb_sat );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+    memcpy( &epoch_time, localtime( &tracker_ctx.last_almanac_update ), sizeof( struct tm ) );
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                  "#\tlast_almanac_update : [%d-%d-%d %d:%d:%d.000]\r\n", epoch_time.tm_year + 1900,
+                  epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    /* Wi-Fi settings */
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#Wi-Fi Settings:\r\n" );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tenabled : %d\r\n",
+                                      tracker_ctx.wifi_settings.enabled );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tchannels : %02X\r\n", tracker_ctx.wifi_settings.channels );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tmax_results : %d\r\n", tracker_ctx.wifi_settings.max_results );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\tscan_mode : %d\r\n",
+                                      tracker_ctx.wifi_settings.scan_mode );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\ttimeout : %d ms\r\n", tracker_ctx.wifi_settings.timeout );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\ttypes : %d\r\n",
+                                      tracker_ctx.wifi_settings.types );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tnbr_retrials : %d\r\n", tracker_ctx.wifi_settings.nbr_retrials );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    /* Application settings */
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#Application settings:\r\n" );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\taccelerometer_used : %d\r\n", tracker_ctx.accelerometer_used );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tapp_scan_interval : %d s\r\n", tracker_ctx.app_scan_interval / 1000 );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                  "#\tapp_keep_alive_frame_interval : %d min\r\n", tracker_ctx.app_keep_alive_frame_interval / 60000 );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tairplane_mode : %d\r\n", tracker_ctx.airplane_mode );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tscan_priority : %d\r\n", tracker_ctx.scan_priority );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "#\ttracker_fw_version : %d.%d.%d\r\n",
+                  TRACKER_MAJOR_APP_VERSION, TRACKER_MINOR_APP_VERSION, TRACKER_SUB_MINOR_APP_VERSION );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\thost_reset_cnt : %d\r\n", tracker_ctx.host_reset_cnt );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "#\tmodem_reset_by_itself_cnt : %d\r\n", tracker_ctx.modem_reset_by_itself_cnt );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
+    *buffer_len += output_buffer_len_tmp;
+}
+
 void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buffer, uint16_t* buffer_len )
 {
     uint8_t   scan_buf[512];
@@ -838,11 +1192,11 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
     time_t    scan_timestamp = 0;
     struct tm epoch_time;
     uint32_t  job_counter = 0;
-    char  output_buffer_tmp[255]; 
-    uint8_t output_buffer_len_tmp=0;
-    
+    char      output_buffer_tmp[255];
+    uint8_t   output_buffer_len_tmp = 0;
+
     *buffer_len = 0;
-    
+
     /* Retrieve the scan_number flash address */
     while( nb_scan_index <= scan_number )
     {
@@ -850,26 +1204,26 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
         flash_read_buffer( next_scan_addr, scan_buf, 2 );
         scan_len = scan_buf[0];
         scan_len += ( uint32_t ) scan_buf[1] << 8;
-        
+
         flash_read_buffer( next_scan_addr + 2, scan_buf, scan_len - 2 );
-        
+
         nb_elements = scan_buf[scan_buf_index++];
-        
-        scan_buf_index += 14; // Jump the accelerometer and temperature element which are always stored
-        job_counter += 2; // increase the job counter according to the accelerometer and temperature data
-        
+
+        scan_buf_index += 14;  // Jump the accelerometer and temperature element which are always stored
+        job_counter += 2;      // increase the job counter according to the accelerometer and temperature data
+
         while( nb_elements_index < nb_elements )
         {
-            uint8_t len       = 0;
-            tag_element       = scan_buf[scan_buf_index++];  // get the element
-            len               = scan_buf[scan_buf_index++];  // get the size element
+            uint8_t len = 0;
+            tag_element = scan_buf[scan_buf_index++];  // get the element
+            len         = scan_buf[scan_buf_index++];  // get the size element
 
             switch( tag_element )
             {
             case TAG_GNSS_PATCH_ANTENNA:
             case TAG_GNSS_PCB_ANTENNA:
             case TAG_WIFI:
-                job_counter++; 
+                job_counter++;
                 scan_buf_index += len;
                 break;
             case TAG_NEXT_SCAN:
@@ -880,7 +1234,7 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
                 break;
             default:
                 scan_buf_index += len;
-            break;
+                break;
             }
             nb_elements_index++;
         }
@@ -899,10 +1253,7 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
     scan_number += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
 
     /* Scan Timestamp */
-    scan_timestamp = scan_buf[scan_buf_index++];
-    scan_timestamp += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
-    scan_timestamp += ( uint32_t ) scan_buf[scan_buf_index++] << 16;
-    scan_timestamp += ( uint32_t ) scan_buf[scan_buf_index++] << 24;
+    scan_timestamp = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
     memcpy( &epoch_time, localtime( &scan_timestamp ), sizeof( struct tm ) );
 
     /* Acceleromter data */
@@ -913,80 +1264,86 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
     acc_z = scan_buf[scan_buf_index++];
     acc_z += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
-                          epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
+                                      epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len = output_buffer_len_tmp;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"[%d - %d] ", job_counter++, 4 );
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d - %d] ", job_counter++, 4 );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len += output_buffer_len_tmp;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"%d,%d,%d\r\n", acc_x, acc_y, acc_z);
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%d,%d,%d\r\n", acc_x, acc_y, acc_z );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len += output_buffer_len_tmp;
 
     /* copy into the */
     temperature = scan_buf[scan_buf_index++];
     temperature += ( uint16_t ) scan_buf[scan_buf_index++] << 8;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
-                          epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                      "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
+                                      epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len += output_buffer_len_tmp;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"[%d - %d] ", job_counter++, 5);
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp =
+        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d - %d] ", job_counter++, 5 );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len += output_buffer_len_tmp;
 
-    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"%2.2f\r\n", ( ( float ) temperature ) / 100);
-    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%2.2f\r\n",
+                                      ( ( float ) temperature ) / 100 );
+    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
     *buffer_len += output_buffer_len_tmp;
 
     while( nb_elements_index < nb_elements )
     {
-        uint8_t len       = 0;
-        int8_t  wifi_rssi = 0;
-        tag_element       = scan_buf[scan_buf_index++];  // get the element
-        len               = scan_buf[scan_buf_index++];  // get the size element
+        uint8_t len = 0;
+        tag_element = scan_buf[scan_buf_index++];  // get the element
+        len         = scan_buf[scan_buf_index++];  // get the size element
 
         switch( tag_element )
         {
         case TAG_GNSS_PATCH_ANTENNA:
             if( GNSS_DISPLAY_PATCH_ANTENNA_LOG_ACTIVATED )
             {
-                /* Display Raw NAV Message*/               
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
-                          epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                uint32_t radio_ms;
+                uint32_t computation_ms;
+                uint16_t nav_len = len - GNSS_TIMING_LEN;
+
+                /* Get Timings */
+                radio_ms       = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                computation_ms = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
+                /* Display Raw NAV Message*/
+                output_buffer_len_tmp =
+                    snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ",
+                              epoch_time.tm_year + 1900, epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
+                              epoch_time.tm_min, epoch_time.tm_sec );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"[%d - %d] ", job_counter++, tag_element);
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                  "[%d - %d] ", job_counter++, tag_element );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
 
-                if( len > 1)
+                for( uint16_t i = 0; i < nav_len; i++ )
                 {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"01");
-                }
-                else
-                {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"00");
-                }
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
-                *buffer_len += output_buffer_len_tmp;
-                
-                for( uint8_t i = 0; i < len; i++ )
-                {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"%02X", scan_buf[scan_buf_index++]);
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X",
+                                                      scan_buf[scan_buf_index++] );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
                 }
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,",0,0,0\r\n");
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                  ",0,%d,%d\r\n", radio_ms, computation_ms );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
-
             }
             else
             {
@@ -996,40 +1353,39 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
         case TAG_GNSS_PCB_ANTENNA:
             if( GNSS_DISPLAY_PCB_ANTENNA_LOG_ACTIVATED )
             {
+                uint32_t radio_ms;
+                uint32_t computation_ms;
+                uint16_t nav_len = len - GNSS_TIMING_LEN;
+
+                /* Get Timings */
+                radio_ms       = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                computation_ms = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
                 /* Display Raw NAV Message*/
-
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
-                          epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                output_buffer_len_tmp =
+                    snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ",
+                              epoch_time.tm_year + 1900, epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour,
+                              epoch_time.tm_min, epoch_time.tm_sec );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d - %d] ", job_counter++, tag_element );
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                  "[%d - %d] ", job_counter++, tag_element );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
 
-                if( len > 1)
+                for( uint16_t i = 0; i < nav_len; i++ )
                 {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"01");
-                }
-                else
-                {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,"00");
-                }
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
-                *buffer_len += output_buffer_len_tmp;
-                
-                for( uint8_t i = 0; i < len; i++ )
-                {
-
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X", scan_buf[scan_buf_index++] );
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X",
+                                                      scan_buf[scan_buf_index++] );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
                 }
 
-                output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, ",0,0,0\r\n" );
-                memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                  ",0,%d,%d\r\n", radio_ms, computation_ms );
+                memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                 *buffer_len += output_buffer_len_tmp;
-
             }
             else
             {
@@ -1039,34 +1395,75 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
         case TAG_WIFI:
             if( WIFI_DISPLAY_LOG_ACTIVATED )
             {
-                //job_counter++;
-                for( uint8_t i = 0; i < len / WIFI_SINGLE_BEACON_LEN; i++ )
+                int8_t                                 wifi_rssi;
+                uint8_t                                wifi_data;
+                lr1110_modem_wifi_channel_t            wifi_channel;
+                lr1110_modem_wifi_signal_type_result_t wifi_type;
+                char                                   wifi_type_char = 'B';
+                lr1110_modem_wifi_cumulative_timings_t timings;
+
+                /* Get Timings */
+                timings.demodulation_us   = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                timings.rx_capture_us     = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                timings.rx_correlation_us = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+                timings.rx_detection_us   = get_uint32_from_array_at_index_and_inc( scan_buf, &scan_buf_index );
+
+                for( uint8_t i = 0; i < ( ( len - WIFI_TIMING_LEN ) / WIFI_SINGLE_BEACON_LEN ); i++ )
                 {
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ", epoch_time.tm_year + 1900, epoch_time.tm_mon + 1,
-                          epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    output_buffer_len_tmp =
+                        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d-%d-%d %d:%d:%d.000] ",
+                                  epoch_time.tm_year + 1900, epoch_time.tm_mon + 1, epoch_time.tm_mday,
+                                  epoch_time.tm_hour, epoch_time.tm_min, epoch_time.tm_sec );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
 
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "[%d - %d] ", job_counter, tag_element );
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                      "[%d - %d] ", job_counter, tag_element );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
 
                     wifi_rssi = scan_buf[scan_buf_index++];
+
+                    wifi_data    = scan_buf[scan_buf_index++];
+                    wifi_channel = ( lr1110_modem_wifi_channel_t )( wifi_data & 0x0F );
+                    wifi_type    = ( lr1110_modem_wifi_signal_type_result_t )( ( wifi_data & 0x30 ) >> 4 );
+
+                    switch( wifi_type )
+                    {
+                    case LR1110_MODEM_WIFI_TYPE_RESULT_B:
+                        wifi_type_char = 'B';
+                        break;
+                    case LR1110_MODEM_WIFI_TYPE_RESULT_G:
+                        wifi_type_char = 'G';
+                        break;
+                    case LR1110_MODEM_WIFI_TYPE_RESULT_N:
+                        wifi_type_char = 'N';
+                        break;
+                    default:
+                        break;
+                    }
+
                     /* Display MAC address */
                     for( uint8_t i = 0; i < 5; i++ )
                     {
-                        output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X:", scan_buf[scan_buf_index++] );
-                        memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                        output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                                          "%02X:", scan_buf[scan_buf_index++] );
+                        memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                         *buffer_len += output_buffer_len_tmp;
                     }
 
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X,", scan_buf[scan_buf_index++] );
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    output_buffer_len_tmp = snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "%02X,",
+                                                      scan_buf[scan_buf_index++] );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
 
-                    /* Display RSSI */
-                    output_buffer_len_tmp = snprintf(output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len, "CHANNEL_1,TYPE_B,%d,0,0,0,0\r\n", wifi_rssi );
-                    memcpy(buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp);
+                    /* Display Scan Information */
+                    output_buffer_len_tmp =
+                        snprintf( output_buffer_tmp, INTERNAL_LOG_BUFFER_LEN - *buffer_len,
+                                  "CHANNEL_%d,TYPE_%c,%d,%d,%d,%d,%d\r\n", wifi_channel, wifi_type_char, wifi_rssi,
+                                  timings.demodulation_us, timings.rx_capture_us, timings.rx_correlation_us,
+                                  timings.rx_detection_us );
+                    memcpy( buffer + *buffer_len, output_buffer_tmp, output_buffer_len_tmp );
                     *buffer_len += output_buffer_len_tmp;
                 }
                 job_counter++;  // incremente for next job
@@ -1095,7 +1492,7 @@ void tracker_get_one_scan_from_internal_log( uint16_t scan_number, uint8_t* buff
     }
 }
 
-uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
+uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_commands_enable )
 {
     uint8_t nb_elements         = 0;
     uint8_t nb_elements_index   = 0;
@@ -1109,8 +1506,9 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
     nb_elements = payload[payload_index++];
 
     buffer_out[0] = 0;  // ensure that byte 0 is set to 0 at the beggining.
-    
-    tracker_ctx.ble_cmd_received = true; // Notify the application that ble cmd has been received to reset the connection timeout 
+
+    tracker_ctx.ble_cmd_received =
+        true;  // Notify the application that ble cmd has been received to reset the connection timeout
 
     if( nb_elements > 0 )
     {
@@ -1172,7 +1570,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_MODEM_VERSION_LEN;
                 break;
             }
-            
+
             case GET_MODEM_STATUS_CMD:
             {
                 lr1110_modem_status_t modem_status;
@@ -1187,10 +1585,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_MODEM_STATUS_LEN;
                 break;
             }
-            
+
             case GET_MODEM_DATE_CMD:
             {
-                uint32_t date = lr1110_modem_board_get_systime_from_gps( &lr1110 );
+                uint32_t date = lr1110_tracker_board_get_systime_from_gps( &lr1110 );
 
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_MODEM_DATE_CMD;
@@ -1206,76 +1604,82 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
             case SET_MODEM_UPDATE_CMD:
             {
-                uint16_t modem_fragment_id;
-                uint8_t i = 0;
-                modem_fragment_id = ( uint16_t ) payload[payload_index++] << 8;
-                modem_fragment_id += payload[payload_index++];
+                if( all_commands_enable )
+                {
+                    uint16_t modem_fragment_id;
+                    uint8_t  i        = 0;
+                    modem_fragment_id = ( uint16_t ) payload[payload_index] << 8;
+                    modem_fragment_id += payload[payload_index + 1];
 
-                /* set the date */
-                if( modem_fragment_id == 0 )
-                {
-                    tracker_ctx.lorawan_parameters_have_changed = true;
-                    chunk_buffer_index = 0;
-                    lr1110_modem_flash_offset = 0;
-                    memset(chunk_buffer,0,128);
-
-                    /* Switch in bootloader */
-                    lr1110_modem_hal_enter_dfu( &lr1110 );
-                    
-                    /* Erase Flash */
-                    lr1110_bootloader_erase_flash( &lr1110 );
-                }
-                
-                for(i = 0; i < len - 2; i += 4)
-                {
-                    /* fill the chunk buffer */
-                    chunk_buffer[chunk_buffer_index] = (uint32_t) payload[payload_index + i] << 24;
-                    chunk_buffer[chunk_buffer_index] += (uint32_t) payload[payload_index + i + 1] << 16;
-                    chunk_buffer[chunk_buffer_index] += (uint32_t) payload[payload_index + i + 2] << 8;
-                    chunk_buffer[chunk_buffer_index] += (uint32_t) payload[payload_index + i + 3];
-                    chunk_buffer_index++;
-                }
-                
-                if(chunk_buffer_index >= 64)
-                {
-                    uint8_t nb_elem_to_shift = chunk_buffer_index - 64;
-                    
-                    lr1110_bootloader_write_flash_encrypted( &lr1110, lr1110_modem_flash_offset, chunk_buffer, 64 );
-                    lr1110_modem_flash_offset += 0x100;
-                    
-                    /* shift the buffer from 64 */
-                    for(i = 0; i < nb_elem_to_shift; i++)
+                    /* set the date */
+                    if( modem_fragment_id == 0 )
                     {
-                        chunk_buffer[i] = chunk_buffer[i + 64];
+                        tracker_ctx.lorawan_parameters_have_changed = true;
+                        chunk_buffer_index                          = 0;
+                        lr1110_modem_flash_offset                   = 0;
+                        memset( chunk_buffer, 0, 128 );
+
+                        /* Switch in bootloader */
+                        lr1110_modem_hal_enter_dfu( &lr1110 );
+
+                        /* Erase Flash */
+                        lr1110_bootloader_erase_flash( &lr1110 );
                     }
-                    
-                    chunk_buffer_index -= 64;
+
+                    for( i = 0; i < len - 2; i += 4 )
+                    {
+                        /* fill the chunk buffer, note : the + 2 represents the modem_fragment_id len in bytes */
+                        chunk_buffer[chunk_buffer_index] = ( uint32_t ) payload[payload_index + 2 + i] << 24;
+                        chunk_buffer[chunk_buffer_index] += ( uint32_t ) payload[payload_index + 2 + i + 1] << 16;
+                        chunk_buffer[chunk_buffer_index] += ( uint32_t ) payload[payload_index + 2 + i + 2] << 8;
+                        chunk_buffer[chunk_buffer_index] += ( uint32_t ) payload[payload_index + 2 + i + 3];
+                        chunk_buffer_index++;
+                    }
+
+                    if( chunk_buffer_index >= 64 )
+                    {
+                        uint8_t nb_elem_to_shift = chunk_buffer_index - 64;
+
+                        lr1110_bootloader_write_flash_encrypted( &lr1110, lr1110_modem_flash_offset, chunk_buffer, 64 );
+                        lr1110_modem_flash_offset += 0x100;
+
+                        /* shift the buffer from 64 */
+                        for( i = 0; i < nb_elem_to_shift; i++ )
+                        {
+                            chunk_buffer[i] = chunk_buffer[i + 64];
+                        }
+
+                        chunk_buffer_index -= 64;
+                    }
+
+                    if( modem_fragment_id == NB_CHUNK_MODEM )
+                    {
+                        /* Push the rest */
+                        lr1110_bootloader_write_flash_encrypted( &lr1110, lr1110_modem_flash_offset, chunk_buffer,
+                                                                 chunk_buffer_index - 1 );
+
+                        lr1110_hal_reset( &lr1110 );
+                        HAL_Delay( 1500 );
+
+                        lr1110_modem_get_version( &lr1110, &tracker_ctx.modem_version );
+                        HAL_DBG_TRACE_PRINTF(
+                            "LR1110 : lorawan:%#02X / firmware:%#04X / bootloader:%#03X / functionality:%#03X\n\r",
+                            tracker_ctx.modem_version.lorawan, tracker_ctx.modem_version.firmware,
+                            tracker_ctx.modem_version.bootloader, tracker_ctx.modem_version.functionality );
+
+                        /* new modem version, reset the board */
+                        tracker_ctx.lorawan_parameters_have_changed = true;
+                    }
+
+                    HAL_DBG_TRACE_PRINTF( "modem_fragment_id %d\n\r", modem_fragment_id );
+
+                    /* Ack the CMD */
+                    buffer_out[0] += 1;  // Add the element in the output buffer
+                    buffer_out[output_buffer_index++] = SET_MODEM_UPDATE_CMD;
+                    buffer_out[output_buffer_index++] = SET_MODEM_UPDATE_ANSWER_LEN;
+                    buffer_out[output_buffer_index++] = modem_fragment_id >> 8;
+                    buffer_out[output_buffer_index++] = modem_fragment_id;
                 }
-               
-                if( modem_fragment_id == NB_CHUNK_MODEM )
-                {
-                    /* Push the rest */
-                    lr1110_bootloader_write_flash_encrypted( &lr1110, lr1110_modem_flash_offset, chunk_buffer, chunk_buffer_index - 1 );
-                    
-                    lr1110_hal_reset( &lr1110 );
-                    HAL_Delay( 1500 );
-
-                    lr1110_modem_get_version( &lr1110, &tracker_ctx.modem_version );
-                    HAL_DBG_TRACE_PRINTF( "LR1110 : lorawan:%#02X / firmware:%#04X / bootloader:%#03X / functionality:%#03X\n\r",
-                              tracker_ctx.modem_version.lorawan, tracker_ctx.modem_version.firmware, tracker_ctx.modem_version.bootloader, tracker_ctx.modem_version.functionality );
-
-                    /* new modem version, reset the board */
-                    tracker_ctx.lorawan_parameters_have_changed = true;
-                }
-
-                HAL_DBG_TRACE_PRINTF( "modem_fragment_id %d\n\r", modem_fragment_id );
-
-                /* Ack the CMD */
-                buffer_out[0] += 1;  // Add the element in the output buffer
-                buffer_out[output_buffer_index++] = SET_MODEM_UPDATE_CMD;
-                buffer_out[output_buffer_index++] = SET_MODEM_UPDATE_ANSWER_LEN;
-                buffer_out[output_buffer_index++] = modem_fragment_id >> 8;
-                buffer_out[output_buffer_index++] = modem_fragment_id;
 
                 payload_index += SET_MODEM_UPDATE_LEN;
                 break;
@@ -1307,10 +1711,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = SET_LORAWAN_DEVEUI_LEN;
                 memcpy( buffer_out + output_buffer_index, tracker_ctx.dev_eui, SET_LORAWAN_DEVEUI_LEN );
                 output_buffer_index += SET_LORAWAN_DEVEUI_LEN;
-                
+
                 lr1110_modem_set_dev_eui( &lr1110, tracker_ctx.dev_eui );
                 /* do a derive key to have the new pin code */
-                lr1110_modem_derive_keys( &lr1110 ); 
+                lr1110_modem_derive_keys( &lr1110 );
                 lr1110_modem_get_pin( &lr1110, &tracker_ctx.lorawan_pin );
 
                 payload_index += SET_LORAWAN_DEVEUI_LEN;
@@ -1328,7 +1732,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_LORAWAN_DEVEUI_LEN;
                 break;
             }
-            
+
             case GET_LORAWAN_CHIP_EUI_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
@@ -1353,10 +1757,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = SET_LORAWAN_JOINEUI_LEN;
                 memcpy( buffer_out + output_buffer_index, tracker_ctx.join_eui, SET_LORAWAN_JOINEUI_LEN );
                 output_buffer_index += SET_LORAWAN_JOINEUI_LEN;
-                
+
                 /* do a derive key to have the new pin code */
                 lr1110_modem_set_join_eui( &lr1110, tracker_ctx.join_eui );
-                lr1110_modem_derive_keys( &lr1110 ); 
+                lr1110_modem_derive_keys( &lr1110 );
                 lr1110_modem_get_pin( &lr1110, &tracker_ctx.lorawan_pin );
 
                 payload_index += SET_LORAWAN_JOINEUI_LEN;
@@ -1401,6 +1805,22 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 output_buffer_index += GET_LORAWAN_APPKEY_ANSWER_LEN;
 
                 payload_index += GET_LORAWAN_APPKEY_LEN;
+                break;
+            }
+
+            case GET_LORAWAN_NB_UPLINK_SINCE_LAST_DOWNLINK_CMD:
+            {
+                uint16_t nb_uplink_mobile_static;
+                uint16_t nb_uplink_reset;
+                lr1110_modem_get_connection_timeout_status( &lr1110, &nb_uplink_mobile_static, &nb_uplink_reset );
+
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_LORAWAN_NB_UPLINK_SINCE_LAST_DOWNLINK_CMD;
+                buffer_out[output_buffer_index++] = GET_LORAWAN_NB_UPLINK_SINCE_LAST_DOWNLINK_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = nb_uplink_reset >> 8;
+                buffer_out[output_buffer_index++] = nb_uplink_reset;
+
+                payload_index += GET_LORAWAN_NB_UPLINK_SINCE_LAST_DOWNLINK_LEN;
                 break;
             }
 
@@ -1483,26 +1903,26 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
             case SET_GNSS_ASSISTANCE_POSITION_CMD:
             {
                 tracker_ctx.new_value_to_set = true;
-                int32_t  latitude            = 0;
-                int32_t  longitude           = 0;
-                int32_t latitude_ack        = 0;
-                int32_t longitude_ack       = 0;
+                int32_t latitude             = 0;
+                int32_t longitude            = 0;
+                int32_t latitude_ack         = 0;
+                int32_t longitude_ack        = 0;
 
                 /* calcul latitude */
-                latitude = ( uint32_t ) payload[payload_index++] << 24;
-                latitude += ( uint32_t ) payload[payload_index++] << 16;
-                latitude += ( uint16_t ) payload[payload_index++] << 8;
-                latitude += payload[payload_index++];
+                latitude = ( uint32_t ) payload[payload_index] << 24;
+                latitude += ( uint32_t ) payload[payload_index + 1] << 16;
+                latitude += ( uint16_t ) payload[payload_index + 2] << 8;
+                latitude += payload[payload_index + 3];
 
                 /* calcul longitude */
-                longitude = ( uint32_t ) payload[payload_index++] << 24;
-                longitude += ( uint32_t ) payload[payload_index++] << 16;
-                longitude += ( uint16_t ) payload[payload_index++] << 8;
-                longitude += payload[payload_index++];
+                longitude = ( uint32_t ) payload[payload_index + 4] << 24;
+                longitude += ( uint32_t ) payload[payload_index + 5] << 16;
+                longitude += ( uint16_t ) payload[payload_index + 6] << 8;
+                longitude += payload[payload_index + 7];
 
                 tracker_ctx.gnss_settings.assistance_position.latitude  = ( float ) latitude / 10000000;
                 tracker_ctx.gnss_settings.assistance_position.longitude = ( float ) longitude / 10000000;
-                
+
                 /* Set the new assistance position*/
                 lr1110_modem_gnss_set_assistance_position( &lr1110, &tracker_ctx.gnss_settings.assistance_position );
 
@@ -1686,6 +2106,17 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
             case GET_GNSS_LAST_ALMANAC_UPDATE_CMD:
             {
+                uint32_t oldest_almanac_date = 0;
+                uint32_t newest_almanac_date = 0;
+
+                /* get the dates form the Modem-E */
+                lr1110_tracker_board_get_almanac_dates( &lr1110, &oldest_almanac_date, &newest_almanac_date );
+
+                if( oldest_almanac_date > tracker_ctx.last_almanac_update )
+                {
+                    tracker_ctx.last_almanac_update = oldest_almanac_date;
+                }
+
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_GNSS_LAST_ALMANAC_UPDATE_CMD;
                 buffer_out[output_buffer_index++] = GET_GNSS_LAST_ALMANAC_UPDATE_ANSWER_LEN;
@@ -1700,58 +2131,78 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
             case GNSS_ALMANAC_UPDATE_CMD:
             {
-                uint16_t                     alamac_fragment_id;
-                alamac_fragment_id = ( uint16_t ) payload[payload_index++] << 8;
-                alamac_fragment_id += payload[payload_index++];
-                uint8_t           almanac_one_sv_buffer[20];
-                volatile uint32_t almanac_date;
-
-                for( uint8_t i = 0; i < 3; i++ )
+                if( all_commands_enable )
                 {
-                    memcpy( almanac_one_sv_buffer,
-                             payload + payload_index + ( LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE * i ), 20 );
-                    lr1110_modem_gnss_one_chunk_almanac_update( &lr1110, almanac_one_sv_buffer );
-                }
+                    uint16_t alamac_fragment_id;
+                    alamac_fragment_id = ( uint16_t ) payload[payload_index] << 8;
+                    alamac_fragment_id += payload[payload_index + 1];
+                    uint8_t           almanac_one_sv_buffer[20];
+                    volatile uint32_t almanac_date;
 
-                /* set the date */
-                if( alamac_fragment_id == 0 )
-                {
-                    almanac_date = ( ( payload[payload_index + 2] << 8 ) + payload[payload_index + 1] );
-                    almanac_date = ( GNSS_EPOCH_SECONDS + 24 * 3600 * ( 2048 * 7 + almanac_date ) );
-                    tracker_ctx.last_almanac_update = almanac_date;
-                }
-
-                if( alamac_fragment_id == NB_CHUNK_ALMANAC )
-                {
-                    lr1110_modem_event_fields_t event_fields;
-
-                    HAL_Delay( 100 );
-
-                    lr1110_modem_get_event( &lr1110, &event_fields );
-
-                    if( ( event_fields.buffer[0] == 0x00 ) && ( event_fields.buffer[1] == 0x00 ) )
+                    for( uint8_t i = 0; i < 3; i++ )
                     {
-                        /* store the new almanac update date just once */
-                        tracker_ctx.new_value_to_set = true;
+                        /* note : the + 2 represents the alamac_fragment_id len in bytes */
+                        memcpy( almanac_one_sv_buffer,
+                                payload + payload_index + 2 + ( LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE * i ), 20 );
+                        lr1110_modem_gnss_one_chunk_almanac_update( &lr1110, almanac_one_sv_buffer );
                     }
-                    else
+
+                    /* set the date */
+                    if( alamac_fragment_id == 0 )
                     {
-                        /* reset the date in case of wrong almanac update */
-                        tracker_ctx.last_almanac_update = 0;
+                        /* note : the + 2 represents the alamac_fragment_id len in bytes */
+                        almanac_date = ( ( payload[payload_index + 2 + 2] << 8 ) + payload[payload_index + 2 + 1] );
+                        /* almanac_date =  Initial GPS date (6 jan 1980) + 24h * 3600s * ( 1024 weeks * 2 (there have
+                           been two wrappings) * 7 days + almanac_date ) */
+                        almanac_date = ( GNSS_EPOCH_SECONDS + 24 * 3600 * ( 2048 * 7 + almanac_date ) );
+                        tracker_ctx.last_almanac_update = almanac_date;
+
+                        gnss_set_full_almanac_udapte_flag( true );
                     }
+
+                    if( alamac_fragment_id == NB_CHUNK_ALMANAC )
+                    {
+                        while( gnss_get_full_almanac_udapte_flag( ) == true )
+                        {
+                            lr1110_modem_event_process( &lr1110 );
+                        }
+
+                        if( gnss_get_full_almanac_udapted( ) == true )
+                        {
+                            /* store the new almanac update date just once */
+                            tracker_ctx.new_value_to_set = true;
+                        }
+                        else
+                        {
+                            /* reset the date in case of wrong almanac update */
+                            tracker_ctx.last_almanac_update = 0;
+                        }
+                    }
+
+                    /* Ack the CMD */
+                    buffer_out[0] += 1;  // Add the element in the output buffer
+                    buffer_out[output_buffer_index++] = GNSS_ALMANAC_UPDATE_CMD;
+                    buffer_out[output_buffer_index++] = GNSS_ALMANAC_UPDATE_LEN;
+                    buffer_out[output_buffer_index++] = alamac_fragment_id >> 8;
+                    buffer_out[output_buffer_index++] = alamac_fragment_id;
+
+                    /* note : the + 2 represents the alamac_fragment_id len in bytes */
+                    memcpy( buffer_out + output_buffer_index, payload + payload_index + 2, 60 );
+                    output_buffer_index += 60;
                 }
-
-                /* Ack the CMD */
-                buffer_out[0] += 1;  // Add the element in the output buffer
-                buffer_out[output_buffer_index++] = GNSS_ALMANAC_UPDATE_CMD;
-                buffer_out[output_buffer_index++] = GNSS_ALMANAC_UPDATE_LEN;
-                buffer_out[output_buffer_index++] = alamac_fragment_id >> 8;
-                buffer_out[output_buffer_index++] = alamac_fragment_id;
-
-                memcpy( buffer_out + output_buffer_index, payload + payload_index, 60 );
-                output_buffer_index += 60;
 
                 payload_index += GNSS_ALMANAC_UPDATE_LEN;
+                break;
+            }
+
+            case GET_GNSS_LAST_NB_SV_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_GNSS_LAST_NB_SV_CMD;
+                buffer_out[output_buffer_index++] = GET_GNSS_LAST_NB_SV_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.last_nb_detected_satellites;
+
+                payload_index += GET_GNSS_LAST_NB_SV_LEN;
                 break;
             }
 
@@ -1797,10 +2248,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
             {
                 uint16_t wifi_channels;
                 tracker_ctx.new_value_to_set = true;
-                
-                wifi_channels   = ( uint16_t ) payload[payload_index++] << 8;
-                wifi_channels   += payload[payload_index++];
-                
+
+                wifi_channels = ( uint16_t ) payload[payload_index] << 8;
+                wifi_channels += payload[payload_index + 1];
+
                 if( wifi_channels <= 0x3FFF )
                 {
                     tracker_ctx.wifi_settings.channels = wifi_channels;
@@ -2007,8 +2458,8 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 uint16_t wifi_timeout = 0;
 
                 tracker_ctx.new_value_to_set = true;
-                wifi_timeout                 = ( uint16_t ) payload[payload_index++] << 8;
-                wifi_timeout += payload[payload_index++];
+                wifi_timeout                 = ( uint16_t ) payload[payload_index] << 8;
+                wifi_timeout += payload[payload_index + 1];
 
                 if( ( wifi_timeout >= 20 ) && ( wifi_timeout <= 5000 ) )
                 {
@@ -2052,6 +2503,17 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.timeout;
 
                 payload_index += GET_WIFI_TIMEOUT_LEN;
+                break;
+            }
+
+            case GET_WIFI_LAST_NB_MAC_ADDRESS_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_WIFI_LAST_NB_MAC_ADDRESS_CMD;
+                buffer_out[output_buffer_index++] = GET_WIFI_LAST_NB_MAC_ADDRESS_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.last_nb_detected_mac_address;
+
+                payload_index += GET_WIFI_LAST_NB_MAC_ADDRESS_LEN;
                 break;
             }
 
@@ -2101,8 +2563,8 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
                 tracker_ctx.new_value_to_set = true;
 
-                app_duty_cycle = ( uint16_t ) payload[payload_index++] << 8;
-                app_duty_cycle += payload[payload_index++];
+                app_duty_cycle = ( uint16_t ) payload[payload_index] << 8;
+                app_duty_cycle += payload[payload_index + 1];
 
                 if( ( app_duty_cycle >= 10 ) && ( app_duty_cycle <= 1800 ) )
                 {
@@ -2120,11 +2582,11 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                     /* Clip the value */
                     if( payload[payload_index] < 10 )
                     {
-                        tracker_ctx.app_scan_interval = 10;
+                        tracker_ctx.app_scan_interval = 10 * 1000;
                     }
                     else
                     {
-                        tracker_ctx.app_scan_interval = 1800;
+                        tracker_ctx.app_scan_interval = 1800 * 1000;
                     }
                     /* NAck the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
@@ -2156,8 +2618,8 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
                 tracker_ctx.new_value_to_set = true;
 
-                app_low_duty_cycle = ( uint16_t ) payload[payload_index++] << 8;
-                app_low_duty_cycle += payload[payload_index++];
+                app_low_duty_cycle = ( uint16_t ) payload[payload_index] << 8;
+                app_low_duty_cycle += payload[payload_index + 1];
 
                 if( ( app_low_duty_cycle >= 10 ) && ( app_low_duty_cycle <= 1440 ) )
                 {
@@ -2210,7 +2672,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 if( ( payload[payload_index] == 1 ) || ( payload[payload_index] == 3 ) )
                 {
                     tracker_ctx.new_value_to_set                = true;
-                    tracker_ctx.lorawan_region                  = payload[payload_index];
+                    tracker_ctx.lorawan_region                  = ( lr1110_modem_regions_t ) payload[payload_index];
                     tracker_ctx.lorawan_parameters_have_changed = true;
 
                     /* Ack the CMD */
@@ -2282,14 +2744,15 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_LORAWAN_JOIN_SERVER_LEN;
                 break;
             }
-            
+
             case SET_LORAWAN_DUTY_CYCLE_CMD:
             {
                 if( payload[payload_index] <= 1 )
                 {
                     tracker_ctx.duty_cycle_enable = payload[payload_index];
-                    lr1110_modem_activate_duty_cycle( &lr1110, ( lr1110_modem_duty_cycle_t ) tracker_ctx.duty_cycle_enable ); 
-                    
+                    lr1110_modem_activate_duty_cycle( &lr1110,
+                                                      ( lr1110_modem_duty_cycle_t ) tracker_ctx.duty_cycle_enable );
+
                     /* Ack the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
                     buffer_out[output_buffer_index++] = SET_LORAWAN_DUTY_CYCLE_CMD;
@@ -2320,37 +2783,40 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_LORAWAN_DUTY_CYCLE_LEN;
                 break;
             }
-            
+
             case SET_AIRPLANE_MODE_CMD:
             {
-                tracker_ctx.new_value_to_set = true;
-
-                if( payload[payload_index] <= 1 )
+                if( all_commands_enable )
                 {
-                    if(tracker_ctx.airplane_mode != payload[payload_index])
+                    tracker_ctx.new_value_to_set = true;
+
+                    if( payload[payload_index] <= 1 )
                     {
-                        /* If the airplane mode changes reset the tracker */
-                        tracker_ctx.lorawan_parameters_have_changed = true;
-                        
-                        tracker_ctx.airplane_mode = payload[payload_index];
+                        if( tracker_ctx.airplane_mode != payload[payload_index] )
+                        {
+                            /* If the airplane mode changes reset the tracker */
+                            tracker_ctx.lorawan_parameters_have_changed = true;
+
+                            tracker_ctx.airplane_mode = payload[payload_index];
+                        }
+
+                        /* Ack the CMD */
+                        buffer_out[0] += 1;  // Add the element in the output buffer
+                        buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_CMD;
+                        buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_LEN;
+                        buffer_out[output_buffer_index++] = tracker_ctx.airplane_mode;
                     }
+                    else
+                    {
+                        /* Clip the value */
+                        tracker_ctx.airplane_mode = 0;
 
-                    /* Ack the CMD */
-                    buffer_out[0] += 1;  // Add the element in the output buffer
-                    buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_CMD;
-                    buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_LEN;
-                    buffer_out[output_buffer_index++] = tracker_ctx.airplane_mode;
-                }
-                else
-                {
-                    /* Clip the value */
-                    tracker_ctx.airplane_mode = 0;
-
-                    /* NAck the CMD */
-                    buffer_out[0] += 1;  // Add the element in the output buffer
-                    buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_CMD;
-                    buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_LEN;
-                    buffer_out[output_buffer_index++] = tracker_ctx.airplane_mode;
+                        /* NAck the CMD */
+                        buffer_out[0] += 1;  // Add the element in the output buffer
+                        buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_CMD;
+                        buffer_out[output_buffer_index++] = SET_AIRPLANE_MODE_LEN;
+                        buffer_out[output_buffer_index++] = tracker_ctx.airplane_mode;
+                    }
                 }
 
                 payload_index += SET_AIRPLANE_MODE_LEN;
@@ -2367,53 +2833,53 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_AIRPLANE_MODE_LEN;
                 break;
             }
-            
-            case SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_CMD:
+
+            case SET_SCAN_PRIORITY_CMD:
             {
                 tracker_ctx.new_value_to_set = true;
-                if( payload[payload_index] <= 1 )
+                if( payload[payload_index] <= 2 )
                 {
-                    tracker_ctx.gnss_scan_if_wifi_not_good_enough = payload[payload_index];
+                    tracker_ctx.scan_priority = ( tracker_scan_priority_t ) payload[payload_index];
 
                     /* Ack the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
-                    buffer_out[output_buffer_index++] = SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_CMD;
-                    buffer_out[output_buffer_index++] = SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_LEN;
-                    buffer_out[output_buffer_index++] = tracker_ctx.gnss_scan_if_wifi_not_good_enough;
+                    buffer_out[output_buffer_index++] = SET_SCAN_PRIORITY_CMD;
+                    buffer_out[output_buffer_index++] = SET_SCAN_PRIORITY_LEN;
+                    buffer_out[output_buffer_index++] = tracker_ctx.scan_priority;
                 }
                 else
                 {
                     /* Clip the value */
-                    tracker_ctx.gnss_scan_if_wifi_not_good_enough = 0;
+                    tracker_ctx.scan_priority = TRACKER_GNSS_PRIORITY;
 
                     /* NAck the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
-                    buffer_out[output_buffer_index++] = SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_CMD;
-                    buffer_out[output_buffer_index++] = SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_LEN;
-                    buffer_out[output_buffer_index++] = tracker_ctx.gnss_scan_if_wifi_not_good_enough;
+                    buffer_out[output_buffer_index++] = SET_SCAN_PRIORITY_CMD;
+                    buffer_out[output_buffer_index++] = SET_SCAN_PRIORITY_LEN;
+                    buffer_out[output_buffer_index++] = tracker_ctx.scan_priority;
                 }
 
-                payload_index += SET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_LEN;
+                payload_index += SET_SCAN_PRIORITY_LEN;
                 break;
             }
 
-            case GET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_CMD:
+            case GET_SCAN_PRIORITY_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
-                buffer_out[output_buffer_index++] = GET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_CMD;
-                buffer_out[output_buffer_index++] = GET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_ANSWER_LEN;
-                buffer_out[output_buffer_index++] = tracker_ctx.gnss_scan_if_wifi_not_good_enough;
+                buffer_out[output_buffer_index++] = GET_SCAN_PRIORITY_CMD;
+                buffer_out[output_buffer_index++] = GET_SCAN_PRIORITY_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.scan_priority;
 
-                payload_index += GET_GNSS_ONLY_IF_WIFI_GOOD_ENOUGH_LEN;
+                payload_index += GET_SCAN_PRIORITY_LEN;
                 break;
             }
-            
+
             case SET_LORAWAN_ADR_PROFILE_CMD:
             {
                 tracker_ctx.new_value_to_set = true;
                 if( payload[payload_index] <= 3 )
                 {
-                    tracker_ctx.lorawan_adr_profile = payload[payload_index];
+                    tracker_ctx.lorawan_adr_profile = ( lr1110_modem_adr_profiles_t ) payload[payload_index];
 
                     /* Ack the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
@@ -2447,20 +2913,20 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_LORAWAN_ADR_PROFILE_LEN;
                 break;
             }
-            
+
             case GET_BOARD_VOLTAGE_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_BOARD_VOLTAGE_CMD;
                 buffer_out[output_buffer_index++] = GET_BOARD_VOLTAGE_ANSWER_LEN;
-                tracker_ctx.voltage = hal_mcu_get_vref_level( );
+                tracker_ctx.voltage               = hal_mcu_get_vref_level( );
                 buffer_out[output_buffer_index++] = tracker_ctx.voltage >> 8;
                 buffer_out[output_buffer_index++] = tracker_ctx.voltage;
 
                 payload_index += GET_BOARD_VOLTAGE_LEN;
                 break;
             }
-            
+
             case GET_APP_ACCUMULATED_CHARGE_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
@@ -2474,10 +2940,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_APP_ACCUMULATED_CHARGE_ANSWER_LEN;
                 break;
             }
-            
+
             case RESET_APP_ACCUMULATED_CHARGE_CMD:
             {
-                tracker_ctx.new_value_to_set = true;
+                tracker_ctx.new_value_to_set   = true;
                 tracker_ctx.accumulated_charge = 0;
 
                 buffer_out[0] += 1;  // Add the element in the output buffer
@@ -2488,21 +2954,51 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 break;
             }
 
+            case GET_APP_RESET_COUNTER_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_APP_RESET_COUNTER_CMD;
+                buffer_out[output_buffer_index++] = GET_APP_RESET_COUNTER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.host_reset_cnt >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.host_reset_cnt;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_reset_by_itself_cnt >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_reset_by_itself_cnt;
+
+                payload_index += GET_APP_RESET_COUNTER_ANSWER_LEN;
+                break;
+            }
+
+            case RESET_APP_RESET_COUNTER_CMD:
+            {
+                tracker_ctx.new_value_to_set          = true;
+                tracker_ctx.host_reset_cnt            = 0;
+                tracker_ctx.modem_reset_by_itself_cnt = 0;
+
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = RESET_APP_RESET_COUNTER_CMD;
+                buffer_out[output_buffer_index++] = RESET_APP_RESET_COUNTER_LEN;
+
+                payload_index += RESET_APP_RESET_COUNTER_LEN;
+                break;
+            }
+
+            case GET_APP_SYSTEM_SANITY_CHECK_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_APP_SYSTEM_SANITY_CHECK_CMD;
+                buffer_out[output_buffer_index++] = GET_APP_SYSTEM_SANITY_CHECK_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = tracker_ctx.system_sanity_check;
+
+                payload_index += GET_APP_SYSTEM_SANITY_CHECK_LEN;
+                break;
+            }
+
             case SET_APP_INTERNAL_LOG_CMD:
             {
                 tracker_ctx.new_value_to_set = true;
                 if( payload[payload_index] <= 1 )
                 {
                     tracker_ctx.internal_log_enable = payload[payload_index];
-
-                    if( tracker_ctx.internal_log_enable )
-                    {
-                        /* Restore the tracker internal log context */
-                        if( tracker_restore_internal_log_ctx( ) != SUCCESS )
-                        {
-                            tracker_init_internal_log_ctx( );
-                        }
-                    }
 
                     /* Ack the CMD */
                     buffer_out[0] += 1;  // Add the element in the output buffer
@@ -2536,69 +3032,110 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 payload_index += GET_APP_INTERNAL_LOG_LEN;
                 break;
             }
-            
+
             case GET_APP_INTERNAL_LOG_REMANING_SPACE_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_APP_INTERNAL_LOG_REMANING_SPACE_CMD;
-                buffer_out[output_buffer_index++] = GET_APP_INTERNAL_LOG_REMANING_SPACE_LEN;
+                buffer_out[output_buffer_index++] = GET_APP_INTERNAL_LOG_REMANING_SPACE_ANSWER_LEN;
                 buffer_out[output_buffer_index++] = tracker_get_remaining_memory_space( );
 
-                payload_index += GET_APP_INTERNAL_LOG_REMANING_SPACE_ANSWER_LEN;
+                payload_index += GET_APP_INTERNAL_LOG_REMANING_SPACE_LEN;
                 break;
             }
-            
+
             case READ_APP_INTERNAL_LOG_CMD:
             {
-                uint8_t answer_len = 0;
-                static uint8_t internal_buffer[CHUNK_INTERNAL_LOG];
-
-                if( internal_log_scan_index <= tracker_ctx.nb_scan )
+                if( all_commands_enable )
                 {
-                    if(internal_log_buffer_len == 0)
-                    {
-                        tracker_get_one_scan_from_internal_log( internal_log_scan_index, internal_log_buffer, &internal_log_buffer_len );
-                    }
+                    uint8_t        answer_len = 0;
+                    static uint8_t internal_buffer[CHUNK_INTERNAL_LOG];
 
-                    if(internal_log_buffer_len > CHUNK_INTERNAL_LOG)
+                    /* Send the device settings */
+                    if( internal_log_tracker_settings_sent == false )
                     {
-                        memcpy(internal_buffer,internal_log_buffer,CHUNK_INTERNAL_LOG);
-                        
-                        /* shift the buffer from internal_log_buffer_len */
-                        for(uint16_t i = 0; i < (internal_log_buffer_len - CHUNK_INTERNAL_LOG); i++)
+                        if( internal_log_buffer_len == 0 )
                         {
-                            internal_log_buffer[i] = internal_log_buffer[i + CHUNK_INTERNAL_LOG];
+                            tracker_get_device_settings( internal_log_buffer, &internal_log_buffer_len );
                         }
 
-                        answer_len = CHUNK_INTERNAL_LOG + 1;
+                        if( internal_log_buffer_len > CHUNK_INTERNAL_LOG )
+                        {
+                            memcpy( internal_buffer, internal_log_buffer, CHUNK_INTERNAL_LOG );
 
-                        internal_log_buffer_len -= CHUNK_INTERNAL_LOG;
+                            /* shift the buffer from internal_log_buffer_len */
+                            for( uint16_t i = 0; i < ( internal_log_buffer_len - CHUNK_INTERNAL_LOG ); i++ )
+                            {
+                                internal_log_buffer[i] = internal_log_buffer[i + CHUNK_INTERNAL_LOG];
+                            }
+
+                            answer_len = CHUNK_INTERNAL_LOG + 1;
+
+                            internal_log_buffer_len -= CHUNK_INTERNAL_LOG;
+                        }
+                        else
+                        {
+                            memcpy( internal_buffer, internal_log_buffer, internal_log_buffer_len );
+
+                            answer_len = internal_log_buffer_len + 1;
+
+                            internal_log_buffer_len            = 0;
+                            internal_log_tracker_settings_sent = true;
+                        }
                     }
                     else
                     {
-                        memcpy(internal_buffer,internal_log_buffer,internal_log_buffer_len);
-                        
-                        answer_len = internal_log_buffer_len + 1;
-                        
-                        internal_log_buffer_len = 0;
-                        internal_log_scan_index++;
+                        /* Send the internal log */
+                        if( internal_log_scan_index <= tracker_ctx.nb_scan )
+                        {
+                            if( internal_log_buffer_len == 0 )
+                            {
+                                tracker_get_one_scan_from_internal_log( internal_log_scan_index, internal_log_buffer,
+                                                                        &internal_log_buffer_len );
+                            }
+
+                            if( internal_log_buffer_len > CHUNK_INTERNAL_LOG )
+                            {
+                                memcpy( internal_buffer, internal_log_buffer, CHUNK_INTERNAL_LOG );
+
+                                /* shift the buffer from internal_log_buffer_len */
+                                for( uint16_t i = 0; i < ( internal_log_buffer_len - CHUNK_INTERNAL_LOG ); i++ )
+                                {
+                                    internal_log_buffer[i] = internal_log_buffer[i + CHUNK_INTERNAL_LOG];
+                                }
+
+                                answer_len = CHUNK_INTERNAL_LOG + 1;
+
+                                internal_log_buffer_len -= CHUNK_INTERNAL_LOG;
+                            }
+                            else
+                            {
+                                memcpy( internal_buffer, internal_log_buffer, internal_log_buffer_len );
+
+                                answer_len = internal_log_buffer_len + 1;
+
+                                internal_log_buffer_len = 0;
+                                internal_log_scan_index++;
+                            }
+                        }
+                        else
+                        {
+                            internal_log_scan_index            = 1;
+                            internal_log_tracker_settings_sent = false;
+                        }
                     }
-                }
-                else
-                {
-                    internal_log_scan_index = 1;
-                }
 
-                buffer_out[0] += 1;  // Add the element in the output buffer
-                buffer_out[output_buffer_index++] = READ_APP_INTERNAL_LOG_CMD;
-                buffer_out[output_buffer_index++] = answer_len;
-                buffer_out[output_buffer_index++] = ((internal_log_scan_index - 1) * 100) / tracker_ctx.nb_scan  ;
-                
-                if(answer_len > 0)
-                {
-                    memcpy( buffer_out + output_buffer_index,internal_buffer,answer_len - 1 );
+                    buffer_out[0] += 1;  // Add the element in the output buffer
+                    buffer_out[output_buffer_index++] = READ_APP_INTERNAL_LOG_CMD;
+                    buffer_out[output_buffer_index++] = answer_len;
+                    buffer_out[output_buffer_index++] = ( ( internal_log_scan_index - 1 ) * 100 ) / tracker_ctx.nb_scan;
 
-                    output_buffer_index += answer_len - 1;
+                    if( answer_len > 0 )
+                    {
+                        memcpy( buffer_out + output_buffer_index, internal_buffer, answer_len - 1 );
+
+                        output_buffer_index += answer_len - 1;
+                    }
                 }
 
                 payload_index += READ_APP_INTERNAL_LOG_LEN;
@@ -2618,10 +3155,121 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
                 break;
             }
 
+            case GET_APP_TRACKER_SETTINGS_CMD:
+            {
+                uint32_t oldest_almanac_date = 0;
+                uint32_t newest_almanac_date = 0;
+                uint16_t nb_uplink_mobile_static;
+                uint16_t nb_uplink_reset;
+
+                /* get the dates form the Modem-E */
+                lr1110_tracker_board_get_almanac_dates( &lr1110, &oldest_almanac_date, &newest_almanac_date );
+                lr1110_modem_get_connection_timeout_status( &lr1110, &nb_uplink_mobile_static, &nb_uplink_reset );
+
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_APP_TRACKER_SETTINGS_CMD;
+                buffer_out[output_buffer_index++] = GET_APP_TRACKER_SETTINGS_ANSWER_LEN;
+
+                /* All settings pattern version */
+                buffer_out[output_buffer_index++] = GET_APP_TRACKER_SETTINGS_VERSION;
+                /* Modem-E firmware version */
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_version.firmware >> 16;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_version.firmware >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_version.firmware;
+                /* LoRaWAN ADR profile */
+                buffer_out[output_buffer_index++] = tracker_ctx.lorawan_adr_profile;
+                /* LoRaWAN Join Sever usage */
+                buffer_out[output_buffer_index++] = tracker_ctx.use_semtech_join_server;
+                /* GNSS enable */
+                buffer_out[output_buffer_index++] = tracker_ctx.gnss_settings.enabled;
+                /* GNSS Antenna sel */
+                buffer_out[output_buffer_index++] = tracker_ctx.gnss_antenna_sel;
+                /* GNSS Assistance position */
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.latitude * 10000000 ) ) >> 24;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.latitude * 10000000 ) ) >> 16;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.latitude * 10000000 ) ) >> 8;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.latitude * 10000000 ) );
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.longitude * 10000000 ) ) >> 24;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.longitude * 10000000 ) ) >> 16;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.longitude * 10000000 ) ) >> 8;
+                buffer_out[output_buffer_index++] =
+                    ( ( int32_t )( tracker_ctx.gnss_settings.assistance_position.longitude * 10000000 ) );
+                /* GNSS Constellation to use */
+                buffer_out[output_buffer_index++] = tracker_ctx.gnss_settings.constellation_to_use;
+                /* GNSS Search mode */
+                buffer_out[output_buffer_index++] = tracker_ctx.gnss_settings.search_mode;
+                /* GNSS oldest almanac */
+                buffer_out[output_buffer_index++] = oldest_almanac_date >> 24;
+                buffer_out[output_buffer_index++] = oldest_almanac_date >> 16;
+                buffer_out[output_buffer_index++] = oldest_almanac_date >> 8;
+                buffer_out[output_buffer_index++] = oldest_almanac_date;
+                /* GNSS newest almanac */
+                buffer_out[output_buffer_index++] = newest_almanac_date >> 24;
+                buffer_out[output_buffer_index++] = newest_almanac_date >> 16;
+                buffer_out[output_buffer_index++] = newest_almanac_date >> 8;
+                buffer_out[output_buffer_index++] = newest_almanac_date;
+                /* Scan priority */
+                buffer_out[output_buffer_index++] = tracker_ctx.scan_priority;
+                /* Wi-Fi enable */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.enabled;
+                /* Wi-Fi channles */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.channels >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.channels;
+                /* Wi-Fi max results */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.max_results;
+                /* Wi-Fi scan mode */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.scan_mode;
+                /* Wi-Fi timeout */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.timeout >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.timeout;
+                /* Wi-Fi types */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.types;
+                /* Wi-Fi nbr_retrials */
+                buffer_out[output_buffer_index++] = tracker_ctx.wifi_settings.nbr_retrials;
+                /* App accelerometer used */
+                buffer_out[output_buffer_index++] = tracker_ctx.accelerometer_used;
+                /* App scan interval */
+                buffer_out[output_buffer_index++] = ( tracker_ctx.app_scan_interval / 1000 ) >> 8;
+                buffer_out[output_buffer_index++] = ( tracker_ctx.app_scan_interval / 1000 );
+                /* App keep alive interval */
+                buffer_out[output_buffer_index++] = ( ( tracker_ctx.app_keep_alive_frame_interval / 60000 ) >> 8 );
+                buffer_out[output_buffer_index++] = ( tracker_ctx.app_keep_alive_frame_interval / 60000 );
+                /* App internal log enable */
+                buffer_out[output_buffer_index++] = tracker_ctx.internal_log_enable;
+                /* App internal log remaining memory space */
+                buffer_out[output_buffer_index++] = tracker_get_remaining_memory_space( );
+                /* App Reset counter */
+                buffer_out[output_buffer_index++] = tracker_ctx.host_reset_cnt >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.host_reset_cnt;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_reset_by_itself_cnt >> 8;
+                buffer_out[output_buffer_index++] = tracker_ctx.modem_reset_by_itself_cnt;
+                /* Last sv number detected */
+                buffer_out[output_buffer_index++] = nb_uplink_reset >> 8;
+                buffer_out[output_buffer_index++] = nb_uplink_reset;
+                /* Last sv number detected */
+                buffer_out[output_buffer_index++] = tracker_ctx.last_nb_detected_satellites;
+                /* Last mac address number detected */
+                buffer_out[output_buffer_index++] = tracker_ctx.last_nb_detected_mac_address;
+                /* Sanity check bit mask */
+                buffer_out[output_buffer_index++] = tracker_ctx.system_sanity_check;
+
+                payload_index += GET_APP_TRACKER_SETTINGS_LEN;
+
+                break;
+            }
+
             case SET_APP_RESET_CMD:
             {
                 reset_board_asked = true;
                 payload_index += SET_APP_RESET_LEN;
+
                 break;
             }
 
@@ -2630,11 +3278,12 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
 
                 break;
             }
+
             nb_elements_index++;
         }
     }
 
-    /* Store the new values here only if a reset board is asked */
+    /* Store the new values here if it's asked */
     if( ( ( tracker_ctx.new_value_to_set ) == true ) && ( reset_board_asked == true ) )
     {
         tracker_store_app_ctx( );
@@ -2653,9 +3302,119 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out )
     return res_size;
 }
 
+void tracker_store_and_reset( uint8_t host_reset_cnt_to_add )
+{
+    tracker_ctx.host_reset_cnt += host_reset_cnt_to_add;
+
+    tracker_store_app_ctx( );
+
+    /* System reset */
+    hal_mcu_reset( );
+}
+
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE FUNCTIONS DEFINITION --------------------------------------------
  */
+
+static void tracker_print_device_settings( void )
+{
+    struct tm epoch_time;
+    uint8_t   nb_trans;
+
+    HAL_DBG_TRACE_MSG( "#Device Settings :\r\n\r\n" );
+
+    HAL_DBG_TRACE_MSG( "#LoRaWAN Settings :\r\n" );
+    HAL_DBG_TRACE_PRINTF( "#\tLR1110 MODEM-E VERSION : LORAWAN : %#04X | FIRMWARE : %#02X | BOOTLOADER : %#02X\r\n",
+                          tracker_ctx.modem_version.lorawan, tracker_ctx.modem_version.firmware,
+                          tracker_ctx.modem_version.bootloader );
+
+    /* Device EUI */
+    HAL_DBG_TRACE_PRINTF( "#\tDevice Eui : %02X", tracker_ctx.dev_eui[0] );
+    for( int i = 1; i < 8; i++ )
+    {
+        HAL_DBG_TRACE_PRINTF( "-%02X", tracker_ctx.dev_eui[i] );
+    }
+    HAL_DBG_TRACE_MSG( "\r\n" );
+
+    /* Join EUI */
+    HAL_DBG_TRACE_PRINTF( "#\tAppEui      : %02X", tracker_ctx.join_eui[0] );
+    for( int i = 1; i < 8; i++ )
+    {
+        HAL_DBG_TRACE_PRINTF( "-%02X", tracker_ctx.join_eui[i] );
+    }
+    HAL_DBG_TRACE_PRINTF( "\r\n" );
+
+    /* AppKey / Semtech JS */
+    if( tracker_ctx.use_semtech_join_server )
+    {
+        HAL_DBG_TRACE_MSG( "#\tAppKey      : Semtech join server used\r\n" );
+    }
+    else
+    {
+        HAL_DBG_TRACE_PRINTF( "#\tAppKey      : %02X", tracker_ctx.app_key[0] );
+        for( int i = 1; i < 16; i++ )
+        {
+            HAL_DBG_TRACE_PRINTF( "-%02X", tracker_ctx.app_key[i] );
+        }
+        HAL_DBG_TRACE_PRINTF( "\r\n" );
+    }
+
+    /* LoRaWAN settings */
+    HAL_DBG_TRACE_PRINTF( "#\tADR profile : %d\r\n", tracker_ctx.lorawan_adr_profile );
+    lr1110_modem_get_nb_trans( &lr1110, &nb_trans );
+    HAL_DBG_TRACE_PRINTF( "#\tlorawan nb trans : %d\r\n", nb_trans );
+    HAL_DBG_TRACE_PRINTF( "#\tlorawan_region : %d\r\n", tracker_ctx.lorawan_region );
+
+    /* GNSS settings */
+    HAL_DBG_TRACE_MSG( "#GNSS Settings:\r\n" );
+    HAL_DBG_TRACE_PRINTF( "#\tenabled : %d\r\n", tracker_ctx.gnss_settings.enabled );
+    HAL_DBG_TRACE_PRINTF( "#\tAntenna sel : %d\r\n", tracker_ctx.gnss_antenna_sel );
+    HAL_DBG_TRACE_PRINTF( "#\tassistance position latitude : %f\r\n",
+                          tracker_ctx.gnss_settings.assistance_position.latitude );
+    HAL_DBG_TRACE_PRINTF( "#\tassistance position longitude : %f\r\n",
+                          tracker_ctx.gnss_settings.assistance_position.longitude );
+    HAL_DBG_TRACE_PRINTF( "#\tconstellation_to_use : %d\r\n", tracker_ctx.gnss_settings.constellation_to_use );
+    HAL_DBG_TRACE_PRINTF( "#\tsearch_mode : %d\r\n", tracker_ctx.gnss_settings.search_mode );
+    HAL_DBG_TRACE_PRINTF( "#\tinput_parameters : %d\r\n", tracker_ctx.gnss_settings.input_parameters );
+    HAL_DBG_TRACE_PRINTF( "#\tnb_sat : %d\r\n", tracker_ctx.gnss_settings.nb_sat );
+    memcpy( &epoch_time, localtime( &tracker_ctx.last_almanac_update ), sizeof( struct tm ) );
+    HAL_DBG_TRACE_PRINTF( "#\tlast_almanac_update : [%d-%d-%d %d:%d:%d.000]\r\n", epoch_time.tm_year + 1900,
+                          epoch_time.tm_mon + 1, epoch_time.tm_mday, epoch_time.tm_hour, epoch_time.tm_min,
+                          epoch_time.tm_sec );
+
+    /* Wi-Fi settings */
+    HAL_DBG_TRACE_MSG( "#Wi-Fi Settings:\r\n" );
+    HAL_DBG_TRACE_PRINTF( "#\tenabled : %d\r\n", tracker_ctx.wifi_settings.enabled );
+    HAL_DBG_TRACE_PRINTF( "#\tchannels : %02X\r\n", tracker_ctx.wifi_settings.channels );
+    HAL_DBG_TRACE_PRINTF( "#\tmax_results : %d\r\n", tracker_ctx.wifi_settings.max_results );
+    HAL_DBG_TRACE_PRINTF( "#\tscan_mode : %d\r\n", tracker_ctx.wifi_settings.scan_mode );
+    HAL_DBG_TRACE_PRINTF( "#\ttimeout : %d ms\r\n", tracker_ctx.wifi_settings.timeout );
+    HAL_DBG_TRACE_PRINTF( "#\ttypes : %d\r\n", tracker_ctx.wifi_settings.types );
+    HAL_DBG_TRACE_PRINTF( "#\tnbr_retrials : %d\r\n", tracker_ctx.wifi_settings.nbr_retrials );
+
+    /* Application settings */
+    HAL_DBG_TRACE_MSG( "#Application settings:\r\n" );
+    HAL_DBG_TRACE_PRINTF( "#\taccelerometer_used : %d\r\n", tracker_ctx.accelerometer_used );
+    HAL_DBG_TRACE_PRINTF( "#\tapp_scan_interval : %d s\r\n", tracker_ctx.app_scan_interval / 1000 );
+    HAL_DBG_TRACE_PRINTF( "#\tapp_keep_alive_frame_interval : %d min\r\n",
+                          tracker_ctx.app_keep_alive_frame_interval / 60000 );
+    HAL_DBG_TRACE_PRINTF( "#\tscan_priority : %d\r\n", tracker_ctx.scan_priority );
+    HAL_DBG_TRACE_PRINTF( "#\tairplane_mode : %d\r\n", tracker_ctx.airplane_mode );
+    HAL_DBG_TRACE_PRINTF( "#\tinternal_log_enable : %d\r\n", tracker_ctx.internal_log_enable );
+    HAL_DBG_TRACE_PRINTF( "#\ttracker_fw_version : %d.%d.%d\r\n", TRACKER_MAJOR_APP_VERSION, TRACKER_MINOR_APP_VERSION,
+                          TRACKER_SUB_MINOR_APP_VERSION );
+    HAL_DBG_TRACE_PRINTF( "#\thost_reset_cnt : %d\r\n", tracker_ctx.host_reset_cnt );
+    HAL_DBG_TRACE_PRINTF( "#\tmodem_reset_by_itself_cnt : %d\r\n", tracker_ctx.modem_reset_by_itself_cnt );
+}
+
+uint32_t get_uint32_from_array_at_index_and_inc( const uint8_t* array, uint16_t* index )
+{
+    const uint16_t local_index = *index;
+    const uint32_t value = array[local_index] + ( array[local_index + 1] << 8 ) + ( array[local_index + 2] << 16 ) +
+                           ( array[local_index + 3] << 24 );
+    *index = local_index + 4;
+    return value;
+}
 
 /* --- EOF ------------------------------------------------------------------ */

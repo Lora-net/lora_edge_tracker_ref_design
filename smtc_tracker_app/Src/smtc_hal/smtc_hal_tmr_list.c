@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_tmr_list.c
+ * @file      smtc_hal_tmr_list.c
  *
- * \brief     Timer list API implementation.
+ * @brief     Timer list API implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -80,7 +80,7 @@
  */
 
 /*!
- * \brief Timers list head pointer
+ * @brief Timers list head pointer
  */
 static timer_event_t* timer_list_head = NULL;
 
@@ -90,39 +90,39 @@ static timer_event_t* timer_list_head = NULL;
  */
 
 /*!
- * \brief Adds or replace the head timer of the list.
+ * @brief Adds or replace the head timer of the list.
  *
- * \remark The list is automatically sorted. The list head always contains the
+ * @remark The list is automatically sorted. The list head always contains the
  *         next timer to expire.
  *
- * \param [in]  obj Timer object to be become the new head
- * \param [in]  remainingTime Remaining time of the previous head to be replaced
+ * @param [in]  obj Timer object to be become the new head
+ * @param [in]  remainingTime Remaining time of the previous head to be replaced
  */
 static void timer_insert_new_head_timer( timer_event_t* obj );
 
 /*!
- * \brief Adds a timer to the list.
+ * @brief Adds a timer to the list.
  *
- * \remark The list is automatically sorted. The list head always contains the
+ * @remark The list is automatically sorted. The list head always contains the
  *         next timer to expire.
  *
- * \param [in]  obj Timer object to be added to the list
- * \param [in]  remainingTime Remaining time of the running head after which the object may be added
+ * @param [in]  obj Timer object to be added to the list
+ * @param [in]  remainingTime Remaining time of the running head after which the object may be added
  */
 static void timer_insert_timer( timer_event_t* obj );
 
 /*!
- * \brief Sets a timeout with the duration "timestamp"
+ * @brief Sets a timeout with the duration "timestamp"
  *
- * \param [in] timestamp Delay duration
+ * @param [in] timestamp Delay duration
  */
 static void timer_set_timeout( timer_event_t* obj );
 
 /*!
- * \brief Check if the Object to be added is not already in the list
+ * @brief Check if the Object to be added is not already in the list
  *
- * \param [in] timestamp Delay duration
- * \retval true (the object is already in the list) or false
+ * @param [in] timestamp Delay duration
+ * @returns true (the object is already in the list) or false
  */
 static bool timer_exists( timer_event_t* obj );
 
@@ -163,7 +163,7 @@ void timer_start( timer_event_t* obj )
     if( timer_list_head == NULL )
     {
         hal_rtc_set_time_ref_in_ticks( );
-        // Inserts a timer at time now + obj->timestamp
+        /* Inserts a timer at time now + obj->timestamp */
         timer_insert_new_head_timer( obj );
     }
     else
@@ -243,8 +243,8 @@ void timer_irq_handler( void )
     uint32_t now           = hal_rtc_set_time_ref_in_ticks( );
     uint32_t delta_context = now - old;  // intentional wrap around
 
-    // Update timeStamp based upon new Time Reference
-    // because delta context should never exceed 2^32
+    /* Update timeStamp based upon new Time Reference
+       because delta context should never exceed 2^32 */
     if( timer_list_head != NULL )
     {
         for( cur = timer_list_head; cur->next != NULL; cur = cur->next )
@@ -261,7 +261,7 @@ void timer_irq_handler( void )
         }
     }
 
-    // Execute immediately the alarm callback
+    /* Execute immediately the alarm callback */
     if( timer_list_head != NULL )
     {
         cur             = timer_list_head;
@@ -270,7 +270,7 @@ void timer_irq_handler( void )
         execute_callback( cur->callback, cur->context );
     }
 
-    // Remove all the expired object from the list
+    /* Remove all the expired object from the list */
     while( ( timer_list_head != NULL ) && ( timer_list_head->timestamp < hal_rtc_get_timer_elapsed_value( ) ) )
     {
         cur             = timer_list_head;
@@ -279,7 +279,7 @@ void timer_irq_handler( void )
         execute_callback( cur->callback, cur->context );
     }
 
-    // Start the next timer_list_head if it exists AND NOT running
+    /* Start the next timer_list_head if it exists AND NOT running */
     if( ( timer_list_head != NULL ) && ( timer_list_head->is_next_2_expire == false ) )
     {
         timer_set_timeout( timer_list_head );
@@ -293,7 +293,7 @@ void timer_stop( timer_event_t* obj )
     timer_event_t* prev = timer_list_head;
     timer_event_t* cur  = timer_list_head;
 
-    // List is empty or the obj to stop does not exist
+    /* List is empty or the obj to stop does not exist */
     if( ( timer_list_head == NULL ) || ( obj == NULL ) )
     {
         CRITICAL_SECTION_END( );
@@ -406,7 +406,7 @@ timer_time_t timer_get_elapsed_time( timer_time_t past )
     uint32_t nowInTicks  = hal_rtc_get_timer_value( );
     uint32_t pastInTicks = hal_rtc_ms_2_tick( past );
 
-    // Intentional wrap around. Works Ok if tick duration below 1ms
+    /* Intentional wrap around. Works Ok if tick duration below 1ms */
     return hal_rtc_tick_2_ms( nowInTicks - pastInTicks );
 }
 
@@ -415,7 +415,7 @@ static void timer_set_timeout( timer_event_t* obj )
     int32_t min_ticks     = hal_rtc_get_minimum_timeout( );
     obj->is_next_2_expire = true;
 
-    // In case deadline too soon
+    /* In case deadline too soon */
     if( obj->timestamp < ( hal_rtc_get_timer_elapsed_value( ) + min_ticks ) )
     {
         obj->timestamp = hal_rtc_get_timer_elapsed_value( ) + min_ticks;

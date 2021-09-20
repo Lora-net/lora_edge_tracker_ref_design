@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_watchdog.h
+ * @file      smtc_hal_watchdog.h
  *
- * \brief     Board specific package WATCHDOG management API definition.
+ * @brief     Board specific package WATCHDOG management API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_WATCHDOG_H__
-#define __SMTC_HAL_WATCHDOG_H__
+#ifndef SMTC_HAL_WATCHDOG_H
+#define SMTC_HAL_WATCHDOG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,16 +64,16 @@ extern "C" {
  */
 
 /*!
- * \brief Initializes the MCU watchdog peripheral
+ * @brief Initializes the MCU watchdog peripheral
  *
- * \remark The watchdog period is equal to WATCHDOG_RELOAD_PERIOD seconds
+ * @remark The watchdog period is equal to WATCHDOG_RELOAD_PERIOD seconds
  */
 void hal_watchdog_init( void );
 
 /*!
- * \brief Reloads watchdog counter
+ * @brief Reloads watchdog counter
  *
- * \remark Application has to call this function periodically.
+ * @remark Application has to call this function periodically.
  *         The call period must be less than WATCHDOG_RELOAD_PERIOD
  *
  */
@@ -83,6 +83,6 @@ void hal_watchdog_reload( void );
 }
 #endif
 
-#endif  // __SMTC_HAL_WATCHDOG_H__
+#endif  // SMTC_HAL_WATCHDOG_H
 
 /* --- EOF ------------------------------------------------------------------ */

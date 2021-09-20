@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_tmr.c
+ * @file      smtc_hal_tmr.c
  *
- * \brief     Board specific package HW timer API implementation.
+ * @brief     Board specific package HW timer API implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -96,16 +96,16 @@ void hal_tmr_start( const uint32_t milliseconds, const hal_tmr_irq_t* tmr_irq )
 {
     uint32_t delay_ms_2_tick = 0;
 
-    // Remark LSE_VALUE / LPTIM_PRESCALER_DIV16
+    /* Remark LSE_VALUE / LPTIM_PRESCALER_DIV16 */
     delay_ms_2_tick = ( uint32_t )( ( ( uint64_t ) milliseconds * ( LSE_VALUE >> 4 ) ) / 1000 );
 
-    // check if delay_ms_2_tick is not greater than 0xFFFF and clamp it if it is the case
+    /* check if delay_ms_2_tick is not greater than 0xFFFF and clamp it if it is the case */
     if( delay_ms_2_tick > 0xFFFF )
     {
         delay_ms_2_tick = 0xFFFF;
     }
 
-    // Auto reload period is set to max value 0xFFFF
+    /* Auto reload period is set to max value 0xFFFF */
     HAL_LPTIM_TimeOut_Start_IT( &lptim_handle, 0xFFFF, delay_ms_2_tick );
     lptim_tmr_irq = *tmr_irq;
 }

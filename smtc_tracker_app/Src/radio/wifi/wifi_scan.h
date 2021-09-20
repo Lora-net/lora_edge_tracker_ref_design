@@ -1,7 +1,7 @@
 /*!
- * \file      wifi_scan.h
+ * @file      wifi_scan.h
  *
- * \brief     Wi-Fi scan definition
+ * @brief     Wi-Fi scan definition
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -55,12 +55,15 @@ extern "C" {
  */
 
 #define WIFI_NBR_RETRIALS_DEFAULT 5
-#define WIFI_MAX_RESULTS_DEFAULT 10
-#define WIFI_TIMEOUT_IN_MS_DEFAULT 110
-#define WIFI_MAX_RESULT_TOTAL 32
+#define WIFI_MAX_RESULTS_DEFAULT 5
+#define WIFI_TIMEOUT_IN_MS_DEFAULT 90
+#define WIFI_MAX_BASIC_RESULTS_PER_SCAN 32
+#define WIFI_MAX_EXTENDED_RESULTS_PER_SCAN 12
 
 #define WIFI_SCAN_SUCCESS 1
 #define WIFI_SCAN_FAIL 0
+
+#define WIFI_BUFFER_MAX_SIZE 948  // 12 results * LR1110_WIFI_EXTENDED_FULL_RESULT_SIZE
 
 /*
  * -----------------------------------------------------------------------------
@@ -68,12 +71,12 @@ extern "C" {
  */
 
 /*!
- * \brief Wi-Fi scan result type
+ * @brief Wi-Fi scan result type
  */
 typedef uint8_t wifi_scan_result_t;
 
 /*!
- * \brief Wi-Fi state used in the state machine
+ * @brief Wi-Fi state used in the state machine
  */
 typedef enum
 {
@@ -84,7 +87,7 @@ typedef enum
 } wifi_state_t;
 
 /*!
- * \brief Wi-Fi single scan result structure
+ * @brief Wi-Fi single scan result structure
  */
 typedef struct
 {
@@ -92,28 +95,36 @@ typedef struct
     lr1110_modem_wifi_channel_t            channel;
     lr1110_modem_wifi_signal_type_result_t type;
     int8_t                                 rssi;
-    int16_t                                phi_offset;
-    uint64_t                               timestamp_us;
-    uint16_t                               beacon_period_tu;
-    uint8_t                                country_code[LR1110_MODEM_WIFI_STR_COUNTRY_CODE_SIZE];
 } wifi_scan_single_result_t;
 
 /*!
- * \brief Wi-Fi single all result structure
+ * @brief Wi-Fi scan all result structure
  */
 typedef struct
 {
     uint8_t                                nbr_results;
-    wifi_scan_single_result_t              results[WIFI_MAX_RESULT_TOTAL];
+    wifi_scan_single_result_t              results[WIFI_MAX_BASIC_RESULTS_PER_SCAN];
     lr1110_modem_wifi_cumulative_timings_t timings;
-    uint32_t                               global_consumption_uas;
-    uint8_t                                raw_buffer[288];
-    uint16_t                               raw_buffer_size;
-    bool                                   error;
-} wifi_scan_all_result_t;
+} wifi_scan_selected_result_t;
 
 /*!
- * \brief Wi-Fi settings stucture parameters
+ * @brief Wi-Fi scan all result structure
+ */
+typedef struct
+{
+    lr1110_modem_wifi_mode_t                          scan_mode;
+    lr1110_modem_wifi_result_format_t                 result_format;
+    uint8_t                                           nbr_results;
+    lr1110_modem_wifi_basic_mac_type_channel_result_t basic_mac_type_channel_results[WIFI_MAX_BASIC_RESULTS_PER_SCAN];
+    lr1110_modem_wifi_basic_complete_result_t         basic_complete_results[WIFI_MAX_BASIC_RESULTS_PER_SCAN];
+    lr1110_modem_wifi_extended_full_result_t          extended_full_results[WIFI_MAX_EXTENDED_RESULTS_PER_SCAN];
+    lr1110_modem_wifi_cumulative_timings_t            timings;
+    uint32_t                                          global_consumption_uas;
+    bool                                              error;
+} wifi_scan_all_results_t;
+
+/*!
+ * @brief Wi-Fi settings stucture parameters
  */
 typedef struct
 {
@@ -125,18 +136,8 @@ typedef struct
     uint8_t                              max_results;
     uint32_t                             timeout;
     lr1110_modem_wifi_result_format_t    result_format;
+    lr1110_modem_system_reg_mode_t       reg_mode;
 } wifi_settings_t;
-
-/*!
- * \brief Wi-Fi global stucture parameters
- */
-typedef struct
-{
-    lr1110_modem_system_reg_mode_t reg_mode;
-    wifi_scan_all_result_t         results;
-    wifi_settings_t                settings;
-    wifi_state_t                   state;
-} wifi_t;
 
 /*
  * -----------------------------------------------------------------------------
@@ -144,34 +145,41 @@ typedef struct
  */
 
 /*!
- * \brief Function executed on Wifi Scan done event
+ * @brief Function executed on Wifi Scan done event
  *
- * \param [in] buffer Buffer containing the raw data
- *
- * \param [in] size Size of the raw data buffer
+ * @param [in] buffer Buffer containing the raw data
+ * @param [in] size Size of the raw data buffer
  */
 void lr1110_modem_wifi_scan_done( uint8_t* buffer, uint16_t size );
 
 /*!
- * \brief Display the last Wi-Fi scan results
+ * @brief Display the last Wi-Fi scan results
+ *
+ * @param [in] capture_result Structure containing the capture results, \ref wifi_scan_all_results_t
  */
-void lr1110_display_wifi_scan_results( void );
+void lr1110_modem_display_wifi_scan_results( const wifi_scan_all_results_t* capture_result );
 
 /*!
- * \brief execute the wifi scan state machine
+ * @brief Select and copy results from Wi-Fi scan to another stucture containing only the necessary result for user
  *
- * \param [in] context Radio abstraction
+ * @param [in] capture_result Structure containing the capture results, \ref wifi_scan_all_results_t
+ * @param [out] selected_results Structure containing the only necessary results, \ref
+ * wifi_scan_selected_result_t
  */
-wifi_scan_result_t wifi_execute_scan( const void* context );
+void lr1110_modem_wifi_scan_select_results( const wifi_scan_all_results_t* capture_result,
+                                            wifi_scan_selected_result_t*   selected_results );
 
 /*!
- * \brief init the wifi scan state machine
+ * @brief execute the wifi scan state machine
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
+ * @param [in] wifi_settings Wi-Fi settings structure to apply \ref wifi_settings_t
+ * @param [out] capture_result Structure containing the capture results, \ref wifi_scan_all_results_t
  *
- * \param [in] wifi_settings structure containing the Wi-Fi parameter \see wifi_settings_t
+ * @returns Wi-Fi scan result operation
  */
-void wifi_init( const void* context, wifi_settings_t wifi_settings );
+wifi_scan_result_t wifi_execute_scan( const void* context, const wifi_settings_t* wifi_settings,
+                                      wifi_scan_all_results_t* capture_result );
 
 #ifdef __cplusplus
 }

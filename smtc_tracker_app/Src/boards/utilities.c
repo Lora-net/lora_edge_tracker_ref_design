@@ -1,7 +1,7 @@
 /*!
- * \file      utilities.c
+ * @file      utilities.c
  *
- * \brief     Helper functions implementation
+ * @brief     Helper functions implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.

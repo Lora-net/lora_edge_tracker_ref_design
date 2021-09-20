@@ -1,7 +1,7 @@
 /*!
- * \file      lr1110_tracker_board.h
+ * @file      lr1110_tracker_board.h
  *
- * \brief     Target board LR1110 driver definition
+ * @brief     Target board LR1110 driver definition
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __LR1110_TRACKER_BOARD_H__
-#define __LR1110_TRACKER_BOARD_H__
+#ifndef LR1110_TRACKER_BOARD_H
+#define LR1110_TRACKER_BOARD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,124 +72,154 @@ extern "C" {
  */
 
 /*!
- * \brief Initializes the radio I/Os pins context
+ * @brief Initializes the radio I/Os pins context
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  */
-void lr1110_modem_board_init_io_context( void* context );
+void lr1110_tracker_board_init_io_context( void* context );
 
 /*!
- * \brief Initializes the radio I/Os pins interface
+ * @brief Initializes the radio I/Os pins interface
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  */
-void lr1110_modem_board_init_io( const void* context );
+void lr1110_tracker_board_init_io( const void* context );
 
 /*!
- * \brief De-initializes the radio I/Os pins interface.
+ * @brief De-initializes the radio I/Os pins interface.
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  *
- * \remark Useful when going in MCU low power modes
+ * @remark Useful when going in MCU low power modes
  */
-void lr1110_modem_board_deinit_io( const void* context );
+void lr1110_tracker_board_deinit_io( const void* context );
 
 /*!
- * \brief De-initializes the radio I/Os pins interface for deep sleep purpose --> switch Busy and DIO in analog input.
+ * @brief De-initializes the radio I/Os pins interface for deep sleep purpose --> switch Busy and DIO in analog input.
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  *
- * \remark Useful when going in MCU low power modes
+ * @remark Useful when going in MCU low power modes
  */
-void lr1110_modem_board_analog_deinit_io( const void* context );
+void lr1110_tracker_board_analog_deinit_io( const void* context );
 
 /*!
- * \brief Sets the radio output power.
+ * @brief Gets the Defines the time required for the TCXO to wakeup [ms].
  *
- * \param [in] context Radio abstraction
- *
- * \param [in] tx_power_offset power Sets the RF output power offset
+ * @returns time Board TCXO wakeup time in ms.
  */
-void lr1110_modem_board_set_rf_tx_power_offset( const void* context, int8_t tx_power_offset );
+uint32_t lr1110_tracker_board_get_tcxo_wakeup_time( void );
 
 /*!
- * \brief Gets the Defines the time required for the TCXO to wakeup [ms].
+ * @brief Initializes the radio driver
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
+ * @param [in] event Pointeur to the event callbacks \see lr1110_modem_event_callback_t
  *
- * \retval time Board TCXO wakeup time in ms.
+ * @returns Status of the init
  */
-uint32_t lr1110_modem_board_get_tcxo_wakeup_time( const void* context );
+lr1110_modem_response_code_t lr1110_tracker_board_init( const void* context, lr1110_modem_event_callback_t* event );
 
 /*!
- * \brief Initializes the radio driver
+ * @brief Flush the modem event queue
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  *
- * \param [in] event Pointeur to the event callbacks
- *
- * \retval Status of the init
+ * @returns Modem-E response code
  */
-lr1110_modem_response_code_t lr1110_modem_board_init( const void* context, lr1110_modem_event_t* event );
+lr1110_modem_response_code_t lr1110_tracker_board_event_flush( const void* context );
 
 /*!
- * \brief Flush the modem event queue
+ * @brief Read the event line value used to process the event queue
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
  */
-lr1110_modem_response_code_t lr1110_modem_board_event_flush( const void* context );
+bool lr1110_tracker_board_read_event_line( const void* context );
 
 /*!
- * \brief Read the event line value used to process the event queue
- *
- * \param [in] context Radio abstraction
+ * @brief turn on the LNA
  */
-bool lr1110_modem_board_read_event_line( const void* context );
+void lr1110_tracker_board_lna_on( void );
 
 /*!
- * \brief turn on the LNA
+ * @brief turn off the LNA
  */
-void lr1110_modem_board_lna_on( void );
+void lr1110_tracker_board_lna_off( void );
 
 /*!
- * \brief turn off the LNA
+ * @brief Enable or disable the hall effect sensor
+ *
+ * @param [in] enable Enable or Disable the hall effect sensor
  */
-void lr1110_modem_board_lna_off( void );
+void lr1110_tracker_board_hall_effect_enable( bool enable );
 
 /*!
- * \brief Enable or disable the hall effect sensor
+ * @brief convert the GPS time in unix time \note assume that GPS time is right
  *
- * \param [in] enable Enable or Disable the hall effect sensor
+ * @param [in] context Radio abstraction
+ *
+ * @returns Unix time in s.
  */
-void lr1110_modem_board_hall_effect_enable( bool enable );
+uint32_t lr1110_tracker_board_get_systime_from_gps( const void* context );
 
 /*!
- * \brief convert the GPS time in unix time \note assume that GPS time is right
+ * @brief Get the oldest and the newest almanac date from the Modem-E
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
+ * @param [out] oldest_almanac_date oldest sv date
+ * @param [out] newest_almanac_date newest sv date
  *
- * \retval Unix time in s.
+ * @returns Modem-E response code
  */
-uint32_t lr1110_modem_board_get_systime_from_gps( const void* context );
+lr1110_modem_response_code_t lr1110_tracker_board_get_almanac_dates( const void* context, uint32_t* oldest_almanac_date, uint32_t* newest_almanac_date);
 
 /*!
- * \brief notify the user is the modem is ready
+ * @brief notify the user is the modem is ready
  *
- * \retval Modem ready state.
+ * @returns Modem ready state.
  */
-bool lr1110_modem_board_is_ready( void );
+bool lr1110_tracker_board_is_ready( void );
 
 /*!
- * \brief set the modem is ready flag
+ * @brief set the modem is ready flag
  *
- * \param [in] ready ready state
+ * @param [in] ready ready state
  */
-void lr1110_modem_board_set_ready( bool ready );
+void lr1110_tracker_board_set_ready( bool ready );
+
+/*!
+ * @brief Measure the dropout voltage when the board drains batteries current
+ *
+ * @param [in] context Radio abstraction
+ * @param [out] drop Voltage drop measured during the TX
+ * @param [out] time_recovery  time taken to the supply rail to reach Vnom after th TX shutdown
+ *
+ * @returns Modem-E response code
+ */
+lr1110_modem_response_code_t lr1110_tracker_board_measure_battery_drop( const void* context, int32_t* drop,
+                                                                      uint32_t* time_recovery );
+
+/*!
+ * @brief Turn on/off the requested LED(s)
+ *
+ * @param [in] led_mask Mask representing the list of the LEDs to turn on/off
+ * @param [in] turn_on If true, the requested LEDs are turned on, else they are turned off
+ */
+void lr1110_tracker_board_led_set( uint32_t led_mask, bool turn_on );
+
+/*!
+ * @brief Turn on/off the requested LED(s) for a given duration
+ *
+ * @param [in] led_mask Mask representing the list of the LEDs to turn on/off
+ * @param [in] turn_on If true, the requested LEDs are turned on, else they are turned off
+ * @param [in] duration_ms Duration of the pulse, in milliseconds
+ */
+void lr1110_tracker_board_led_pulse( uint32_t led_mask, bool turn_on, uint32_t duration_ms );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __LR1110_TRACKER_BOARD_H__
+#endif  // LR1110_TRACKER_BOARD_H
 
 /* --- EOF ------------------------------------------------------------------ */

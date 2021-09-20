@@ -9,27 +9,28 @@
 #   2020-07-27 - first version
 # ------------------------------------------------
 
--include printing.mk
-
 ######################################
 # target
 ######################################
-EVK_TARGET = lora_edge_tracker_sdk
 
-#Choose the app to compile
-TRACKER_APP = 1
-LORAWAN_APP = 0
-GNSS_APP = 0
-WIFI_APP = 0
-TX_CONTINUOUS_APP = 0
-UPDATE_MODEM_APP = 0
-BLE_STANDALONE_APP = 0
-READ_INTERNAL_LOG = 0
+# Default application to build
+# Supported values:
+#  tracker
+#  lorawan
+#  large_file_upload
+#  stream
+#  gnss
+#  wifi
+#  clock_sync
+#  tx_continuous
+#  ble_standalone
+#  update_modem_app
+#  read_internal_log
+#  low_power
+#  uart_firmware_update
+APP ?= tracker
 
-#Choose the region to use
-USE_REGION_868 = 1
-USE_REGION_915 = 0
-
+EVK_TARGET = $(APP)
 
 TOP_DIR = ..
 
@@ -118,9 +119,9 @@ ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_gnss.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_lorawan.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_system.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_wifi.c \
+${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src/lr1110_modem_helper.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/wifi/wifi_scan.c \
 ${TOP_DIR}/smtc_tracker_app/Src/radio/gnss/gnss_scan.c \
-${TOP_DIR}/smtc_tracker_app/Src/radio/lorawan_config/lorawan_config.c \
 ${TOP_DIR}/Drivers/BSP/Components/external_supply/external_supply.c \
 ${TOP_DIR}/Drivers/BSP/Components/Leds/leds.c \
 ${TOP_DIR}/Drivers/BSP/Components/lis2de12/lis2de12.c \
@@ -157,47 +158,72 @@ ${TOP_DIR}/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_uart.c \
 ${TOP_DIR}/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_uart_ex.c \
 ${TOP_DIR}/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal.c \
 ${TOP_DIR}/Drivers/STM32WBxx_HAL_Driver/Src/stm32wbxx_hal_exti.c \
+${TOP_DIR}/smtc_tracker_app/Src/apps/common/apps_utilities.c
 
-ifeq ($(TRACKER_APP),1)
+ifeq ($(APP),tracker)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker/main_tracker.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker/main_tracker.c
 endif
 
-ifeq ($(LORAWAN_APP),1)
+ifeq ($(APP),lorawan)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaMac/classA/main_loramac_a.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaWAN/main_lorawan.c
 endif
 
-ifeq ($(GNSS_APP),1)
+ifeq ($(APP),stream)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/gnss_test/main_test_gnss.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/stream/main_stream.c
 endif
 
-ifeq ($(WIFI_APP),1)
+ifeq ($(APP),gnss)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/wifi_test/main_test_wifi.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/simple_gnss_example/main_simple_gnss_example.c
 endif
 
-ifeq ($(TX_CONTINUOUS_APP),1)
+ifeq ($(APP),wifi)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/tx_continuous_test/main_test_tx_continuous.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/simple_wifi_example/main_simple_wifi_example.c
 endif
 
-ifeq ($(UPDATE_MODEM_APP),1)
+ifeq ($(APP),tx_continuous)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/update_firmware.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/tx_continuous_test/main_test_tx_continuous.c
 endif
 
-ifeq ($(BLE_STANDALONE_APP),1)
+ifeq ($(APP),clock_sync)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/main_BLE_standalone.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/clock_sync/main_clock_sync.c
 endif
 
-ifeq ($(READ_INTERNAL_LOG),1)
+ifeq ($(APP),update_modem_app)
 C_SOURCES +=  \
-${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/main_read_internal_log.c 
+${TOP_DIR}/smtc_tracker_app/Src/apps/update-firmware/update_firmware.c
 endif
 
+ifeq ($(APP),ble_standalone)
+C_SOURCES +=  \
+${TOP_DIR}/smtc_tracker_app/Src/apps/ble_standalone/main_BLE_standalone.c
+endif
+
+ifeq ($(APP),read_internal_log)
+C_SOURCES +=  \
+${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker/main_read_internal_log.c
+endif
+
+ifeq ($(APP),low_power)
+C_SOURCES +=  \
+${TOP_DIR}/smtc_tracker_app/Src/apps/low-power/main_low_power.c
+endif
+
+ifeq ($(APP),uart_firmware_update)
+C_SOURCES +=  \
+${TOP_DIR}/smtc_tracker_app/Src/apps/uart_firmware_update/main_uart_firmware_update.c
+endif
+
+ifeq ($(APP),large_file_upload)
+C_SOURCES +=  \
+${TOP_DIR}/smtc_tracker_app/Src/apps/large_file_upload/main_large_file_upload.c
+endif
 
 # ASM sources
 ASM_SOURCES =  \
@@ -252,17 +278,6 @@ C_DEFS =  \
 -DLR1110_TRACKER \
 -DMODEM_TO_MODEM \
 
-ifeq ($(USE_REGION_868),1)
-C_DEFS +=  \
--DUSE_REGION_EU868
-endif
-
-ifeq ($(USE_REGION_915),1)
-C_DEFS +=  \
--DUSE_REGION_US915
-endif
-
-
 -DGIT_VERSION=\"$(GIT_VERSION)\" \
 -DGIT_COMMIT=\"$(GIT_COMMIT)\" \
 -DGIT_DATE=\"$(GIT_DATE)\" \
@@ -300,17 +315,20 @@ C_INCLUDES =  \
 -I${TOP_DIR}/Middlewares/ST/STM32_WPAN/ble \
 -I${TOP_DIR}/smtc_tracker_app/Inc\ble\app \
 -I${TOP_DIR}/smtc_tracker_app/Inc \
+-I${TOP_DIR}/smtc_tracker_app/Inc/apps \
+-I${TOP_DIR}/smtc_tracker_app/Inc/apps/lorawan_commissioning \
 -I${TOP_DIR}/smtc_tracker_app/Inc/smtc_hal \
 -I${TOP_DIR}/smtc_tracker_app/Inc/boards \
 -I${TOP_DIR}/smtc_tracker_app/Inc/ble/app \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio \
--I${TOP_DIR}/smtc_tracker_app/Src/radio/lorawan_config \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/wifi \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/gnss \
 -I${TOP_DIR}/smtc_tracker_app/Src/radio/lr1110_modem/src \
--I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaMac/classA \
+-I${TOP_DIR}/smtc_tracker_app/Src/apps/LoRaWAN \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/Tracker \
 -I${TOP_DIR}/smtc_tracker_app/Src/apps/update_firmware \
+-I${TOP_DIR}/smtc_tracker_app/Src/apps/stream \
+-I${TOP_DIR}/smtc_tracker_app/Src/apps/large_file_upload \
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections

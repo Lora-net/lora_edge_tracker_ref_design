@@ -52,7 +52,7 @@ float acceleration_mg[3];
 static void accelerometer_irq1_init( void );
 
 /*!
- * \brief INT1 interrupt callback
+ * @brief INT1 interrupt callback
  */
 void lis2de12_int1_irq_handler( void* obj );
 
@@ -83,10 +83,10 @@ static hal_gpio_irq_t lis2de12_int1 = {
   */
 
  /*!
- * \brief Initializes the hardware and variables associated with the lis2de12.
+ * @brief Initializes the hardware and variables associated with the lis2de12.
  * 
- * \param [in]  irq_active      Interupt MASK to activate int1 or not
- * \retval      Status        SUCCESS(1) or FAIL(0)
+ * @param [in]  irq_active      Interupt MASK to activate int1 or not
+ * @returns      Status        SUCCESS(1) or FAIL(0)
  */
 uint8_t accelerometer_init( uint8_t irq_active )
 {
@@ -112,13 +112,10 @@ uint8_t accelerometer_init( uint8_t irq_active )
     /* Set Output Data Rate to 10Hz */
     lis2de12_data_rate_set(LIS2DE12_ODR_10Hz);
 
-    /* Tempature measurement init */
-    lis2de12_temperature_meas_set(LIS2DE12_TEMP_ENABLE);
-
     /* Enable Block Data Update */
-    lis2de12_block_data_update_set(PROPERTY_DISABLE);
+    lis2de12_block_data_update_set(PROPERTY_ENABLE);
     
-    /* Enable Fifo mode */
+    /* Enable bypass mode */
     lis2de12_fifo_mode_set(LIS2DE12_BYPASS_MODE);
     
     /* Set full scale to 2g */ 
@@ -163,7 +160,7 @@ uint8_t accelerometer_init( uint8_t irq_active )
     return SUCCESS;
 }
 
-uint8_t is_accelerometer_detected_moved(void)
+uint8_t is_accelerometer_detected_moved( void )
 {
     lis2de12_int1_src_t int1_gen_source; 
     
@@ -179,7 +176,7 @@ uint8_t is_accelerometer_detected_moved(void)
 }
 
 /*!
- * \brief Get the accelerometer IRQ state
+ * @brief Get the accelerometer IRQ state
  */
 bool get_accelerometer_irq1_state ( void )
 {
@@ -202,26 +199,26 @@ uint8_t is_accelerometer_double_tap_detected(void)
 void acc_read_raw_data( void )
 {
     lis2de12_reg_t reg;
-    bool DataRead=false;
+    bool data_read = false;
     
-    while(DataRead == false)
+    while( data_read == false )
     {
-        lis2de12_xl_data_ready_get(&reg.byte);
-        if (reg.byte)
+        lis2de12_xl_data_ready_get( &reg.byte );
+        if( reg.byte )
         {
             /* Read accelerometer data */
-            memset(data_raw_acceleration.u8bit, 0x00, 3*sizeof(int16_t));
-            lis2de12_acceleration_raw_get(data_raw_acceleration.u8bit);
-            
-            lis2de12_acceleration_raw_get_x(data_raw_acceleration.u8bit);
-            lis2de12_acceleration_raw_get_y(data_raw_acceleration.u8bit+2);
-            lis2de12_acceleration_raw_get_z(data_raw_acceleration.u8bit+4);
-            
-            acceleration_mg[0] = lis2de12_from_fs2_to_mg(data_raw_acceleration.i16bit[0]);
-            acceleration_mg[1] = lis2de12_from_fs2_to_mg(data_raw_acceleration.i16bit[1]);
-            acceleration_mg[2] = lis2de12_from_fs2_to_mg(data_raw_acceleration.i16bit[2]);
-            
-            DataRead = true;
+            memset( data_raw_acceleration.u8bit, 0x00, 3 * sizeof( int16_t ) );
+            lis2de12_acceleration_raw_get( data_raw_acceleration.u8bit );
+
+            lis2de12_acceleration_raw_get_x( data_raw_acceleration.u8bit );
+            lis2de12_acceleration_raw_get_y( data_raw_acceleration.u8bit + 2 );
+            lis2de12_acceleration_raw_get_z( data_raw_acceleration.u8bit + 4 );
+
+            acceleration_mg[0] = lis2de12_from_fs2_to_mg( data_raw_acceleration.i16bit[0] );
+            acceleration_mg[1] = lis2de12_from_fs2_to_mg( data_raw_acceleration.i16bit[1] );
+            acceleration_mg[2] = lis2de12_from_fs2_to_mg( data_raw_acceleration.i16bit[2] );
+
+            data_read = true;
         }
     }
 }
@@ -246,7 +243,7 @@ int16_t acc_get_temperature( void )
     uint16_t temperature;
     uint8_t is_ready = 0;
 
-    lis2de12_temp_data_ready_get(&is_ready);
+    lis2de12_temp_data_ready_get( &is_ready );
 
     lis2de12_temperature_raw_get( &temperature );
 

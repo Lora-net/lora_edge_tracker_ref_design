@@ -1,7 +1,7 @@
 /*!
- * \file      main_erase_user_flash.c
+ * @file      main_erase_user_flash.c
  *
- * \brief     erase all user flash memoery, necessary when the flash content is unknow
+ * @brief     erase all user flash memoery, necessary when the flash content is unknow
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -36,7 +36,7 @@
  */
 int main( void )
 {
-    // Target board initialization
+    /* Target board initialization */
     BoardInitMcu( );
     BoardInitPeriph( );
 

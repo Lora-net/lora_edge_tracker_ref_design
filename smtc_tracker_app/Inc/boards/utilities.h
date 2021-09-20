@@ -1,7 +1,7 @@
 /*!
- * \file      utilities.h
+ * @file      utilities.h
  *
- * \brief     Helper functions implementation
+ * @brief     Helper functions implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __UTILITIES_H__
-#define __UTILITIES_H__
+#ifndef UTILITIES_H
+#define UTILITIES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +48,23 @@ extern "C" {
  */
 
 /*!
- * \brief Returns 2 raised to the power of n
+ * @brief Returns 2 raised to the power of n
  *
- * \param [in] n power value
- * \retval result of raising 2 to the power n
+ * @param [in] n power value
+ * @returns result of raising 2 to the power n
  */
 #define POW2( n ) ( 1 << n )
+
+/*!
+ * @brief Returns the maximum value between a and b
+ *
+ * @param [IN] a 1st value
+ * @param [IN] b 2nd value
+ * @returns maxValue Maximum value
+ */
+//#ifndef MAX
+#define SMTC_MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
+//#endif
 
 /*
  * -----------------------------------------------------------------------------
@@ -82,63 +93,63 @@ extern "C" {
  */
 
 /*!
- * \brief Initializes the pseudo random generator initial value
+ * @brief Initializes the pseudo random generator initial value
  *
- * \param [in] seed Pseudo random generator initial value
+ * @param [in] seed Pseudo random generator initial value
  */
 void srand1( uint32_t seed );
 
 /*!
- * \brief Computes a random number
- * \retval random random value
+ * @brief Computes a random number
+ * @returns random random value
  */
 int32_t rand1( void );
 
 /*!
- * \brief Computes a random number between min and max
+ * @brief Computes a random number between min and max
  *
- * \param [in] min range minimum value
- * \param [in] max range maximum value
- * \retval random random value in range min..max
+ * @param [in] min range minimum value
+ * @param [in] max range maximum value
+ * @returns random random value in range min..max
  */
 int32_t randr( int32_t min, int32_t max );
 
 /*!
- * \brief Copies size elements of src array to dst array
+ * @brief Copies size elements of src array to dst array
  *
- * \remark STM32 Standard memcpy function only works on pointers that are aligned
+ * @remark STM32 Standard memcpy function only works on pointers that are aligned
  *
- * \param [out] dst  Destination array
- * \param [in]  src  Source array
- * \param [in]  size Number of bytes to be copied
+ * @param [out] dst  Destination array
+ * @param [in]  src  Source array
+ * @param [in]  size Number of bytes to be copied
  */
 void memcpy1( uint8_t* dst, const uint8_t* src, uint16_t size );
 
 /*!
- * \brief Copies size elements of src array to dst array reversing the byte order
+ * @brief Copies size elements of src array to dst array reversing the byte order
  *
- * \param [out] dst  Destination array
- * \param [in]  src  Source array
- * \param [in]  size Number of bytes to be copied
+ * @param [out] dst  Destination array
+ * @param [in]  src  Source array
+ * @param [in]  size Number of bytes to be copied
  */
 void memcpyr( uint8_t* dst, const uint8_t* src, uint16_t size );
 
 /*!
- * \brief Set size elements of dst array with value
+ * @brief Set size elements of dst array with value
  *
- * \remark STM32 Standard memset function only works on pointers that are aligned
+ * @remark STM32 Standard memset function only works on pointers that are aligned
  *
- * \param [out] dst   Destination array
- * \param [in]  value Default value
- * \param [in]  size  Number of bytes to be copied
+ * @param [out] dst   Destination array
+ * @param [in]  value Default value
+ * @param [in]  size  Number of bytes to be copied
  */
 void memset1( uint8_t* dst, uint8_t value, uint16_t size );
 
 /*!
- * \brief Converts a nibble to an hexadecimal character
+ * @brief Converts a nibble to an hexadecimal character
  *
- * \param [in] a   Nibble to be converted
- * \retval hexChar Converted hexadecimal character
+ * @param [in] a   Nibble to be converted
+ * @returns hexChar Converted hexadecimal character
  */
 int8_t Nibble2HexChar( uint8_t a );
 
@@ -146,6 +157,6 @@ int8_t Nibble2HexChar( uint8_t a );
 }
 #endif
 
-#endif  // __UTILITIES_H__
+#endif  // UTILITIES_H
 
 /* --- EOF ------------------------------------------------------------------ */

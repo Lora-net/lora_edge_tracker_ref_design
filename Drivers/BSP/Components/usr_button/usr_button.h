@@ -1,7 +1,7 @@
 /*!
- * \file      usr_button.h
+ * @file      usr_button.h
  *
- * \brief     User button driver definition.
+ * @brief     User button driver definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -62,30 +62,29 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- PUBLIC FUNCTIONS PROTOTYPES ---------------------------------------------
  */
- 
+
 /*!
- * \brief Init Switch
+ * @brief Init Switch
  */
 void usr_button_init( void );
 
 /*!
- * \brief Deinit Switchs 
+ * @brief Deinit Switchs
  */
 void usr_button_deinit( void );
 
 /*!
- * \brief Get the accelerometer IRQ state
+ * @brief Get the accelerometer IRQ state
  */
-bool get_usr_button_irq_state ( void );
+bool get_usr_button_irq_state( void );
 
 /*!
- * \brief Clear the accelerometer IRQ state
+ * @brief Clear the accelerometer IRQ state
  */
-void clear_usr_button_irq_state ( void );
-
+void clear_usr_button_irq_state( void );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //__USR_BUTTON_H__
+#endif  //__USR_BUTTON_H__

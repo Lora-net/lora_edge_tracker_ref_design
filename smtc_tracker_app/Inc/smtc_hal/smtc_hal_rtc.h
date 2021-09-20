@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_rtc.h
+ * @file      smtc_hal_rtc.h
  *
- * \brief     Board specific package RTC API definition.
+ * @brief     Board specific package RTC API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_RTC_H__
-#define __SMTC_HAL_RTC_H__
+#ifndef SMTC_HAL_RTC_H
+#define SMTC_HAL_RTC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,10 +39,8 @@ extern "C" {
  * -----------------------------------------------------------------------------
  * --- DEPENDENCIES ------------------------------------------------------------
  */
-
 #include "stm32wbxx_hal.h"
 #include "stm32wbxx_ll_rtc.h"
-
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC MACROS -----------------------------------------------------------
@@ -54,22 +52,22 @@ extern "C" {
  */
 
 /*!
- * \brief Temperature coefficient of the clock source
+ * @brief Temperature coefficient of the clock source
  */
 #define RTC_TEMP_COEFFICIENT ( -0.035 )
 
 /*!
- * \brief Temperature coefficient deviation of the clock source
+ * @brief Temperature coefficient deviation of the clock source
  */
 #define RTC_TEMP_DEV_COEFFICIENT ( 0.0035 )
 
 /*!
- * \brief Turnover temperature of the clock source
+ * @brief Turnover temperature of the clock source
  */
 #define RTC_TEMP_TURNOVER ( 25.0 )
 
 /*!
- * \brief Turnover temperature deviation of the clock source
+ * @brief Turnover temperature deviation of the clock source
  */
 #define RTC_TEMP_DEV_TURNOVER ( 5.0 )
 
@@ -79,7 +77,7 @@ extern "C" {
  */
 
 /*!
- * \brief RTC timer context
+ * @brief RTC timer context
  */
 typedef struct
 {
@@ -89,7 +87,7 @@ typedef struct
 } rtc_context_t;
 
 /*!
- * \brief RTC structure
+ * @brief RTC structure
  */
 typedef struct hal_rtc_s
 {
@@ -108,133 +106,133 @@ typedef struct hal_rtc_s
  */
 
 /*!
- *  \brief Initializes the MCU RTC peripheral
+ *  @brief Initializes the MCU RTC peripheral
  */
 void hal_rtc_init( void );
 
 /*!
- * \brief Returns the current RTC time in seconds
+ * @brief Returns the current RTC time in seconds
  *
- * \remark Used for scheduling autonomous retransmissions (i.e: NbTrans),
+ * @remark Used for scheduling autonomous retransmissions (i.e: NbTrans),
  *         transmitting MAC answers, basically any delay without accurate time
  *         constraints. It is also used to measure the time spent inside the
  *         LoRaWAN process for the integrated failsafe.
  *
- * \retval rtc_time_s Current RTC time in seconds
+ * @returns rtc_time_s Current RTC time in seconds
  */
 uint32_t hal_rtc_get_time_s( void );
 
 /*!
- * \brief Returns the current RTC time in milliseconds
+ * @brief Returns the current RTC time in milliseconds
  *
- * \remark Used to timestamp radio events (i.e: end of TX), will also be used
+ * @remark Used to timestamp radio events (i.e: end of TX), will also be used
  * for ClassB
  *
- * \retval rtc_time_ms Current RTC time in milliseconds wraps every 49 days
+ * @returns rtc_time_ms Current RTC time in milliseconds wraps every 49 days
  */
 uint32_t hal_rtc_get_time_ms( void );
 
 /*!
- * \brief Waits delay milliseconds by polling RTC
+ * @brief Waits delay milliseconds by polling RTC
  *
- * \param [in] milliseconds Delay in ms
+ * @param [in] milliseconds Delay in ms
  */
 void hal_rtc_delay_in_ms( const uint32_t milliseconds );
 
 /*!
- * \brief Sets the rtc wakeup timer for seconds parameter. The RTC will generate an IRQ
+ * @brief Sets the rtc wakeup timer for seconds parameter. The RTC will generate an IRQ
  * to wakeup the MCU.
  *
- * \param [in] seconds Number of seconds before wakeup
+ * @param [in] seconds Number of seconds before wakeup
  */
 void hal_rtc_wakeup_timer_set_s( const int32_t seconds );
 
 /*!
- * \brief Sets the rtc wakeup timer for milliseconds parameter. The RTC will generate
+ * @brief Sets the rtc wakeup timer for milliseconds parameter. The RTC will generate
  * an IRQ to wakeup the MCU.
  *
- * \param [in] milliseconds Number of seconds before wakeup
+ * @param [in] milliseconds Number of seconds before wakeup
  */
 void hal_rtc_wakeup_timer_set_ms( const int32_t milliseconds );
 
 /*!
- * \brief Stops the Timer
+ * @brief Stops the Timer
  */
 void hal_rtc_stop_timer( void );
 
 /*!
- * \brief Set the RTC time reference in ticks
+ * @brief Set the RTC time reference in ticks
  *
- * \retval time_ref_in_ticks RTC time reference in ticks
+ * @returns time_ref_in_ticks RTC time reference in ticks
  */
 uint32_t hal_rtc_set_time_ref_in_ticks( void );
 
 /*!
- * \brief Get the RTC time reference in ticks
+ * @brief Get the RTC time reference in ticks
  *
- * \retval time_ref_in_ticks RTC time reference in ticks
+ * @returns time_ref_in_ticks RTC time reference in ticks
  */
 uint32_t hal_rtc_get_time_ref_in_ticks( void );
 
 /*!
- * \brief Get the RTC timer elapsed time since the last Alarm was set
+ * @brief Get the RTC timer elapsed time since the last Alarm was set
  *
- * \retval RTC Elapsed time since the last alarm in ticks.
+ * @returns RTC Elapsed time since the last alarm in ticks.
  */
 uint32_t hal_rtc_get_timer_elapsed_value( void );
 
 /*!
- * \brief Get the RTC timer value
+ * @brief Get the RTC timer value
  *
- * \retval RTC Timer value
+ * @returns RTC Timer value
  */
 uint32_t hal_rtc_get_timer_value( void );
 
 /*!
- * \brief Converts time in ms to time in ticks
+ * @brief Converts time in ms to time in ticks
  *
- * \param [in] milliseconds Time in milliseconds
- * \retval milliseconds Time in timer ticks
+ * @param [in] milliseconds Time in milliseconds
+ * @returns milliseconds Time in timer ticks
  */
 uint32_t hal_rtc_ms_2_tick( const uint32_t milliseconds );
 
 /*!
- * \brief Converts time in ticks to time in ms
+ * @brief Converts time in ticks to time in ms
  *
- * \param [in] tick Time in timer ticks
- * \retval tick Time in milliseconds
+ * @param [in] tick Time in timer ticks
+ * @returns tick Time in milliseconds
  */
 uint32_t hal_rtc_tick_2_ms( const uint32_t tick );
 
 /*!
- * \brief returns the wake up time in ticks
+ * @brief returns the wake up time in ticks
  *
- * \retval wake up time in ticks
+ * @returns wake up time in ticks
  */
 uint32_t hal_rtc_get_minimum_timeout( void );
 
 /*!
- * \brief Computes the temperature compensation for a period of time on a
+ * @brief Computes the temperature compensation for a period of time on a
  *        specific temperature.
  *
- * \param [in] period Time period to compensate in milliseconds
- * \param [in] temperature Current temperature
+ * @param [in] period Time period to compensate in milliseconds
+ * @param [in] temperature Current temperature
  *
- * \retval Compensated time period
+ * @returns Compensated time period
  */
 uint32_t hal_rtc_temp_compensation( uint32_t period, float temperature );
 
 /*!
- * \brief Stops the Alarm
+ * @brief Stops the Alarm
  */
 void hal_rtc_stop_alarm( void );
 
 /*!
- * \brief Starts wake up alarm
+ * @brief Starts wake up alarm
  *
- * \note  Alarm in RtcTimerContext.Time + timeout
+ * @remark  Alarm in RtcTimerContext.Time + timeout
  *
- * \param [in] timeout Timeout value in ticks
+ * @param [in] timeout Timeout value in ticks
  */
 void hal_rtc_start_alarm( uint32_t timeout );
 
@@ -242,6 +240,6 @@ void hal_rtc_start_alarm( uint32_t timeout );
 }
 #endif
 
-#endif  // __SMTC_HAL_RTC_H__
+#endif  // SMTC_HAL_RTC_H
 
 /* --- EOF ------------------------------------------------------------------ */

@@ -112,7 +112,7 @@ void P2PS_STM_App_Notification(P2PS_STM_App_Notification_evt_t *pNotification)
             uint8_t out_buffer[244];
             uint8_t out_buffer_size = 0;
 
-            out_buffer_size = tracker_parse_cmd(pNotification->DataTransfered.pPayload, out_buffer);
+            out_buffer_size = tracker_parse_cmd(pNotification->DataTransfered.pPayload, out_buffer, true);
 
             if(out_buffer_size > 0)
             {
@@ -130,7 +130,7 @@ void P2PS_STM_App_Notification(P2PS_STM_App_Notification_evt_t *pNotification)
         {
             pNotification->DataTransfered.pPayload[2] = 0xFF; // Force the nb_page to erase to 255
             *(uint32_t*)SRAM1_BASE = *(uint32_t*)pNotification->DataTransfered.pPayload;
-            hal_mcu_reset();
+            hal_mcu_reset( );
             break;
         }
 
@@ -203,19 +203,21 @@ void P2PS_APP_Init(void)
  *
  *************************************************************/
 /* USER CODE BEGIN FD_LOCAL_FUNCTIONS*/
-void P2PS_Send_Notification(void)
-{   
-    if(P2P_Server_App_Context.ReadWrite.ReadyToSend == 0x01)
+void P2PS_Send_Notification( void )
+{
+    if( P2P_Server_App_Context.ReadWrite.ReadyToSend == 0x01 )
     {
         P2P_Server_App_Context.ReadWrite.ReadyToSend = 0;
-        HAL_DBG_TRACE_MSG("-- P2P APPLICATION SERVER  : INFORM CLIENT ASNWER CMD \n\r");
-        if(P2P_Server_App_Context.Notification_Status == 1)
+        HAL_DBG_TRACE_MSG( "-- P2P APPLICATION SERVER  : INFORM CLIENT ASNWER CMD \n\r" );
+        if( P2P_Server_App_Context.Notification_Status == 1 )
         {
-            P2PS_STM_App_Update_Char(P2P_NOTIFY_CHAR_UUID, P2P_Server_App_Context.ReadWrite.Buffer,P2P_Server_App_Context.ReadWrite.Len);
+            P2PS_STM_App_Update_Char( P2P_NOTIFY_CHAR_UUID, P2P_Server_App_Context.ReadWrite.Buffer,
+                                      P2P_Server_App_Context.ReadWrite.Len );
         }
         else
         {
-            P2PS_STM_App_Update_Char(P2P_WRITE_CHAR_UUID, P2P_Server_App_Context.ReadWrite.Buffer,P2P_Server_App_Context.ReadWrite.Len);
+            P2PS_STM_App_Update_Char( P2P_WRITE_CHAR_UUID, P2P_Server_App_Context.ReadWrite.Buffer,
+                                      P2P_Server_App_Context.ReadWrite.Len );
         }
     }
 

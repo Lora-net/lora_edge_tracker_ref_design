@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_spi.h
+ * @file      smtc_hal_spi.h
  *
- * \brief     Board specific package SPI API definition.
+ * @brief     Board specific package SPI API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,8 +28,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __SMTC_HAL_SPI_H__
-#define __SMTC_HAL_SPI_H__
+#ifndef SMTC_HAL_SPI_H
+#define SMTC_HAL_SPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +60,7 @@ extern "C" {
  */
 
 /*!
- *  \brief SPI structure
+ *  @brief SPI structure
  */
 typedef struct hal_spi_s
 {
@@ -80,12 +80,12 @@ typedef struct hal_spi_s
  */
 
 /*!
- * \brief Initializes the MCU SPI peripheral
+ * @brief Initializes the MCU SPI peripheral
  *
- * \param [in] id   SPI interface id [1:N]
- * \param [in] mosi SPI MOSI pin name to be used
- * \param [in] miso SPI MISO pin name to be used
- * \param [in] sclk SPI SCLK pin name to be used
+ * @param [in] id   SPI interface id [1:N]
+ * @param [in] mosi SPI MOSI pin name to be used
+ * @param [in] miso SPI MISO pin name to be used
+ * @param [in] sclk SPI SCLK pin name to be used
  */
 void hal_spi_init( const uint32_t id, const hal_gpio_pin_names_t mosi, const hal_gpio_pin_names_t miso,
                    const hal_gpio_pin_names_t sclk );
@@ -93,17 +93,17 @@ void hal_spi_init( const uint32_t id, const hal_gpio_pin_names_t mosi, const hal
 /*!
  *  Deinitialize the MCU SPI peripheral
  *
- * \param [in] id   SPI interface id [1:N]
+ * @param [in] id   SPI interface id [1:N]
  */
 void hal_spi_deinit( const uint32_t id );
 
 /*!
- * \brief Sends out_data and receives in_data
+ * @brief Sends out_data and receives in_data
  *
- * \param [in] id       SPI interface id [1:N]
- * \param [in] out_data Byte to be sent
+ * @param [in] id       SPI interface id [1:N]
+ * @param [in] out_data Byte to be sent
 
- * \retval in_data      Received byte.
+ * @returns in_data      Received byte.
  */
 uint16_t hal_spi_in_out( const uint32_t id, const uint16_t out_data );
 
@@ -111,4 +111,4 @@ uint16_t hal_spi_in_out( const uint32_t id, const uint16_t out_data );
 }
 #endif
 
-#endif  // __SMTC_HAL_SPI_H__
+#endif  // SMTC_HAL_SPI_H

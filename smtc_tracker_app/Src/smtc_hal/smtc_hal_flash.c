@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_flash.c
+ * @file      smtc_hal_flash.c
  *
- * \brief     Board specific package FLASH API implementation
+ * @brief     Board specific package FLASH API implementation
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -62,7 +62,7 @@
  */
 
 /*!
- * \brief Initializes the FlashUserStartAddr to FLASH_USER_END_ADDR to avoid erase a occupied memory .
+ * @brief Initializes the FlashUserStartAddr to FLASH_USER_END_ADDR to avoid erase a occupied memory .
  */
 uint32_t flash_user_start_addr = FLASH_USER_END_ADDR;
 
@@ -84,9 +84,9 @@ static uint32_t get_page( uint32_t address );
  */
 
 /*!
- * \brief Initializes the FLASH module and find the first empty page.
+ * @brief Initializes the FLASH module and find the first empty page.
  *
- * \retval User flash start address
+ * @returns User flash start address
  */
 uint32_t flash_init( void )
 {

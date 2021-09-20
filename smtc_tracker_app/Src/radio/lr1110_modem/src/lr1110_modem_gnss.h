@@ -77,18 +77,30 @@ extern "C" {
     ( ( LR1110_MODEM_GNSS_FULL_UPDATE_N_ALMANACS * LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE ) + 20 )
 
 /*!
- * @brief Size of the almanac for all satellites when reading
+ * @brief Position of the destination ID in the scan result buffer
  */
-#define LR1110_MODEM_GNSS_FULL_ALMANAC_READ_BUFFER_SIZE \
-    ( ( LR1110_MODEM_GNSS_FULL_UPDATE_N_ALMANACS * LR1110_MODEM_GNSS_SINGLE_ALMANAC_READ_SIZE ) + 4 )
+#define LR1110_MODEM_GNSS_SCAN_RESULT_DESTINATION_INDEX ( 0 )
+
+/*!
+ * @brief Position of the scan done event type in the scan result buffer, \note a event type exists only if the
+ * destination is LR1110_MODEM_GNSS_DESTINATION_HOST
+ */
+#define LR1110_MODEM_GNSS_SCAN_RESULT_EVENT_TYPE_INDEX ( 1 )
 
 /*
  * -----------------------------------------------------------------------------
  * --- PUBLIC TYPES ------------------------------------------------------------
  */
 
+/*!
+ * @brief GNSS Event value for Host destinated message
+ *
+ * These values are the meaning of the second byte of a message destinated to host obtained when reading
+ * LR1110_MODEM_LORAWAN_EVENT_GNSS_SCAN_DONE buffer
+ */
 typedef enum
 {
+    LR1110_MODEM_GNSS_SCAN_DONE_PROCESS_OK                                 = 0x00,
     LR1110_MODEM_GNSS_SCAN_DONE_IQ_FAILS                                   = 0x05,
     LR1110_MODEM_GNSS_SCAN_DONE_NO_TIME                                    = 0x06,
     LR1110_MODEM_GNSS_SCAN_DONE_NO_SATELLITE_DETECTED                      = 0x07,
@@ -100,13 +112,12 @@ typedef enum
 } lr1110_modem_gnss_scan_done_event_t;
 
 /*!
- * @brief GNSS response type indicates the destination: Host MCU, GNSS solver or GNSS DMC
+ * @brief GNSS response type indicates the destination: Host MCU or GNSS solver
  */
 typedef enum
 {
     LR1110_MODEM_GNSS_DESTINATION_HOST   = 0x00,  //!< Host MCU
     LR1110_MODEM_GNSS_DESTINATION_SOLVER = 0x01,  //!< GNSS Solver
-    LR1110_MODEM_GNSS_DESTINATION_DMC    = 0x02,  //!< GNSS DMC
 } lr1110_modem_gnss_destination_t;
 
 /*!
@@ -121,11 +132,11 @@ typedef enum
 /*!
  * @brief bit mask indicating which information is added in the output payload
  */
-enum lr1110_modem_gnss_input_parameters_e
+enum lr1110_modem_gnss_result_mask_e
 {
-    LR1110_MODEM_GNSS_BIT_CHANGE_MASK   = ( 1 << 0 ),
+    LR1110_MODEM_GNSS_PSEUDO_RANGE_MASK = ( 1 << 0 ),
     LR1110_MODEM_GNSS_DOPPLER_MASK      = ( 1 << 1 ),
-    LR1110_MODEM_GNSS_PSEUDO_RANGE_MASK = ( 1 << 2 ),
+    LR1110_MODEM_GNSS_BIT_CHANGE_MASK   = ( 1 << 2 ),
 };
 
 /*!
@@ -138,28 +149,38 @@ typedef enum
 } lr1110_modem_gnss_constellation_t;
 
 /*!
+ * @brief Almanac Constellation identifiers
+ */
+typedef enum
+{
+    LR1110_MODEM_GNSS_ALMANAC_CONSTELLATION_GPS       = 0x01,
+    LR1110_MODEM_GNSS_ALMANAC_CONSTELLATION_BEIDOU    = 0x02,
+    LR1110_MODEM_GNSS_ALMANAC_CONSTELLATION_UNDEFINED = 0x08,
+} lr1110_modem_gnss_almanac_constellation_id_t;
+
+/*!
  * @brief Frequency search space around the Doppler frequency
  */
 typedef enum
 {
-    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_250HZ = 0x00,
-    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_500HZ = 0x01,
-    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_1KHZ  = 0x02,
-    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_2KHZ  = 0x03,
+    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_250_HZ = 0x00,
+    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_500_HZ = 0x01,
+    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_1_KHZ  = 0x02,
+    LR1110_MODEM_GNSS_FREQUENCY_SEARCH_SPACE_2_KHZ  = 0x03,
 } lr1110_modem_gnss_frequency_search_space_t;
 
 /*!
- * @brief Message to GNSS_DMC indicating status error code
+ * @brief Context status error code
  */
 typedef enum
 {
-    LR1110_MODEM_GNSS_DMC_NO_ERROR                         = 0x00,  //!< No error
-    LR1110_MODEM_GNSS_DMC_ALMANAC_TOO_OLD                  = 0x01,  //!< Almanac too old
-    LR1110_MODEM_GNSS_DMC_LAST_ALMANAC_UPDATE_CRC_MISMATCH = 0x02,  //!< Last almanac update CRC mismatch
-    LR1110_MODEM_GNSS_DMC_FLASH_MEMORY_INTEGRITY_ERROR     = 0x03,  //!< Flash memory integrity error
-    LR1110_MODEM_GNSS_DMC_LAST_ALMANAC_UPDATE_TOO_OLD =
+    LR1110_MODEM_GNSS_CONTEXT_STATUS_NO_ERROR                         = 0x00,  //!< No error
+    LR1110_MODEM_GNSS_CONTEXT_STATUS_ALMANAC_TOO_OLD                  = 0x01,  //!< Almanac too old
+    LR1110_MODEM_GNSS_CONTEXT_STATUS_LAST_ALMANAC_UPDATE_CRC_MISMATCH = 0x02,  //!< Last almanac update CRC mismatch
+    LR1110_MODEM_GNSS_CONTEXT_STATUS_FLASH_MEMORY_INTEGRITY_ERROR     = 0x03,  //!< Flash memory integrity error
+    LR1110_MODEM_GNSS_CONTEXT_STATUS_LAST_ALMANAC_UPDATE_TOO_OLD =
         0x04,  //!< Last almanac update time difference more than 1 month
-} lr1110_modem_gnss_dmc_error_code_t;
+} lr1110_modem_gnss_context_status_error_code_t;
 
 /*!
  * @brief Satellite ID type
@@ -185,8 +206,9 @@ typedef uint8_t lr1110_modem_gnss_frequency_search_space_mask_t;
  */
 typedef uint8_t lr1110_modem_gnss_almanac_full_update_bytestream_t[LR1110_MODEM_GNSS_FULL_ALMANAC_WRITE_BUFFER_SIZE];
 
-typedef uint8_t lr1110_modem_gnss_almanac_full_read_bytestream_t[LR1110_MODEM_GNSS_FULL_ALMANAC_READ_BUFFER_SIZE];
-
+/*!
+ * @brief Buffer that hold one chunk of almanac for update
+ */
 typedef uint8_t lr1110_modem_gnss_almanac_one_chunk_bytestream_t[LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE];
 
 /*!
@@ -203,8 +225,8 @@ typedef struct
  */
 typedef struct
 {
-    lr1110_modem_gnss_satellite_id_t satellite_id;
-    int8_t                           cnr;  //!< Carrier-to-noise ration (C/N) in dB
+    lr1110_modem_gnss_satellite_id_t satellite_id;  //!< Satellite ID
+    int8_t                           cnr;           //!< Carrier-to-noise ration (C/N) in dB
 } lr1110_modem_gnss_detected_satellite_t;
 
 /*!
@@ -212,8 +234,8 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t radio_ms;
-    uint32_t computation_ms;
+    uint32_t radio_ms;        //!< Duration with radio on
+    uint32_t computation_ms;  //!< Duration of computation
 } lr1110_modem_gnss_timings_t;
 
 /*!
@@ -230,12 +252,12 @@ typedef struct
  */
 typedef struct
 {
-    uint8_t  gnss_firmware_version;
+    uint8_t  gnss_firmware_version;  //!< GNSS firmware version
     uint32_t global_almanac_crc;  //!< The global CRC is the 32 bit CRC computed on all the flash memory content, on all
                                   //!< 128 satellites. Per sv 21 bytes
-    lr1110_modem_gnss_dmc_error_code_t         error_code;
-    uint8_t                                    almanac_update_bit_mask;
-    lr1110_modem_gnss_frequency_search_space_t frequency_search_space;
+    lr1110_modem_gnss_context_status_error_code_t error_code;               //!< Error code
+    uint8_t                                       almanac_update_bit_mask;  //!< Almanac update bit mask
+    lr1110_modem_gnss_frequency_search_space_t    frequency_search_space;   //!< Frequency search space
 } lr1110_modem_gnss_context_t;
 
 /*
@@ -394,6 +416,9 @@ lr1110_modem_response_code_t lr1110_modem_gnss_set_assistance_position(
 /*!
  * @brief Function to read the assistance position.
  *
+ * The assistance position read may be different from the one set beforehand
+ * with lr1110_modem_gnss_set_assistance_position due to a scaling computation.
+ *
  * @param [in] context Chip implementation context
  * @param [out] assistance_position latitude 12 bits and longitude 12 bits @ref
  * lr1110_modem_gnss_solver_assistance_position_t
@@ -494,32 +519,32 @@ lr1110_modem_response_code_t lr1110_modem_gnss_almanac_read_by_index( const void
  *
  * @param [in] context Chip implementation context
  * @param [in] effort_mode Effort mode @ref lr1110_modem_gnss_search_mode_t
- * @param [in] gnss_input_parameters Bit mask indicating which information is added in the output payload @ref
- * lr1110_modem_gnss_input_parameters_e
+ * @param [in] gnss_result_mask Bit mask indicating which information is added in the output payload @ref
+ * lr1110_modem_gnss_result_mask_e
  * @param [in] nb_sat The expected number of satellite to provide. This value must be in the range [0:128]
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous_md( const void*                           context,
-                                                                   const lr1110_modem_gnss_search_mode_t effort_mode,
-                                                                   const uint8_t gnss_input_parameters,
-                                                                   const uint8_t nb_sat );
+lr1110_modem_response_code_t lr1110_modem_gnss_scan_autonomous( const void*                           context,
+                                                                const lr1110_modem_gnss_search_mode_t effort_mode,
+                                                                const uint8_t gnss_result_mask,
+                                                                const uint8_t nb_sat );
 
 /*!
  * @brief GNSS scan with assisted parameters.
  *
  * @param [in] context Chip implementation context
  * @param [in] effort_mode Effort mode @ref lr1110_modem_gnss_search_mode_t
- * @param [in] gnss_input_parameters Bit mask indicating which information is added in the output payload @ref
- * lr1110_modem_gnss_input_parameters_e
+ * @param [in] gnss_result_mask Bit mask indicating which information is added in the output payload @ref
+ * lr1110_modem_gnss_result_mask_e
  * @param [in] nb_sat The expected number of satellite to provide. This value must be in the range [0:128]
  *
  * @returns Operation status
  */
-lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted_md( const void*                           context,
-                                                                 const lr1110_modem_gnss_search_mode_t effort_mode,
-                                                                 const uint8_t gnss_input_parameters,
-                                                                 const uint8_t nb_sat );
+lr1110_modem_response_code_t lr1110_modem_gnss_scan_assisted( const void*                           context,
+                                                              const lr1110_modem_gnss_search_mode_t effort_mode,
+                                                              const uint8_t gnss_result_mask,
+                                                              const uint8_t nb_sat );
 
 /*!
  * @brief Push data received from solver to LR1110 modem

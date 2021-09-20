@@ -1,7 +1,7 @@
 /*!
- * \file      external_supply.c
+ * @file      external_supply.c
  *
- * \brief     External supply driver implementation.
+ * @brief     External supply driver implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -33,7 +33,7 @@
  * -----------------------------------------------------------------------------
  * --- DEPENDENCIES ------------------------------------------------------------
  */
- 
+
 #include "smtc_hal.h"
 
 /*
@@ -66,66 +66,49 @@
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
 
-void external_supply_init( uint8_t vcc_mask ){
-    
-    if( vcc_mask & VCC_SENSORS_SUPPLY_MASK)
+void external_supply_init( uint8_t vcc_mask )
+{
+    if( vcc_mask & VCC_SENSORS_SUPPLY_MASK )
     {
         hal_gpio_init_out( VCC_SENSORS_MCU, 0 );
     }
-    if( vcc_mask & LNA_SUPPLY_MASK)
+    if( vcc_mask & LNA_SUPPLY_MASK )
     {
         hal_gpio_init_out( LNA_PON, 0 );
     }
-    if( vcc_mask & SPDT_2G4_MASK)
+    if( vcc_mask & SPDT_2G4_MASK )
     {
         hal_gpio_init_out( VCC_SWITCH_WIFI_BLE, 0 );
     }
 }
 
-void external_supply_deinit( uint8_t vcc_mask ){
-    
-    if( vcc_mask & VCC_SENSORS_SUPPLY_MASK)
+void external_supply_deinit( uint8_t vcc_mask )
+{
+    if( vcc_mask & VCC_SENSORS_SUPPLY_MASK )
     {
-        hal_gpio_deinit(VCC_SENSORS_MCU);
+        hal_gpio_deinit( VCC_SENSORS_MCU );
     }
-    if( vcc_mask & LNA_SUPPLY_MASK)
+    if( vcc_mask & LNA_SUPPLY_MASK )
     {
-        hal_gpio_deinit(LNA_PON);
+        hal_gpio_deinit( LNA_PON );
     }
-    if( vcc_mask & SPDT_2G4_MASK)
+    if( vcc_mask & SPDT_2G4_MASK )
     {
-        hal_gpio_deinit(VCC_SWITCH_WIFI_BLE);
+        hal_gpio_deinit( VCC_SWITCH_WIFI_BLE );
     }
 }
 
-void lna_on( void ){
-    hal_gpio_set_value(LNA_PON, 1);
-}
+void lna_on( void ) { hal_gpio_set_value( LNA_PON, 1 ); }
 
+void lna_off( void ) { hal_gpio_set_value( LNA_PON, 0 ); }
 
-void lna_off( void ){
-    hal_gpio_set_value(LNA_PON, 0);
-}
+void spdt_2g4_on( void ) { hal_gpio_set_value( VCC_SWITCH_WIFI_BLE, 1 ); }
 
-void spdt_2g4_on( void ){
+void spdt_2g4_off( void ) { hal_gpio_set_value( VCC_SWITCH_WIFI_BLE, 0 ); }
 
-    hal_gpio_set_value(VCC_SWITCH_WIFI_BLE, 1);
-}
+void vcc_sensors_on( void ) { hal_gpio_set_value( VCC_SENSORS_MCU, 1 ); }
 
-void spdt_2g4_off( void ){
-
-    hal_gpio_set_value(VCC_SWITCH_WIFI_BLE, 0);
-}
-
-void vcc_sensors_on( void ){
-
-    hal_gpio_set_value(VCC_SENSORS_MCU, 1);
-}
-
-void vcc_sensors_off( void ){
-
-    hal_gpio_set_value(VCC_SENSORS_MCU, 0);
-}
+void vcc_sensors_off( void ) { hal_gpio_set_value( VCC_SENSORS_MCU, 0 ); }
 
 /*
  * -----------------------------------------------------------------------------

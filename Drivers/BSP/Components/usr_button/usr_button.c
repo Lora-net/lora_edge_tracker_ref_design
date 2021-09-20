@@ -1,7 +1,7 @@
 /*!
- * \file      usr_button.c
+ * @file      usr_button.c
  *
- * \brief     User button implementation.
+ * @brief     User button implementation.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -28,12 +28,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /*
  * -----------------------------------------------------------------------------
  * --- DEPENDENCIES ------------------------------------------------------------
  */
- 
+
 #include "smtc_hal.h"
 
 /*
@@ -57,31 +57,29 @@
  */
 
 /*!
- * \brief Hardware INT IRQ callback initialization
+ * @brief Hardware INT IRQ callback initialization
  *
- * \param [in] obj void* object 
+ * @param [in] obj void* object
  */
 void usr_button_irq_handler( void* obj );
-
 
 /*
  * -----------------------------------------------------------------------------
  * --- PRIVATE VARIABLES -------------------------------------------------------
  */
 
- /*!
- * \brief User button interrupt flag state
+/*!
+ * @brief User button interrupt flag state
  */
 static bool usr_button_irq_state = false;
 
- /*!
- * \brief User button gpio irq definition
+/*!
+ * @brief User button gpio irq definition
  */
-hal_gpio_irq_t usr_button=
-{
-    .pin = USER_BUTTON,
+hal_gpio_irq_t usr_button = {
+    .pin      = USER_BUTTON,
     .callback = usr_button_irq_handler,
-    .context = NULL,
+    .context  = NULL,
 };
 
 /*
@@ -89,34 +87,27 @@ hal_gpio_irq_t usr_button=
  * --- PUBLIC FUNCTIONS DEFINITION ---------------------------------------------
  */
 
-void usr_button_init( void ){
-    
-    hal_gpio_init_in( usr_button.pin , HAL_GPIO_PULL_MODE_DOWN, HAL_GPIO_IRQ_MODE_RISING, &usr_button );
+void usr_button_init( void )
+{
+    hal_gpio_init_in( usr_button.pin, HAL_GPIO_PULL_MODE_DOWN, HAL_GPIO_IRQ_MODE_RISING, &usr_button );
 }
 
-void usr_button_deinit( void ){
-    
-    hal_gpio_irq_deatach( &usr_button ) ;
+void usr_button_deinit( void )
+{
+    hal_gpio_irq_deatach( &usr_button );
     hal_gpio_deinit( usr_button.pin );
 }
 
-bool get_usr_button_irq_state ( void )
-{
-    return usr_button_irq_state;
-}
+bool get_usr_button_irq_state( void ) { return usr_button_irq_state; }
 
-void clear_usr_button_irq_state ( void )
-{
-    usr_button_irq_state = false;
-}
+void clear_usr_button_irq_state( void ) { usr_button_irq_state = false; }
 
 /***************************************************************************\
  * Local Function Definition
 \***************************************************************************/
 
-void usr_button_irq_handler ( void* obj )
+void usr_button_irq_handler( void* obj )
 {
     leds_on( LED_RX_MASK );
     usr_button_irq_state = true;
 }
-

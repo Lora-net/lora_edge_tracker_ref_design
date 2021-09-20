@@ -1,7 +1,7 @@
 /*!
- * \file      gnss_scan.h
+ * @file      gnss_scan.h
  *
- * \brief     GNSS scan definition
+ * @brief     GNSS scan definition
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -72,23 +72,12 @@ extern "C" {
  */
 
 /*!
- * \brief GNSS scan result type
+ * @brief GNSS scan result type
  */
 typedef uint8_t gnss_scan_result_t;
 
 /*!
- * \brief GNSS state used in the state machine
- */
-typedef enum
-{
-    GNSS_START_SCAN,
-    GNSS_GET_RESULTS,
-    GNSS_TERMINATED,
-    GNSS_LOW_POWER,
-} gnss_state_t;
-
-/*!
- * \brief GNSS Antenna type
+ * @brief GNSS Antenna type
  */
 typedef enum
 {
@@ -97,42 +86,33 @@ typedef enum
 } antenna_t;
 
 /*!
- * \brief GNSS general settings
+ * @brief GNSS general settings
  */
 typedef struct
 {
     bool                                           enabled;
     uint8_t                                        scan_type;
-    uint8_t                                        inter_capture_delay_second;
     lr1110_modem_gnss_search_mode_t                search_mode;
-    uint8_t                                        input_paramaters;
+    uint8_t                                        input_parameters;
     uint8_t                                        constellation_to_use;
     lr1110_modem_gnss_solver_assistance_position_t assistance_position;
     uint8_t                                        nb_sat;
 } gnss_settings_t;
 
 /*!
- * \brief GNSS scan results
+ * @brief GNSS scan results
  */
 typedef struct
 {
-    bool                                   double_scan_first_scan_done;
-    uint16_t                               result_size;
+    bool                                   is_valid_nav_message;
+    uint16_t                               nav_message_size;
     antenna_t                              antenna;
-    uint8_t                                result_buffer[GNSS_BUFFER_MAX_SIZE];
+    uint8_t                                nav_message[GNSS_BUFFER_MAX_SIZE];
     uint8_t                                nb_detected_satellites;
     lr1110_modem_gnss_detected_satellite_t detected_satellites[32];
+    lr1110_modem_gnss_timings_t            timings;
+    uint8_t                                average_cn;
 } gnss_scan_single_result_t;
-
-/*!
- * \brief GNSS scan general handler
- */
-typedef struct
-{
-    gnss_scan_single_result_t capture_result;
-    gnss_settings_t           settings;
-    gnss_state_t              state;
-} gnss_t;
 
 /*
  * -----------------------------------------------------------------------------
@@ -140,50 +120,61 @@ typedef struct
  */
 
 /*!
- * \brief Function executed on GNSS Scan done event
+ * @brief Function executed on GNSS Scan done event
  *
- * \param [in] buffer Buffer containing the NAV Message
- *
- * \param [in] size Size of the NAV message
+ * @param [in] buffer Buffer containing the NAV Message
+ * @param [in] size Size of the NAV message
  */
 void lr1110_modem_gnss_scan_done( uint8_t* buffer, uint16_t size );
 
 /*!
- * \brief Display the last scan results
+ * @brief Display the last scan results
+ *
+ * @param [in] capture_result Structure containing the capture result, \ref gnss_scan_single_result_t
  */
-void gnss_scan_display_results( void );
+void gnss_scan_display_results( const gnss_scan_single_result_t* capture_result );
 
 /*!
- * \brief start the gnss capture state machine
+ * @brief Determine the best nav message between two nav messages and valid only one nav message
  *
- * \param [in] context Radio abstraction
+ * @param [in/out] capture_result Structure containing the pcb capture result, \ref gnss_scan_single_result_t
+ * @param [in/out] capture_result Structure containing the patch capture result, \ref gnss_scan_single_result_t
  */
-gnss_scan_result_t gnss_scan_execute( const void* context );
+void gnss_scan_determine_best_nav_message( gnss_scan_single_result_t* pcb_capture_result,
+                                           gnss_scan_single_result_t* patch_capture_result );
 
 /*!
- * \brief init the gnss state machine
+ * @brief start the gnss capture state machine
  *
- * \param [in] context Radio abstraction
+ * @param [in] context Radio abstraction
+ * @param [in] settings GNSS settings to apply \ref gnss_settings_t
+ * @param [out] capture_result Structure containing the capture result, \ref gnss_scan_single_result_t
  *
- * \param [in] settings GNSS settings to apply \ref gnss_settings_t
+ * @returns GNSS scan result operation
  */
-void gnss_scan_init( const void* context, gnss_settings_t settings );
+gnss_scan_result_t gnss_scan_execute( const void* context, antenna_t antenna, const gnss_settings_t* settings,
+                                      gnss_scan_single_result_t* capture_result );
 
 /*!
- * \brief Choose scan mode between assisted and autonomous
+ * @brief Set the full almanac update flag.
  *
- * \param [in] type between
-    ASSISTED_MODE or AUTONOMOUS_MODE
+ * @param [in] enable Enable or Disable the full almanac update flag.
  */
-void gnss_scan_set_type( uint8_t type );
+void gnss_set_full_almanac_udapte_flag( bool enable );
 
 /*!
- * \brief configure by default the gnss scanner
+ * @brief Get the full almanac update flag.
  *
- * \param [in] antenna selection between
- * GNSS_PATCH_ANTENNA or GNSS_PCB_ANTENNA
+ * @returns full almanac update flag.
  */
-void gnss_scan_set_antenna( antenna_t antenna );
+bool gnss_get_full_almanac_udapte_flag( void );
+
+/*!
+ * @brief Get the almanac updated flag.
+ *
+ * @returns almanac updated flag.
+ */
+bool gnss_get_full_almanac_udapted( void );
 
 #ifdef __cplusplus
 }

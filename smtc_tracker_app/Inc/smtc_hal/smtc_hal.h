@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal.h
+ * @file      smtc_hal.h
  *
- * \brief     Board specific package API definition.
+ * @brief     Board specific package API definition.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __SMTC_HAL_H__
-#define __SMTC_HAL_H__
+#ifndef SMTC_HAL_H
+#define SMTC_HAL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,6 +92,6 @@ extern "C" {
 }
 #endif
 
-#endif  // __SMTC_HAL_H__
+#endif  // SMTC_HAL_H
 
 /* --- EOF ------------------------------------------------------------------ */

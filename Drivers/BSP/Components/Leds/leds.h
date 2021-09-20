@@ -54,20 +54,27 @@ extern "C" {
  * --- PUBLIC CONSTANTS --------------------------------------------------------
  */
 
-/*!
- * \brief LED TX MASK
- */
-#define LED_TX_MASK 0x01
+typedef enum
+{
+    LR1110_TRACKER_LED_TX,
+    LR1110_TRACKER_LED_RX,
+    LR1110_TRACKER_LED_COUNT
+} lr1110_tracker_led_t;
 
 /*!
- * \brief LED RX MASK
+ * @brief LED TX MASK
  */
-#define LED_RX_MASK 0x02
+#define LED_TX_MASK ( 1 << LR1110_TRACKER_LED_TX )
 
 /*!
- * \brief LED ALL MASK
+ * @brief LED RX MASK
  */
-#define LED_ALL_MASK 0x03
+#define LED_RX_MASK ( 1 << LR1110_TRACKER_LED_RX )
+
+/*!
+ * @brief LED ALL MASK
+ */
+#define LED_ALL_MASK ( LED_TX_MASK | LED_RX_MASK )
 
 /*
  * -----------------------------------------------------------------------------
@@ -80,42 +87,42 @@ extern "C" {
  */
 
 /*!
- * \brief Init Leds
+ * @brief Init Leds
  */
 void leds_init( void );
 
 /*!
- * \brief Deinit Leds
+ * @brief Deinit Leds
  */
 void leds_deinit( void );
 /*!
- * \brief Select and turn on Leds
+ * @brief Select and turn on Leds
  *
- * \param [in] leds Leds MASK to turn on leds
+ * @param [in] leds Leds MASK to turn on leds
  */
 void leds_on( uint8_t leds );
 
 /*!
- * \brief Select and turn off Leds
+ * @brief Select and turn off Leds
  *
- * \param [in] leds Leds MASK to turn off leds
+ * @param [in] leds Leds MASK to turn off leds
  */
 void leds_off( uint8_t leds );
 
 /*!
- * \brief Select and toggle Leds
+ * @brief Select and toggle Leds
  *
- * \param [in] leds Leds MASK to turn off leds
+ * @param [in] leds Leds MASK to turn off leds
  */
 void leds_toggle( uint8_t leds );
 
 /*!
- * \brief Select and toggle Leds
+ * @brief Select and toggle Leds
  *
- * \param [in] leds Leds MASK to turn off leds
- * \param [in] delay Blink delay
- * \param [in] nb_blink        Number of blink
- * \param [in] reset_leds     Reset leds at the beginning
+ * @param [in] leds Leds MASK to turn off leds
+ * @param [in] delay Blink delay
+ * @param [in] nb_blink        Number of blink
+ * @param [in] reset_leds     Reset leds at the beginning
  */
 void leds_blink( uint8_t leds, uint32_t delay, uint8_t nb_blink, bool reset_leds );
 
@@ -123,4 +130,4 @@ void leds_blink( uint8_t leds, uint32_t delay, uint8_t nb_blink, bool reset_leds
 }
 #endif
 
-#endif //__LEDS_H__
+#endif  //__LEDS_H__

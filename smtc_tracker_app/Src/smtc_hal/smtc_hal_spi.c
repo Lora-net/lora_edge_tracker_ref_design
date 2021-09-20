@@ -1,7 +1,7 @@
 /*!
- * \file      smtc_hal_spi.c
+ * @file      smtc_hal_spi.c
  *
- * \brief     Implements the spi HAL functions.
+ * @brief     Implements the spi HAL functions.
  *
  * Revised BSD License
  * Copyright Semtech Corporation 2020. All rights reserved.
@@ -63,14 +63,11 @@
  * --- PRIVATE VARIABLES -------------------------------------------------------
  */
 
-#if defined( __GNUC__ )
-#pragma GCC diagnostic ignored "-Wmissing-braces"
-#endif
 static hal_spi_t hal_spi[] = {
     [0] =
         {
             .interface = SPI1,
-            .handle    = NULL,
+            .handle    = { NULL },
             .pins =
                 {
                     .mosi = NC,
