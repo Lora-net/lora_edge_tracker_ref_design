@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [v1.4.0] 2022-xx-xx ###
+
+### Added
+* Add BLE/LoRaWAN GET_TRACKER_TYPE_CMD
+
+### Changed
+* Application startup improvement when LR1110 firmware is not present
+
+### Fixed
+* Change LBT bandwidth from 1.25MHz to 125KHz for Japan region
+* Change LBT bandwidth from 1.25MHz to 125KHz for KR920 region
+* Tracker was losting the BLE connection after a Modem-E firmware update
+* HSE capacitors tuning to fix the frequency drift in BLE.
+* LSCO jitter stability
+* Clear accelerometer IRQ at startup
 
 ### [v1.3.0] 2021-09-06 ###
 

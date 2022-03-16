@@ -61,11 +61,11 @@ extern "C" {
 #define FLASH_USER_START_PAGE ( 7 ) /* Start nb page of user Flash area, 8 because of the bootloader */
 
 #define FLASH_USER_END_ADDR ( ADDR_FLASH_PAGE_200 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user Flash area */
-#define FLASH_USER_END_PAGE ( 200 )                                            /* End nb page of user Flash area */
+#define FLASH_USER_END_PAGE ( 194 )                                            /* End nb page of user Flash area */
 
-#define FLASH_USER_INTERNAL_LOG_CTX_START_ADDR ADDR_FLASH_PAGE_201
+#define FLASH_USER_INTERNAL_LOG_CTX_START_ADDR ADDR_FLASH_PAGE_195
 #define FLASH_USER_INTERNAL_LOG_CTX_END_ADDR \
-    ( ADDR_FLASH_PAGE_201 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user ctx Flash area */
+    ( ADDR_FLASH_PAGE_195 + ADDR_FLASH_PAGE_SIZE - 1 ) /* End @ of user ctx Flash area */
 
 #define FLASH_USER_TRACKER_CTX_START_ADDR ADDR_FLASH_PAGE_202
 #define FLASH_USER_TRACKER_CTX_END_ADDR \

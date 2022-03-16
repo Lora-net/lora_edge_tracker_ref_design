@@ -40,12 +40,12 @@
 /*!
  * @brief Current minor version number of the driver
  */
-#define LR1110_MODEM_DRIVER_VERSION_MINOR 1
+#define LR1110_MODEM_DRIVER_VERSION_MINOR 0
 
 /*!
  * @brief Current patch version number of the driver
  */
-#define LR1110_MODEM_DRIVER_VERSION_PATCH 0
+#define LR1110_MODEM_DRIVER_VERSION_PATCH 1
 
 #ifdef __cplusplus
 extern "C" {

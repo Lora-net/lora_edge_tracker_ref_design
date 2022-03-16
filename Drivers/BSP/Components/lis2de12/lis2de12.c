@@ -40,14 +40,11 @@
  * RAM data
 \***************************************************************************/
 
-// The I2C instance of the LIS2DE12.
-extern hal_i2c_t   i2c1_instance;
-
-static bool accelerometer_irq1_state = false;
+static volatile bool accelerometer_irq1_state = false;
 
 static uint8_t who_am_i;
-axis3bit16_t data_raw_acceleration;
-float acceleration_mg[3];
+axis3bit16_t   data_raw_acceleration;
+float          acceleration_mg[3];
 
 static void accelerometer_irq1_init( void );
 
@@ -66,110 +63,122 @@ static hal_gpio_irq_t lis2de12_int1 = {
 };
 
 /**
-  * @defgroup  LIS2DE12
-  * @brief     This file provides a set of functions needed to drive the
-  *            lis2de12 enanced inertial module.
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12
+ * @brief     This file provides a set of functions needed to drive the
+ *            lis2de12 enanced inertial module.
+ * @{
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Interfaces_Functions
-  * @brief     This section provide a set of functions used to read and
-  *            write a generic register of the device.
-  *            MANDATORY: return 0 -> no Error.
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Interfaces_Functions
+ * @brief     This section provide a set of functions used to read and
+ *            write a generic register of the device.
+ *            MANDATORY: return 0 -> no Error.
+ * @{
+ *
+ */
 
- /*!
+/*!
  * @brief Initializes the hardware and variables associated with the lis2de12.
- * 
+ *
  * @param [in]  irq_active      Interupt MASK to activate int1 or not
  * @returns      Status        SUCCESS(1) or FAIL(0)
  */
-uint8_t accelerometer_init( uint8_t irq_active )
+uint8_t accelerometer_init( void )
 {
-    int i=0;
-    lis2de12_int1_cfg_t lis2de12_int1_cfg;
+    int                  i = 0;
+    lis2de12_int1_cfg_t  lis2de12_int1_cfg;
     lis2de12_ctrl_reg1_t ctrl_reg1;
     lis2de12_ctrl_reg3_t ctrl_reg3;
-    
+    lis2de12_int1_src_t  int1_gen_source;
+    uint32_t             ret = 1;
+
     /* Check device ID */
-    while( (i <= 5) && (who_am_i != LIS2DE12_ID))
+    while( ( i <= 5 ) && ( who_am_i != LIS2DE12_ID ) )
     {
-      lis2de12_device_id_get(&who_am_i);
-      if (who_am_i != LIS2DE12_ID)
-      {
-        if(i == 5)
+        lis2de12_device_id_get( &who_am_i );
+        if( who_am_i != LIS2DE12_ID )
         {
-            return 0;
+            if( i == 5 )
+            {
+                return ret;
+            }
         }
-      }
-      i++;
+        i++;
     }
 
     /* Set Output Data Rate to 10Hz */
-    lis2de12_data_rate_set(LIS2DE12_ODR_10Hz);
+    lis2de12_data_rate_set( LIS2DE12_ODR_10Hz );
 
     /* Enable Block Data Update */
-    lis2de12_block_data_update_set(PROPERTY_ENABLE);
-    
+    ret = lis2de12_block_data_update_set( PROPERTY_ENABLE );
+
     /* Enable bypass mode */
-    lis2de12_fifo_mode_set(LIS2DE12_BYPASS_MODE);
-    
-    /* Set full scale to 2g */ 
-    lis2de12_full_scale_set(LIS2DE12_2g);
+    ret |= lis2de12_fifo_mode_set( LIS2DE12_BYPASS_MODE );
+
+    /* Set full scale to 2g */
+    ret |= lis2de12_full_scale_set( LIS2DE12_2g );
 
     /* Motion detection setup */
-    lis2de12_read_reg(LIS2DE12_CTRL_REG1, (uint8_t*)&ctrl_reg1, 1);
-    ctrl_reg1.xen= 1;
-    ctrl_reg1.yen= 1;
-    ctrl_reg1.zen= 1;
+    ret |= lis2de12_read_reg( LIS2DE12_CTRL_REG1, ( uint8_t* ) &ctrl_reg1, 1 );
+    ctrl_reg1.xen  = 1;
+    ctrl_reg1.yen  = 1;
+    ctrl_reg1.zen  = 1;
     ctrl_reg1.lpen = 1;
-    lis2de12_write_reg(LIS2DE12_CTRL_REG1, (uint8_t*)&ctrl_reg1, 1);
-    
-    lis2de12_high_pass_int_conf_set(LIS2DE12_ON_INT1_GEN);
-    
-    ctrl_reg3.i1_zyxda = 0;
-    ctrl_reg3.i1_ia1 = 1;
-    ctrl_reg3.i1_ia2 = 0;
-    ctrl_reg3.i1_click = 0;
-    ctrl_reg3.i1_overrun = 0;
-    ctrl_reg3.i1_wtm = 0;
+    ret |= lis2de12_write_reg( LIS2DE12_CTRL_REG1, ( uint8_t* ) &ctrl_reg1, 1 );
+
+    ret |= lis2de12_high_pass_int_conf_set( LIS2DE12_ON_INT1_GEN );
+
+    ctrl_reg3.i1_zyxda    = 0;
+    ctrl_reg3.i1_ia1      = 1;
+    ctrl_reg3.i1_ia2      = 0;
+    ctrl_reg3.i1_click    = 0;
+    ctrl_reg3.i1_overrun  = 0;
+    ctrl_reg3.i1_wtm      = 0;
     ctrl_reg3.not_used_01 = 0;
     ctrl_reg3.not_used_02 = 0;
-    lis2de12_pin_int1_config_set(&ctrl_reg3);
+    ret |= lis2de12_pin_int1_config_set( &ctrl_reg3 );
 
-    lis2de12_int1_pin_notification_mode_set(LIS2DE12_INT1_LATCHED);
-    
-    lis2de12_int1_cfg.xhie=1;
-    lis2de12_int1_cfg.yhie=1;
-    lis2de12_int1_cfg.zhie=1;
-    lis2de12_int1_gen_conf_set(&lis2de12_int1_cfg);
+    ret |= lis2de12_int1_pin_notification_mode_set( LIS2DE12_INT1_LATCHED );
 
-    lis2de12_int1_gen_threshold_set(4);
+    lis2de12_int1_cfg.xhie = 1;
+    lis2de12_int1_cfg.yhie = 1;
+    lis2de12_int1_cfg.zhie = 1;
+    ret |= lis2de12_int1_gen_conf_set( &lis2de12_int1_cfg );
 
-    lis2de12_int1_gen_duration_set(3);
+    ret |= lis2de12_int1_gen_threshold_set( 4 );
 
-    if( irq_active & 0x01)
-    {
-        accelerometer_irq1_init( );
-    }
+    ret |= lis2de12_int1_gen_duration_set( 3 );
 
-    return SUCCESS;
+    accelerometer_irq1_init( );
+
+    /* Reset the accelerometer_irq1_state from the LIS2DE12 */
+    ret |= lis2de12_int1_gen_source_get( &int1_gen_source );
+
+    return ret;
 }
 
 uint8_t is_accelerometer_detected_moved( void )
 {
-    lis2de12_int1_src_t int1_gen_source; 
-    
-    lis2de12_int1_gen_source_get(&int1_gen_source);
-    
-    if((int1_gen_source.xh == 1) || (int1_gen_source.yh == 1) || (int1_gen_source.zh == 1))
+    uint32_t            ret;
+    lis2de12_int1_src_t int1_gen_source;
+
+    ret = lis2de12_int1_gen_source_get( &int1_gen_source );
+
+    /*HAL_DBG_TRACE_PRINTF( "is_accelerometer_detected_moved :\n" );
+    HAL_DBG_TRACE_PRINTF( "xh:%d | ", int1_gen_source.xh );
+    HAL_DBG_TRACE_PRINTF( "xl:%d | ", int1_gen_source.xl );
+    HAL_DBG_TRACE_PRINTF( "yh:%d | ", int1_gen_source.yh );
+    HAL_DBG_TRACE_PRINTF( "yl:%d | ", int1_gen_source.yl );
+    HAL_DBG_TRACE_PRINTF( "zh:%d | ", int1_gen_source.zh );
+    HAL_DBG_TRACE_PRINTF( "zl:%d | ", int1_gen_source.zl );
+    HAL_DBG_TRACE_PRINTF( "ia:%d\n", int1_gen_source.ia );*/
+
+    if( int1_gen_source.ia == 1 )
     {
         accelerometer_irq1_state = false;
-        
+
         return 1;
     }
     return 0;
@@ -178,18 +187,27 @@ uint8_t is_accelerometer_detected_moved( void )
 /*!
  * @brief Get the accelerometer IRQ state
  */
-bool get_accelerometer_irq1_state ( void )
+bool get_accelerometer_irq1_state( void )
 {
-    return accelerometer_irq1_state;
+    if( accelerometer_irq1_state == true )
+    {
+        /* Clear flag */
+        accelerometer_irq1_state = false;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
-uint8_t is_accelerometer_double_tap_detected(void)
+uint8_t is_accelerometer_double_tap_detected( void )
 {
     lis2de12_click_src_t click_src;
 
-    lis2de12_tap_source_get(&click_src);
+    lis2de12_tap_source_get( &click_src );
 
-    if((click_src.dclick == 1) || (click_src.ia == 1) || (click_src.z == 1))
+    if( ( click_src.dclick == 1 ) || ( click_src.ia == 1 ) || ( click_src.z == 1 ) )
     {
         return 1;
     }
@@ -199,8 +217,8 @@ uint8_t is_accelerometer_double_tap_detected(void)
 void acc_read_raw_data( void )
 {
     lis2de12_reg_t reg;
-    bool data_read = false;
-    
+    bool           data_read = false;
+
     while( data_read == false )
     {
         lis2de12_xl_data_ready_get( &reg.byte );
@@ -223,45 +241,35 @@ void acc_read_raw_data( void )
     }
 }
 
-int16_t acc_get_raw_x( void )
-{
-    return acceleration_mg[0];
-}
+int16_t acc_get_raw_x( void ) { return acceleration_mg[0]; }
 
-int16_t acc_get_raw_y( void )
-{
-    return acceleration_mg[1];
-}
+int16_t acc_get_raw_y( void ) { return acceleration_mg[1]; }
 
-int16_t acc_get_raw_z( void )
-{
-    return acceleration_mg[2];
-}
+int16_t acc_get_raw_z( void ) { return acceleration_mg[2]; }
 
 int16_t acc_get_temperature( void )
 {
     uint16_t temperature;
-    uint8_t is_ready = 0;
+    uint8_t  is_ready = 0;
 
     lis2de12_temp_data_ready_get( &is_ready );
 
     lis2de12_temperature_raw_get( &temperature );
 
     /* Build the raw tmp */
-    return (int16_t)temperature;
+    return ( int16_t ) temperature;
 }
 
 /**
-  * @brief  Read generic device register
-  *
-  * @param  reg   register to read
-  * @param  data  pointer to buffer that store the data read(ptr)
-  * @param  len   number of consecutive register to read
-  * @retval          interface status (MANDATORY: return 0 -> no Error)
-  *
-  */
-int32_t lis2de12_read_reg(uint8_t reg, uint8_t* data,
-                          uint16_t len)
+ * @brief  Read generic device register
+ *
+ * @param  reg   register to read
+ * @param  data  pointer to buffer that store the data read(ptr)
+ * @param  len   number of consecutive register to read
+ * @retval          interface status (MANDATORY: return 0 -> no Error)
+ *
+ */
+int32_t lis2de12_read_reg( uint8_t reg, uint8_t* data, uint16_t len )
 {
     int32_t ret;
     ret = hal_i2c_read_buffer( 1, LIS2DE12_I2C_ADD_H, reg, data, len );
@@ -269,70 +277,54 @@ int32_t lis2de12_read_reg(uint8_t reg, uint8_t* data,
 }
 
 /**
-  * @brief  Write generic device register
-  *
-  * @param  reg   register to write
-  * @param  data  pointer to data to write in register reg(ptr)
-  * @param  len   number of consecutive register to write
-  * @retval          interface status (MANDATORY: return 0 -> no Error)
-  *
-  */
-int32_t lis2de12_write_reg(uint8_t reg, uint8_t* data,
-                           uint16_t len)
+ * @brief  Write generic device register
+ *
+ * @param  reg   register to write
+ * @param  data  pointer to data to write in register reg(ptr)
+ * @param  len   number of consecutive register to write
+ * @retval          interface status (MANDATORY: return 0 -> no Error)
+ *
+ */
+int32_t lis2de12_write_reg( uint8_t reg, uint8_t* data, uint16_t len )
 {
-  int32_t ret;
-  ret = hal_i2c_write_buffer( 1, LIS2DE12_I2C_ADD_H , reg, data, len );
-  return !ret;
+    int32_t ret;
+    ret = hal_i2c_write_buffer( 1, LIS2DE12_I2C_ADD_H, reg, data, len );
+    return !ret;
 }
 
 /**
-  * @}
-  *
-  */
-
-  /**
-  * @defgroup    LIS2DE12_Sensitivity
-  * @brief       These functions convert raw-data into engineering units.
-  * @{
-  *
-  */
-
-float_t lis2de12_from_fs2_to_mg(int16_t lsb)
-{
-  return ( (float_t)lsb / 256.0f ) * 16.0f;
-}
-
-float_t lis2de12_from_fs4_to_mg(int16_t lsb)
-{
-  return ( (float_t)lsb / 256.0f ) * 32.0f;
-}
-
-float_t lis2de12_from_fs8_to_mg(int16_t lsb)
-{
-  return ( (float_t)lsb / 256.0f ) * 64.0f;
-}
-
-float_t lis2de12_from_fs16_to_mg(int16_t lsb)
-{
-  return ( (float_t)lsb / 256.0f ) * 192.0f;
-}
-
-float_t lis2de12_from_lsb_to_celsius(int16_t lsb)
-{
-  return ( ( (float_t)lsb / 256.0f ) * 1.0f ) + 25.0f;
-}
+ * @}
+ *
+ */
 
 /**
-  * @}
-  *
-  */
+ * @defgroup    LIS2DE12_Sensitivity
+ * @brief       These functions convert raw-data into engineering units.
+ * @{
+ *
+ */
+
+float_t lis2de12_from_fs2_to_mg( int16_t lsb ) { return ( ( float_t ) lsb / 256.0f ) * 16.0f; }
+
+float_t lis2de12_from_fs4_to_mg( int16_t lsb ) { return ( ( float_t ) lsb / 256.0f ) * 32.0f; }
+
+float_t lis2de12_from_fs8_to_mg( int16_t lsb ) { return ( ( float_t ) lsb / 256.0f ) * 64.0f; }
+
+float_t lis2de12_from_fs16_to_mg( int16_t lsb ) { return ( ( float_t ) lsb / 256.0f ) * 192.0f; }
+
+float_t lis2de12_from_lsb_to_celsius( int16_t lsb ) { return ( ( ( float_t ) lsb / 256.0f ) * 1.0f ) + 25.0f; }
 
 /**
-  * @defgroup  LIS2DE12_Data_generation
-  * @brief     This section group all the functions concerning data generation.
-  * @{
-  *
-  */
+ * @}
+ *
+ */
+
+/**
+ * @defgroup  LIS2DE12_Data_generation
+ * @brief     This section group all the functions concerning data generation.
+ * @{
+ *
+ */
 
 /**
   * @brief  Temperature status register.[get]
@@ -342,11 +334,11 @@ float_t lis2de12_from_lsb_to_celsius(int16_t lsb)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temp_status_reg_get(uint8_t *buff)
+int32_t lis2de12_temp_status_reg_get( uint8_t* buff )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG_AUX, buff, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_STATUS_REG_AUX, buff, 1 );
+    return ret;
 }
 /**
   * @brief  Temperature data available.[get]
@@ -356,16 +348,15 @@ int32_t lis2de12_temp_status_reg_get(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temp_data_ready_get(uint8_t *val)
+int32_t lis2de12_temp_data_ready_get( uint8_t* val )
 {
-  lis2de12_status_reg_aux_t status_reg_aux;
-  int32_t ret;
+    lis2de12_status_reg_aux_t status_reg_aux;
+    int32_t                   ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG_AUX,
-                          (uint8_t*)&status_reg_aux, 1);
-  *val = status_reg_aux.tda;
+    ret  = lis2de12_read_reg( LIS2DE12_STATUS_REG_AUX, ( uint8_t* ) &status_reg_aux, 1 );
+    *val = status_reg_aux.tda;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  Temperature data overrun.[get]
@@ -375,16 +366,15 @@ int32_t lis2de12_temp_data_ready_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temp_data_ovr_get(uint8_t *val)
+int32_t lis2de12_temp_data_ovr_get( uint8_t* val )
 {
-  lis2de12_status_reg_aux_t status_reg_aux;
-  int32_t ret;
+    lis2de12_status_reg_aux_t status_reg_aux;
+    int32_t                   ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG_AUX,
-                          (uint8_t*)&status_reg_aux, 1);
-  *val = status_reg_aux.tor;
+    ret  = lis2de12_read_reg( LIS2DE12_STATUS_REG_AUX, ( uint8_t* ) &status_reg_aux, 1 );
+    *val = status_reg_aux.tor;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  Temperature output value.[get]
@@ -394,17 +384,17 @@ int32_t lis2de12_temp_data_ovr_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temperature_raw_get(uint16_t *raw_temp)
+int32_t lis2de12_temperature_raw_get( uint16_t* raw_temp )
 {
     int32_t ret;
     uint8_t buf_tmp;
-  
-    ret = lis2de12_read_reg(LIS2DE12_OUT_TEMP_L, &buf_tmp, 1);
+
+    ret       = lis2de12_read_reg( LIS2DE12_OUT_TEMP_L, &buf_tmp, 1 );
     *raw_temp = buf_tmp;
-    
-    ret = lis2de12_read_reg(LIS2DE12_OUT_TEMP_H, &buf_tmp, 1);
+
+    ret = lis2de12_read_reg( LIS2DE12_OUT_TEMP_H, &buf_tmp, 1 );
     *raw_temp += buf_tmp << 8;
-    
+
     return ret;
 }
 /**
@@ -415,17 +405,18 @@ int32_t lis2de12_temperature_raw_get(uint16_t *raw_temp)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temperature_meas_set(lis2de12_temp_en_t val)
+int32_t lis2de12_temperature_meas_set( lis2de12_temp_en_t val )
 {
-  lis2de12_temp_cfg_reg_t temp_cfg_reg;
-  int32_t ret;
+    lis2de12_temp_cfg_reg_t temp_cfg_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TEMP_CFG_REG, (uint8_t*)&temp_cfg_reg, 1);
-  if (ret == 0) {
-    temp_cfg_reg.temp_en = (uint8_t) val;
-    ret = lis2de12_write_reg(LIS2DE12_TEMP_CFG_REG, (uint8_t*)&temp_cfg_reg, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_TEMP_CFG_REG, ( uint8_t* ) &temp_cfg_reg, 1 );
+    if( ret == 0 )
+    {
+        temp_cfg_reg.temp_en = ( uint8_t ) val;
+        ret                  = lis2de12_write_reg( LIS2DE12_TEMP_CFG_REG, ( uint8_t* ) &temp_cfg_reg, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -436,25 +427,25 @@ int32_t lis2de12_temperature_meas_set(lis2de12_temp_en_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_temperature_meas_get(
-                                      lis2de12_temp_en_t *val)
+int32_t lis2de12_temperature_meas_get( lis2de12_temp_en_t* val )
 {
-  lis2de12_temp_cfg_reg_t temp_cfg_reg;
-  int32_t ret;
+    lis2de12_temp_cfg_reg_t temp_cfg_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TEMP_CFG_REG, (uint8_t*)&temp_cfg_reg, 1);
-  switch (temp_cfg_reg.temp_en) {
+    ret = lis2de12_read_reg( LIS2DE12_TEMP_CFG_REG, ( uint8_t* ) &temp_cfg_reg, 1 );
+    switch( temp_cfg_reg.temp_en )
+    {
     case LIS2DE12_TEMP_DISABLE:
-      *val = LIS2DE12_TEMP_DISABLE;
-      break;
+        *val = LIS2DE12_TEMP_DISABLE;
+        break;
     case LIS2DE12_TEMP_ENABLE:
-      *val = LIS2DE12_TEMP_ENABLE;
-      break;
+        *val = LIS2DE12_TEMP_ENABLE;
+        break;
     default:
-      *val = LIS2DE12_TEMP_DISABLE;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_TEMP_DISABLE;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -465,18 +456,19 @@ int32_t lis2de12_temperature_meas_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_data_rate_set(lis2de12_odr_t val)
+int32_t lis2de12_data_rate_set( lis2de12_odr_t val )
 {
-  lis2de12_ctrl_reg1_t ctrl_reg1;
-  int32_t ret;
+    lis2de12_ctrl_reg1_t ctrl_reg1;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG1, (uint8_t*)&ctrl_reg1, 1);
-  if (ret == 0) {
-    ctrl_reg1.lpen = PROPERTY_ENABLE;
-    ctrl_reg1.odr = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG1, (uint8_t*)&ctrl_reg1, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG1, ( uint8_t* ) &ctrl_reg1, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg1.lpen = PROPERTY_ENABLE;
+        ctrl_reg1.odr  = ( uint8_t ) val;
+        ret            = lis2de12_write_reg( LIS2DE12_CTRL_REG1, ( uint8_t* ) &ctrl_reg1, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -487,48 +479,49 @@ int32_t lis2de12_data_rate_set(lis2de12_odr_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_data_rate_get(lis2de12_odr_t *val)
+int32_t lis2de12_data_rate_get( lis2de12_odr_t* val )
 {
-  lis2de12_ctrl_reg1_t ctrl_reg1;
-  int32_t ret;
+    lis2de12_ctrl_reg1_t ctrl_reg1;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG1, (uint8_t*)&ctrl_reg1, 1);
-  switch (ctrl_reg1.odr) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG1, ( uint8_t* ) &ctrl_reg1, 1 );
+    switch( ctrl_reg1.odr )
+    {
     case LIS2DE12_POWER_DOWN:
-      *val = LIS2DE12_POWER_DOWN;
-      break;
+        *val = LIS2DE12_POWER_DOWN;
+        break;
     case LIS2DE12_ODR_1Hz:
-      *val = LIS2DE12_ODR_1Hz;
-      break;
+        *val = LIS2DE12_ODR_1Hz;
+        break;
     case LIS2DE12_ODR_10Hz:
-      *val = LIS2DE12_ODR_10Hz;
-      break;
+        *val = LIS2DE12_ODR_10Hz;
+        break;
     case LIS2DE12_ODR_25Hz:
-      *val = LIS2DE12_ODR_25Hz;
-      break;
+        *val = LIS2DE12_ODR_25Hz;
+        break;
     case LIS2DE12_ODR_50Hz:
-      *val = LIS2DE12_ODR_50Hz;
-      break;
+        *val = LIS2DE12_ODR_50Hz;
+        break;
     case LIS2DE12_ODR_100Hz:
-      *val = LIS2DE12_ODR_100Hz;
-      break;
+        *val = LIS2DE12_ODR_100Hz;
+        break;
     case LIS2DE12_ODR_200Hz:
-      *val = LIS2DE12_ODR_200Hz;
-      break;
+        *val = LIS2DE12_ODR_200Hz;
+        break;
     case LIS2DE12_ODR_400Hz:
-      *val = LIS2DE12_ODR_400Hz;
-      break;
+        *val = LIS2DE12_ODR_400Hz;
+        break;
     case LIS2DE12_ODR_1kHz620_LP:
-      *val = LIS2DE12_ODR_1kHz620_LP;
-      break;
+        *val = LIS2DE12_ODR_1kHz620_LP;
+        break;
     case LIS2DE12_ODR_5kHz376_LP_1kHz344_NM_HP:
-      *val = LIS2DE12_ODR_5kHz376_LP_1kHz344_NM_HP;
-      break;
+        *val = LIS2DE12_ODR_5kHz376_LP_1kHz344_NM_HP;
+        break;
     default:
-      *val = LIS2DE12_POWER_DOWN;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_POWER_DOWN;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -540,17 +533,18 @@ int32_t lis2de12_data_rate_get(lis2de12_odr_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_on_outputs_set(uint8_t val)
+int32_t lis2de12_high_pass_on_outputs_set( uint8_t val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  if (ret == 0) {
-    ctrl_reg2.fds = val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg2.fds = val;
+        ret           = lis2de12_write_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -562,15 +556,15 @@ int32_t lis2de12_high_pass_on_outputs_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_on_outputs_get(uint8_t *val)
+int32_t lis2de12_high_pass_on_outputs_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  *val = (uint8_t)ctrl_reg2.fds;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    *val = ( uint8_t ) ctrl_reg2.fds;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -587,18 +581,18 @@ int32_t lis2de12_high_pass_on_outputs_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_bandwidth_set(
-                                         lis2de12_hpcf_t val)
+int32_t lis2de12_high_pass_bandwidth_set( lis2de12_hpcf_t val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  if (ret == 0) {
-    ctrl_reg2.hpcf = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg2.hpcf = ( uint8_t ) val;
+        ret            = lis2de12_write_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -615,31 +609,31 @@ int32_t lis2de12_high_pass_bandwidth_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_bandwidth_get(
-                                         lis2de12_hpcf_t *val)
+int32_t lis2de12_high_pass_bandwidth_get( lis2de12_hpcf_t* val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  switch (ctrl_reg2.hpcf) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    switch( ctrl_reg2.hpcf )
+    {
     case LIS2DE12_AGGRESSIVE:
-      *val = LIS2DE12_AGGRESSIVE;
-      break;
+        *val = LIS2DE12_AGGRESSIVE;
+        break;
     case LIS2DE12_STRONG:
-      *val = LIS2DE12_STRONG;
-      break;
+        *val = LIS2DE12_STRONG;
+        break;
     case LIS2DE12_MEDIUM:
-      *val = LIS2DE12_MEDIUM;
-      break;
+        *val = LIS2DE12_MEDIUM;
+        break;
     case LIS2DE12_LIGHT:
-      *val = LIS2DE12_LIGHT;
-      break;
+        *val = LIS2DE12_LIGHT;
+        break;
     default:
-      *val = LIS2DE12_LIGHT;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_LIGHT;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -650,17 +644,18 @@ int32_t lis2de12_high_pass_bandwidth_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_mode_set(lis2de12_hpm_t val)
+int32_t lis2de12_high_pass_mode_set( lis2de12_hpm_t val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  if (ret == 0) {
-    ctrl_reg2.hpm = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg2.hpm = ( uint8_t ) val;
+        ret           = lis2de12_write_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -671,30 +666,31 @@ int32_t lis2de12_high_pass_mode_set(lis2de12_hpm_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_mode_get(lis2de12_hpm_t *val)
+int32_t lis2de12_high_pass_mode_get( lis2de12_hpm_t* val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  switch (ctrl_reg2.hpm) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    switch( ctrl_reg2.hpm )
+    {
     case LIS2DE12_NORMAL_WITH_RST:
-      *val = LIS2DE12_NORMAL_WITH_RST;
-      break;
+        *val = LIS2DE12_NORMAL_WITH_RST;
+        break;
     case LIS2DE12_REFERENCE_MODE:
-      *val = LIS2DE12_REFERENCE_MODE;
-      break;
+        *val = LIS2DE12_REFERENCE_MODE;
+        break;
     case LIS2DE12_NORMAL:
-      *val = LIS2DE12_NORMAL;
-      break;
+        *val = LIS2DE12_NORMAL;
+        break;
     case LIS2DE12_AUTORST_ON_INT:
-      *val = LIS2DE12_AUTORST_ON_INT;
-      break;
+        *val = LIS2DE12_AUTORST_ON_INT;
+        break;
     default:
-      *val = LIS2DE12_NORMAL_WITH_RST;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_NORMAL_WITH_RST;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -705,17 +701,18 @@ int32_t lis2de12_high_pass_mode_get(lis2de12_hpm_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_full_scale_set(lis2de12_fs_t val)
+int32_t lis2de12_full_scale_set( lis2de12_fs_t val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  if (ret == 0) {
-    ctrl_reg4.fs = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg4.fs = ( uint8_t ) val;
+        ret          = lis2de12_write_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -726,30 +723,31 @@ int32_t lis2de12_full_scale_set(lis2de12_fs_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_full_scale_get(lis2de12_fs_t *val)
+int32_t lis2de12_full_scale_get( lis2de12_fs_t* val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  switch (ctrl_reg4.fs) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    switch( ctrl_reg4.fs )
+    {
     case LIS2DE12_2g:
-      *val = LIS2DE12_2g;
-      break;
+        *val = LIS2DE12_2g;
+        break;
     case LIS2DE12_4g:
-      *val = LIS2DE12_4g;
-      break;
+        *val = LIS2DE12_4g;
+        break;
     case LIS2DE12_8g:
-      *val = LIS2DE12_8g;
-      break;
+        *val = LIS2DE12_8g;
+        break;
     case LIS2DE12_16g:
-      *val = LIS2DE12_16g;
-      break;
+        *val = LIS2DE12_16g;
+        break;
     default:
-      *val = LIS2DE12_2g;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_2g;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -760,17 +758,18 @@ int32_t lis2de12_full_scale_get(lis2de12_fs_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_block_data_update_set(uint8_t val)
+int32_t lis2de12_block_data_update_set( uint8_t val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  if (ret == 0) {
-    ctrl_reg4.bdu = !val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg4.bdu = !val;
+        ret           = lis2de12_write_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -781,15 +780,15 @@ int32_t lis2de12_block_data_update_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_block_data_update_get(uint8_t *val)
+int32_t lis2de12_block_data_update_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  *val = (uint8_t)ctrl_reg4.bdu;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    *val = ( uint8_t ) ctrl_reg4.bdu;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -801,11 +800,11 @@ int32_t lis2de12_block_data_update_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_filter_reference_set(uint8_t *buff)
+int32_t lis2de12_filter_reference_set( uint8_t* buff )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_REFERENCE, buff, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_REFERENCE, buff, 1 );
+    return ret;
 }
 
 /**
@@ -817,11 +816,11 @@ int32_t lis2de12_filter_reference_set(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_filter_reference_get(uint8_t *buff)
+int32_t lis2de12_filter_reference_get( uint8_t* buff )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_REFERENCE, buff, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_REFERENCE, buff, 1 );
+    return ret;
 }
 /**
   * @brief  Acceleration set of data available.[get]
@@ -831,15 +830,15 @@ int32_t lis2de12_filter_reference_get(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_xl_data_ready_get(uint8_t *val)
+int32_t lis2de12_xl_data_ready_get( uint8_t* val )
 {
-  lis2de12_status_reg_t status_reg;
-  int32_t ret;
+    lis2de12_status_reg_t status_reg;
+    int32_t               ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG, (uint8_t*)&status_reg, 1);
-  *val = status_reg.zyxda;
+    ret  = lis2de12_read_reg( LIS2DE12_STATUS_REG, ( uint8_t* ) &status_reg, 1 );
+    *val = status_reg.zyxda;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  Acceleration set of data overrun.[get]
@@ -849,15 +848,15 @@ int32_t lis2de12_xl_data_ready_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_xl_data_ovr_get(uint8_t *val)
+int32_t lis2de12_xl_data_ovr_get( uint8_t* val )
 {
-  lis2de12_status_reg_t status_reg;
-  int32_t ret;
+    lis2de12_status_reg_t status_reg;
+    int32_t               ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG, (uint8_t*)&status_reg, 1);
-  *val = status_reg.zyxor;
+    ret  = lis2de12_read_reg( LIS2DE12_STATUS_REG, ( uint8_t* ) &status_reg, 1 );
+    *val = status_reg.zyxor;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  Acceleration output value.[get]
@@ -867,11 +866,11 @@ int32_t lis2de12_xl_data_ovr_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_acceleration_raw_get(uint8_t *buff)
+int32_t lis2de12_acceleration_raw_get( uint8_t* buff )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg( 0x08 | LIS2DE12_FIFO_READ_START, buff, 6);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( 0x08 | LIS2DE12_FIFO_READ_START, buff, 6 );
+    return ret;
 }
 
 /**
@@ -882,10 +881,10 @@ int32_t lis2de12_acceleration_raw_get(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_acceleration_raw_get_x(uint8_t *buff)
+int32_t lis2de12_acceleration_raw_get_x( uint8_t* buff )
 {
     int32_t ret;
-    ret = lis2de12_read_reg(0x08 | LIS2DE12_OUT_X_H, buff, 2);
+    ret = lis2de12_read_reg( 0x08 | LIS2DE12_OUT_X_H, buff, 2 );
     return ret;
 }
 
@@ -897,10 +896,10 @@ int32_t lis2de12_acceleration_raw_get_x(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_acceleration_raw_get_y(uint8_t *buff)
+int32_t lis2de12_acceleration_raw_get_y( uint8_t* buff )
 {
     int32_t ret;
-    ret = lis2de12_read_reg(0x08 | LIS2DE12_OUT_Y_H, buff, 2);
+    ret = lis2de12_read_reg( 0x08 | LIS2DE12_OUT_Y_H, buff, 2 );
     return ret;
 }
 
@@ -912,23 +911,23 @@ int32_t lis2de12_acceleration_raw_get_y(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_acceleration_raw_get_z(uint8_t *buff)
+int32_t lis2de12_acceleration_raw_get_z( uint8_t* buff )
 {
     int32_t ret;
-    ret = lis2de12_read_reg(0x08 | LIS2DE12_OUT_Z_H, buff, 2);
+    ret = lis2de12_read_reg( 0x08 | LIS2DE12_OUT_Z_H, buff, 2 );
     return ret;
 }
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Common
-  * @brief     This section group common usefull functions
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Common
+ * @brief     This section group common usefull functions
+ * @{
+ *
+ */
 
 /**
   * @brief  DeviceWhoamI .[get]
@@ -938,11 +937,11 @@ int32_t lis2de12_acceleration_raw_get_z(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_device_id_get(uint8_t *buff)
+int32_t lis2de12_device_id_get( uint8_t* buff )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_WHO_AM_I, buff, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_WHO_AM_I, buff, 1 );
+    return ret;
 }
 /**
   * @brief  Self Test.[set]
@@ -952,17 +951,18 @@ int32_t lis2de12_device_id_get(uint8_t *buff)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_self_test_set(lis2de12_st_t val)
+int32_t lis2de12_self_test_set( lis2de12_st_t val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  if (ret == 0) {
-    ctrl_reg4.st = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg4.st = ( uint8_t ) val;
+        ret          = lis2de12_write_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -973,27 +973,28 @@ int32_t lis2de12_self_test_set(lis2de12_st_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_self_test_get(lis2de12_st_t *val)
+int32_t lis2de12_self_test_get( lis2de12_st_t* val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  switch (ctrl_reg4.st) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    switch( ctrl_reg4.st )
+    {
     case LIS2DE12_ST_DISABLE:
-      *val = LIS2DE12_ST_DISABLE;
-      break;
+        *val = LIS2DE12_ST_DISABLE;
+        break;
     case LIS2DE12_ST_POSITIVE:
-      *val = LIS2DE12_ST_POSITIVE;
-      break;
+        *val = LIS2DE12_ST_POSITIVE;
+        break;
     case LIS2DE12_ST_NEGATIVE:
-      *val = LIS2DE12_ST_NEGATIVE;
-      break;
+        *val = LIS2DE12_ST_NEGATIVE;
+        break;
     default:
-      *val = LIS2DE12_ST_DISABLE;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_ST_DISABLE;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1004,17 +1005,18 @@ int32_t lis2de12_self_test_get(lis2de12_st_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_boot_set(uint8_t val)
+int32_t lis2de12_boot_set( uint8_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.boot = val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.boot = val;
+        ret            = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1025,15 +1027,15 @@ int32_t lis2de12_boot_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_boot_get(uint8_t *val)
+int32_t lis2de12_boot_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  *val = (uint8_t)ctrl_reg5.boot;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    *val = ( uint8_t ) ctrl_reg5.boot;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1044,24 +1046,24 @@ int32_t lis2de12_boot_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_status_get(lis2de12_status_reg_t *val)
+int32_t lis2de12_status_get( lis2de12_status_reg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_STATUS_REG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_STATUS_REG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup   LIS2DE12_Interrupts_generator_1
-  * @brief      This section group all the functions that manage the first
-  *             interrupts generator
-  * @{
-  *
-  */
+ * @defgroup   LIS2DE12_Interrupts_generator_1
+ * @brief      This section group all the functions that manage the first
+ *             interrupts generator
+ * @{
+ *
+ */
 
 /**
   * @brief  Interrupt generator 1 configuration register.[set]
@@ -1071,12 +1073,11 @@ int32_t lis2de12_status_get(lis2de12_status_reg_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_conf_set(
-                                   lis2de12_int1_cfg_t *val)
+int32_t lis2de12_int1_gen_conf_set( lis2de12_int1_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_INT1_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_INT1_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1087,12 +1088,11 @@ int32_t lis2de12_int1_gen_conf_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_conf_get(
-                                   lis2de12_int1_cfg_t *val)
+int32_t lis2de12_int1_gen_conf_get( lis2de12_int1_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_INT1_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT1_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1103,12 +1103,11 @@ int32_t lis2de12_int1_gen_conf_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_source_get(
-                                     lis2de12_int1_src_t *val)
+int32_t lis2de12_int1_gen_source_get( lis2de12_int1_src_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_INT1_SRC, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT1_SRC, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  User-defined threshold value for xl interrupt event on
@@ -1120,17 +1119,18 @@ int32_t lis2de12_int1_gen_source_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_threshold_set(uint8_t val)
+int32_t lis2de12_int1_gen_threshold_set( uint8_t val )
 {
-  lis2de12_int1_ths_t int1_ths;
-  int32_t ret;
+    lis2de12_int1_ths_t int1_ths;
+    int32_t             ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT1_THS, (uint8_t*)&int1_ths, 1);
-  if (ret == 0) {
-    int1_ths.ths = val;
-    ret = lis2de12_write_reg(LIS2DE12_INT1_THS, (uint8_t*)&int1_ths, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT1_THS, ( uint8_t* ) &int1_ths, 1 );
+    if( ret == 0 )
+    {
+        int1_ths.ths = val;
+        ret          = lis2de12_write_reg( LIS2DE12_INT1_THS, ( uint8_t* ) &int1_ths, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1143,15 +1143,15 @@ int32_t lis2de12_int1_gen_threshold_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_threshold_get(uint8_t *val)
+int32_t lis2de12_int1_gen_threshold_get( uint8_t* val )
 {
-  lis2de12_int1_ths_t int1_ths;
-  int32_t ret;
+    lis2de12_int1_ths_t int1_ths;
+    int32_t             ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT1_THS, (uint8_t*)&int1_ths, 1);
-  *val = (uint8_t)int1_ths.ths;
+    ret  = lis2de12_read_reg( LIS2DE12_INT1_THS, ( uint8_t* ) &int1_ths, 1 );
+    *val = ( uint8_t ) int1_ths.ths;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1163,17 +1163,18 @@ int32_t lis2de12_int1_gen_threshold_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_duration_set(uint8_t val)
+int32_t lis2de12_int1_gen_duration_set( uint8_t val )
 {
-  lis2de12_int1_duration_t int1_duration;
-  int32_t ret;
+    lis2de12_int1_duration_t int1_duration;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT1_DURATION, (uint8_t*)&int1_duration, 1);
-  if (ret == 0) {
-    int1_duration.d = val;
-    ret = lis2de12_write_reg(LIS2DE12_INT1_DURATION, (uint8_t*)&int1_duration, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT1_DURATION, ( uint8_t* ) &int1_duration, 1 );
+    if( ret == 0 )
+    {
+        int1_duration.d = val;
+        ret             = lis2de12_write_reg( LIS2DE12_INT1_DURATION, ( uint8_t* ) &int1_duration, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1185,29 +1186,29 @@ int32_t lis2de12_int1_gen_duration_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_gen_duration_get(uint8_t *val)
+int32_t lis2de12_int1_gen_duration_get( uint8_t* val )
 {
-  lis2de12_int1_duration_t int1_duration;
-  int32_t ret;
+    lis2de12_int1_duration_t int1_duration;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT1_DURATION, (uint8_t*)&int1_duration, 1);
-  *val = (uint8_t)int1_duration.d;
+    ret  = lis2de12_read_reg( LIS2DE12_INT1_DURATION, ( uint8_t* ) &int1_duration, 1 );
+    *val = ( uint8_t ) int1_duration.d;
 
-  return ret;
+    return ret;
 }
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup   LIS2DE12_Interrupts_generator_2
-  * @brief      This section group all the functions that manage the second
-  *             interrupts generator
-  * @{
-  *
-  */
+ * @defgroup   LIS2DE12_Interrupts_generator_2
+ * @brief      This section group all the functions that manage the second
+ *             interrupts generator
+ * @{
+ *
+ */
 
 /**
   * @brief  Interrupt generator 2 configuration register.[set]
@@ -1217,12 +1218,11 @@ int32_t lis2de12_int1_gen_duration_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_conf_set(
-                                   lis2de12_int2_cfg_t *val)
+int32_t lis2de12_int2_gen_conf_set( lis2de12_int2_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_INT2_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_INT2_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1233,12 +1233,11 @@ int32_t lis2de12_int2_gen_conf_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_conf_get(
-                                   lis2de12_int2_cfg_t *val)
+int32_t lis2de12_int2_gen_conf_get( lis2de12_int2_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_INT2_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT2_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  Interrupt generator 2 source register.[get]
@@ -1248,12 +1247,11 @@ int32_t lis2de12_int2_gen_conf_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_source_get(
-                                     lis2de12_int2_src_t *val)
+int32_t lis2de12_int2_gen_source_get( lis2de12_int2_src_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_INT2_SRC, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT2_SRC, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief   User-defined threshold value for xl interrupt event on
@@ -1265,17 +1263,18 @@ int32_t lis2de12_int2_gen_source_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_threshold_set(uint8_t val)
+int32_t lis2de12_int2_gen_threshold_set( uint8_t val )
 {
-  lis2de12_int2_ths_t int2_ths;
-  int32_t ret;
+    lis2de12_int2_ths_t int2_ths;
+    int32_t             ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT2_THS, (uint8_t*)&int2_ths, 1);
-  if (ret == 0) {
-    int2_ths.ths = val;
-    ret = lis2de12_write_reg(LIS2DE12_INT2_THS, (uint8_t*)&int2_ths, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT2_THS, ( uint8_t* ) &int2_ths, 1 );
+    if( ret == 0 )
+    {
+        int2_ths.ths = val;
+        ret          = lis2de12_write_reg( LIS2DE12_INT2_THS, ( uint8_t* ) &int2_ths, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1288,15 +1287,15 @@ int32_t lis2de12_int2_gen_threshold_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_threshold_get(uint8_t *val)
+int32_t lis2de12_int2_gen_threshold_get( uint8_t* val )
 {
-  lis2de12_int2_ths_t int2_ths;
-  int32_t ret;
+    lis2de12_int2_ths_t int2_ths;
+    int32_t             ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT2_THS, (uint8_t*)&int2_ths, 1);
-  *val = (uint8_t)int2_ths.ths;
+    ret  = lis2de12_read_reg( LIS2DE12_INT2_THS, ( uint8_t* ) &int2_ths, 1 );
+    *val = ( uint8_t ) int2_ths.ths;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1308,17 +1307,18 @@ int32_t lis2de12_int2_gen_threshold_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_duration_set(uint8_t val)
+int32_t lis2de12_int2_gen_duration_set( uint8_t val )
 {
-  lis2de12_int2_duration_t int2_duration;
-  int32_t ret;
+    lis2de12_int2_duration_t int2_duration;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT2_DURATION, (uint8_t*)&int2_duration, 1);
-  if (ret == 0) {
-    int2_duration.d = val;
-    ret = lis2de12_write_reg(LIS2DE12_INT2_DURATION, (uint8_t*)&int2_duration, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_INT2_DURATION, ( uint8_t* ) &int2_duration, 1 );
+    if( ret == 0 )
+    {
+        int2_duration.d = val;
+        ret             = lis2de12_write_reg( LIS2DE12_INT2_DURATION, ( uint8_t* ) &int2_duration, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1330,28 +1330,28 @@ int32_t lis2de12_int2_gen_duration_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_gen_duration_get(uint8_t *val)
+int32_t lis2de12_int2_gen_duration_get( uint8_t* val )
 {
-  lis2de12_int2_duration_t int2_duration;
-  int32_t ret;
+    lis2de12_int2_duration_t int2_duration;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_INT2_DURATION, (uint8_t*)&int2_duration, 1);
-  *val = (uint8_t)int2_duration.d;
+    ret  = lis2de12_read_reg( LIS2DE12_INT2_DURATION, ( uint8_t* ) &int2_duration, 1 );
+    *val = ( uint8_t ) int2_duration.d;
 
-  return ret;
+    return ret;
 }
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Interrupt_pins
-  * @brief     This section group all the functions that manage interrup pins
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Interrupt_pins
+ * @brief     This section group all the functions that manage interrup pins
+ * @{
+ *
+ */
 
 /**
   * @brief  High-pass filter on interrupts/tap generator.[set]
@@ -1361,18 +1361,18 @@ int32_t lis2de12_int2_gen_duration_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_int_conf_set(
-                                        lis2de12_hp_t val)
+int32_t lis2de12_high_pass_int_conf_set( lis2de12_hp_t val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  if (ret == 0) {
-    ctrl_reg2.hp = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg2.hp = ( uint8_t ) val;
+        ret          = lis2de12_write_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1383,43 +1383,43 @@ int32_t lis2de12_high_pass_int_conf_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_high_pass_int_conf_get(
-                                        lis2de12_hp_t *val)
+int32_t lis2de12_high_pass_int_conf_get( lis2de12_hp_t* val )
 {
-  lis2de12_ctrl_reg2_t ctrl_reg2;
-  int32_t ret;
+    lis2de12_ctrl_reg2_t ctrl_reg2;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG2, (uint8_t*)&ctrl_reg2, 1);
-  switch (ctrl_reg2.hp) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG2, ( uint8_t* ) &ctrl_reg2, 1 );
+    switch( ctrl_reg2.hp )
+    {
     case LIS2DE12_DISC_FROM_INT_GENERATOR:
-      *val = LIS2DE12_DISC_FROM_INT_GENERATOR;
-      break;
+        *val = LIS2DE12_DISC_FROM_INT_GENERATOR;
+        break;
     case LIS2DE12_ON_INT1_GEN:
-      *val = LIS2DE12_ON_INT1_GEN;
-      break;
+        *val = LIS2DE12_ON_INT1_GEN;
+        break;
     case LIS2DE12_ON_INT2_GEN:
-      *val = LIS2DE12_ON_INT2_GEN;
-      break;
+        *val = LIS2DE12_ON_INT2_GEN;
+        break;
     case LIS2DE12_ON_TAP_GEN:
-      *val = LIS2DE12_ON_TAP_GEN;
-      break;
+        *val = LIS2DE12_ON_TAP_GEN;
+        break;
     case LIS2DE12_ON_INT1_INT2_GEN:
-      *val = LIS2DE12_ON_INT1_INT2_GEN;
-      break;
+        *val = LIS2DE12_ON_INT1_INT2_GEN;
+        break;
     case LIS2DE12_ON_INT1_TAP_GEN:
-      *val = LIS2DE12_ON_INT1_TAP_GEN;
-      break;
+        *val = LIS2DE12_ON_INT1_TAP_GEN;
+        break;
     case LIS2DE12_ON_INT2_TAP_GEN:
-      *val = LIS2DE12_ON_INT2_TAP_GEN;
-      break;
+        *val = LIS2DE12_ON_INT2_TAP_GEN;
+        break;
     case LIS2DE12_ON_INT1_INT2_TAP_GEN:
-      *val = LIS2DE12_ON_INT1_INT2_TAP_GEN;
-      break;
+        *val = LIS2DE12_ON_INT1_INT2_TAP_GEN;
+        break;
     default:
-      *val = LIS2DE12_DISC_FROM_INT_GENERATOR;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_DISC_FROM_INT_GENERATOR;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1430,12 +1430,11 @@ int32_t lis2de12_high_pass_int_conf_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_int1_config_set(
-                                     lis2de12_ctrl_reg3_t *val)
+int32_t lis2de12_pin_int1_config_set( lis2de12_ctrl_reg3_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_CTRL_REG3, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_CTRL_REG3, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1446,12 +1445,11 @@ int32_t lis2de12_pin_int1_config_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_int1_config_get(
-                                     lis2de12_ctrl_reg3_t *val)
+int32_t lis2de12_pin_int1_config_get( lis2de12_ctrl_reg3_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG3, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG3, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  int2_pin_detect_4d: [set]  4D enable: 4D detection is enabled
@@ -1463,17 +1461,18 @@ int32_t lis2de12_pin_int1_config_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_pin_detect_4d_set(uint8_t val)
+int32_t lis2de12_int2_pin_detect_4d_set( uint8_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.d4d_int2 = val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.d4d_int2 = val;
+        ret                = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1485,15 +1484,15 @@ int32_t lis2de12_int2_pin_detect_4d_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_pin_detect_4d_get(uint8_t *val)
+int32_t lis2de12_int2_pin_detect_4d_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  *val = (uint8_t)ctrl_reg5.d4d_int2;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    *val = ( uint8_t ) ctrl_reg5.d4d_int2;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1506,18 +1505,18 @@ int32_t lis2de12_int2_pin_detect_4d_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_pin_notification_mode_set(
-                                                lis2de12_lir_int2_t val)
+int32_t lis2de12_int2_pin_notification_mode_set( lis2de12_lir_int2_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.lir_int2 = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.lir_int2 = ( uint8_t ) val;
+        ret                = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1530,25 +1529,25 @@ int32_t lis2de12_int2_pin_notification_mode_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int2_pin_notification_mode_get(
-                                                lis2de12_lir_int2_t *val)
+int32_t lis2de12_int2_pin_notification_mode_get( lis2de12_lir_int2_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  switch (ctrl_reg5.lir_int2) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    switch( ctrl_reg5.lir_int2 )
+    {
     case LIS2DE12_INT2_PULSED:
-      *val = LIS2DE12_INT2_PULSED;
-      break;
+        *val = LIS2DE12_INT2_PULSED;
+        break;
     case LIS2DE12_INT2_LATCHED:
-      *val = LIS2DE12_INT2_LATCHED;
-      break;
+        *val = LIS2DE12_INT2_LATCHED;
+        break;
     default:
-      *val = LIS2DE12_INT2_PULSED;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_INT2_PULSED;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1560,17 +1559,18 @@ int32_t lis2de12_int2_pin_notification_mode_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_pin_detect_4d_set(uint8_t val)
+int32_t lis2de12_int1_pin_detect_4d_set( uint8_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.d4d_int1 = val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.d4d_int1 = val;
+        ret                = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1582,15 +1582,15 @@ int32_t lis2de12_int1_pin_detect_4d_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_pin_detect_4d_get(uint8_t *val)
+int32_t lis2de12_int1_pin_detect_4d_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  *val = (uint8_t)ctrl_reg5.d4d_int1;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    *val = ( uint8_t ) ctrl_reg5.d4d_int1;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1602,18 +1602,18 @@ int32_t lis2de12_int1_pin_detect_4d_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_pin_notification_mode_set(
-                                                lis2de12_lir_int1_t val)
+int32_t lis2de12_int1_pin_notification_mode_set( lis2de12_lir_int1_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.lir_int1 = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.lir_int1 = ( uint8_t ) val;
+        ret                = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1625,25 +1625,25 @@ int32_t lis2de12_int1_pin_notification_mode_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_int1_pin_notification_mode_get(
-                                                lis2de12_lir_int1_t *val)
+int32_t lis2de12_int1_pin_notification_mode_get( lis2de12_lir_int1_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  switch (ctrl_reg5.lir_int1) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    switch( ctrl_reg5.lir_int1 )
+    {
     case LIS2DE12_INT1_PULSED:
-      *val = LIS2DE12_INT1_PULSED;
-      break;
+        *val = LIS2DE12_INT1_PULSED;
+        break;
     case LIS2DE12_INT1_LATCHED:
-      *val = LIS2DE12_INT1_LATCHED;
-      break;
+        *val = LIS2DE12_INT1_LATCHED;
+        break;
     default:
-      *val = LIS2DE12_INT1_PULSED;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_INT1_PULSED;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1654,12 +1654,11 @@ int32_t lis2de12_int1_pin_notification_mode_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_int2_config_set(
-                                     lis2de12_ctrl_reg6_t *val)
+int32_t lis2de12_pin_int2_config_set( lis2de12_ctrl_reg6_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_CTRL_REG6, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_CTRL_REG6, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1670,24 +1669,23 @@ int32_t lis2de12_pin_int2_config_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_int2_config_get(
-                                     lis2de12_ctrl_reg6_t *val)
+int32_t lis2de12_pin_int2_config_get( lis2de12_ctrl_reg6_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG6, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG6, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Fifo
-  * @brief     This section group all the functions concerning the fifo usage
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Fifo
+ * @brief     This section group all the functions concerning the fifo usage
+ * @{
+ *
+ */
 
 /**
   * @brief  FIFO enable.[set]
@@ -1697,17 +1695,18 @@ int32_t lis2de12_pin_int2_config_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_set(uint8_t val)
+int32_t lis2de12_fifo_set( uint8_t val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  if (ret == 0) {
-    ctrl_reg5.fifo_en = val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg5.fifo_en = val;
+        ret               = lis2de12_write_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1718,15 +1717,15 @@ int32_t lis2de12_fifo_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_get(uint8_t *val)
+int32_t lis2de12_fifo_get( uint8_t* val )
 {
-  lis2de12_ctrl_reg5_t ctrl_reg5;
-  int32_t ret;
+    lis2de12_ctrl_reg5_t ctrl_reg5;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG5, (uint8_t*)&ctrl_reg5, 1);
-  *val = (uint8_t)ctrl_reg5.fifo_en;
+    ret  = lis2de12_read_reg( LIS2DE12_CTRL_REG5, ( uint8_t* ) &ctrl_reg5, 1 );
+    *val = ( uint8_t ) ctrl_reg5.fifo_en;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1737,17 +1736,18 @@ int32_t lis2de12_fifo_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_watermark_set(uint8_t val)
+int32_t lis2de12_fifo_watermark_set( uint8_t val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  if (ret == 0) {
-    fifo_ctrl_reg.fth = val;
-    ret = lis2de12_write_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    if( ret == 0 )
+    {
+        fifo_ctrl_reg.fth = val;
+        ret               = lis2de12_write_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1758,15 +1758,15 @@ int32_t lis2de12_fifo_watermark_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_watermark_get(uint8_t *val)
+int32_t lis2de12_fifo_watermark_get( uint8_t* val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  *val = (uint8_t)fifo_ctrl_reg.fth;
+    ret  = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    *val = ( uint8_t ) fifo_ctrl_reg.fth;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -1777,18 +1777,18 @@ int32_t lis2de12_fifo_watermark_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_trigger_event_set(
-                                        lis2de12_tr_t val)
+int32_t lis2de12_fifo_trigger_event_set( lis2de12_tr_t val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  if (ret == 0) {
-    fifo_ctrl_reg.tr = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    if( ret == 0 )
+    {
+        fifo_ctrl_reg.tr = ( uint8_t ) val;
+        ret              = lis2de12_write_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1799,25 +1799,25 @@ int32_t lis2de12_fifo_trigger_event_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_trigger_event_get(
-                                        lis2de12_tr_t *val)
+int32_t lis2de12_fifo_trigger_event_get( lis2de12_tr_t* val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  switch (fifo_ctrl_reg.tr) {
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    switch( fifo_ctrl_reg.tr )
+    {
     case LIS2DE12_INT1_GEN:
-      *val = LIS2DE12_INT1_GEN;
-      break;
+        *val = LIS2DE12_INT1_GEN;
+        break;
     case LIS2DE12_INT2_GEN:
-      *val = LIS2DE12_INT2_GEN;
-      break;
+        *val = LIS2DE12_INT2_GEN;
+        break;
     default:
-      *val = LIS2DE12_INT1_GEN;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_INT1_GEN;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1828,17 +1828,18 @@ int32_t lis2de12_fifo_trigger_event_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_mode_set(lis2de12_fm_t val)
+int32_t lis2de12_fifo_mode_set( lis2de12_fm_t val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  if (ret == 0) {
-    fifo_ctrl_reg.fm = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    if( ret == 0 )
+    {
+        fifo_ctrl_reg.fm = ( uint8_t ) val;
+        ret              = lis2de12_write_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -1849,30 +1850,31 @@ int32_t lis2de12_fifo_mode_set(lis2de12_fm_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_mode_get(lis2de12_fm_t *val)
+int32_t lis2de12_fifo_mode_get( lis2de12_fm_t* val )
 {
-  lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
-  int32_t ret;
+    lis2de12_fifo_ctrl_reg_t fifo_ctrl_reg;
+    int32_t                  ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_CTRL_REG, (uint8_t*)&fifo_ctrl_reg, 1);
-  switch (fifo_ctrl_reg.fm) {
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_CTRL_REG, ( uint8_t* ) &fifo_ctrl_reg, 1 );
+    switch( fifo_ctrl_reg.fm )
+    {
     case LIS2DE12_BYPASS_MODE:
-      *val = LIS2DE12_BYPASS_MODE;
-      break;
+        *val = LIS2DE12_BYPASS_MODE;
+        break;
     case LIS2DE12_FIFO_MODE:
-      *val = LIS2DE12_FIFO_MODE;
-      break;
+        *val = LIS2DE12_FIFO_MODE;
+        break;
     case LIS2DE12_DYNAMIC_STREAM_MODE:
-      *val = LIS2DE12_DYNAMIC_STREAM_MODE;
-      break;
+        *val = LIS2DE12_DYNAMIC_STREAM_MODE;
+        break;
     case LIS2DE12_STREAM_TO_FIFO_MODE:
-      *val = LIS2DE12_STREAM_TO_FIFO_MODE;
-      break;
+        *val = LIS2DE12_STREAM_TO_FIFO_MODE;
+        break;
     default:
-      *val = LIS2DE12_BYPASS_MODE;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_BYPASS_MODE;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -1883,12 +1885,11 @@ int32_t lis2de12_fifo_mode_get(lis2de12_fm_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_status_get(
-                                 lis2de12_fifo_src_reg_t *val)
+int32_t lis2de12_fifo_status_get( lis2de12_fifo_src_reg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_SRC_REG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_FIFO_SRC_REG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  FIFO stored data level.[get]
@@ -1898,15 +1899,15 @@ int32_t lis2de12_fifo_status_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_data_level_get(uint8_t *val)
+int32_t lis2de12_fifo_data_level_get( uint8_t* val )
 {
-  lis2de12_fifo_src_reg_t fifo_src_reg;
-  int32_t ret;
+    lis2de12_fifo_src_reg_t fifo_src_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_SRC_REG, (uint8_t*)&fifo_src_reg, 1);
-  *val = (uint8_t)fifo_src_reg.fss;
+    ret  = lis2de12_read_reg( LIS2DE12_FIFO_SRC_REG, ( uint8_t* ) &fifo_src_reg, 1 );
+    *val = ( uint8_t ) fifo_src_reg.fss;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  Empty FIFO status flag.[get]
@@ -1916,15 +1917,15 @@ int32_t lis2de12_fifo_data_level_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_empty_flag_get(uint8_t *val)
+int32_t lis2de12_fifo_empty_flag_get( uint8_t* val )
 {
-  lis2de12_fifo_src_reg_t fifo_src_reg;
-  int32_t ret;
+    lis2de12_fifo_src_reg_t fifo_src_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_SRC_REG, (uint8_t*)&fifo_src_reg, 1);
-  *val = (uint8_t)fifo_src_reg.empty;
+    ret  = lis2de12_read_reg( LIS2DE12_FIFO_SRC_REG, ( uint8_t* ) &fifo_src_reg, 1 );
+    *val = ( uint8_t ) fifo_src_reg.empty;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  FIFO overrun status flag.[get]
@@ -1934,15 +1935,15 @@ int32_t lis2de12_fifo_empty_flag_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_ovr_flag_get(uint8_t *val)
+int32_t lis2de12_fifo_ovr_flag_get( uint8_t* val )
 {
-  lis2de12_fifo_src_reg_t fifo_src_reg;
-  int32_t ret;
+    lis2de12_fifo_src_reg_t fifo_src_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_SRC_REG, (uint8_t*)&fifo_src_reg, 1);
-  *val = (uint8_t)fifo_src_reg.ovrn_fifo;
+    ret  = lis2de12_read_reg( LIS2DE12_FIFO_SRC_REG, ( uint8_t* ) &fifo_src_reg, 1 );
+    *val = ( uint8_t ) fifo_src_reg.ovrn_fifo;
 
-  return ret;
+    return ret;
 }
 /**
   * @brief  FIFO watermark status.[get]
@@ -1952,28 +1953,28 @@ int32_t lis2de12_fifo_ovr_flag_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_fifo_fth_flag_get(uint8_t *val)
+int32_t lis2de12_fifo_fth_flag_get( uint8_t* val )
 {
-  lis2de12_fifo_src_reg_t fifo_src_reg;
-  int32_t ret;
+    lis2de12_fifo_src_reg_t fifo_src_reg;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_FIFO_SRC_REG, (uint8_t*)&fifo_src_reg, 1);
-  *val = (uint8_t)fifo_src_reg.wtm;
+    ret  = lis2de12_read_reg( LIS2DE12_FIFO_SRC_REG, ( uint8_t* ) &fifo_src_reg, 1 );
+    *val = ( uint8_t ) fifo_src_reg.wtm;
 
-  return ret;
+    return ret;
 }
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Tap_generator
-  * @brief     This section group all the functions that manage the tap and
-  *            double tap event generation
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Tap_generator
+ * @brief     This section group all the functions that manage the tap and
+ *            double tap event generation
+ * @{
+ *
+ */
 
 /**
   * @brief  Tap/Double Tap generator configuration register.[set]
@@ -1983,11 +1984,11 @@ int32_t lis2de12_fifo_fth_flag_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_conf_set(lis2de12_click_cfg_t *val)
+int32_t lis2de12_tap_conf_set( lis2de12_click_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_write_reg(LIS2DE12_CLICK_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_write_reg( LIS2DE12_CLICK_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 
 /**
@@ -1998,11 +1999,11 @@ int32_t lis2de12_tap_conf_set(lis2de12_click_cfg_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_conf_get(lis2de12_click_cfg_t *val)
+int32_t lis2de12_tap_conf_get( lis2de12_click_cfg_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_CFG, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_CLICK_CFG, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  Tap/Double Tap generator source register.[get]
@@ -2012,11 +2013,11 @@ int32_t lis2de12_tap_conf_get(lis2de12_click_cfg_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_source_get(lis2de12_click_src_t *val)
+int32_t lis2de12_tap_source_get( lis2de12_click_src_t* val )
 {
-  int32_t ret;
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_SRC, (uint8_t*) val, 1);
-  return ret;
+    int32_t ret;
+    ret = lis2de12_read_reg( LIS2DE12_CLICK_SRC, ( uint8_t* ) val, 1 );
+    return ret;
 }
 /**
   * @brief  User-defined threshold value for Tap/Double Tap event.[set]
@@ -2027,17 +2028,18 @@ int32_t lis2de12_tap_source_get(lis2de12_click_src_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_threshold_set(uint8_t val)
+int32_t lis2de12_tap_threshold_set( uint8_t val )
 {
-  lis2de12_click_ths_t click_ths;
-  int32_t ret;
+    lis2de12_click_ths_t click_ths;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  if (ret == 0) {
-    click_ths.ths = val;
-    ret = lis2de12_write_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    if( ret == 0 )
+    {
+        click_ths.ths = val;
+        ret           = lis2de12_write_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2049,15 +2051,15 @@ int32_t lis2de12_tap_threshold_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_threshold_get(uint8_t *val)
+int32_t lis2de12_tap_threshold_get( uint8_t* val )
 {
-  lis2de12_click_ths_t click_ths;
-  int32_t ret;
+    lis2de12_click_ths_t click_ths;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  *val = (uint8_t)click_ths.ths;
+    ret  = lis2de12_read_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    *val = ( uint8_t ) click_ths.ths;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -2071,18 +2073,18 @@ int32_t lis2de12_tap_threshold_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_notification_mode_set(
-                                           lis2de12_lir_click_t val)
+int32_t lis2de12_tap_notification_mode_set( lis2de12_lir_click_t val )
 {
-  lis2de12_click_ths_t click_ths;
-  int32_t ret;
+    lis2de12_click_ths_t click_ths;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  if (ret == 0) {
-    click_ths.lir_click = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    if( ret == 0 )
+    {
+        click_ths.lir_click = ( uint8_t ) val;
+        ret                 = lis2de12_write_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2096,25 +2098,25 @@ int32_t lis2de12_tap_notification_mode_set(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_tap_notification_mode_get(
-                                           lis2de12_lir_click_t *val)
+int32_t lis2de12_tap_notification_mode_get( lis2de12_lir_click_t* val )
 {
-  lis2de12_click_ths_t click_ths;
-  int32_t ret;
+    lis2de12_click_ths_t click_ths;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CLICK_THS, (uint8_t*)&click_ths, 1);
-  switch (click_ths.lir_click) {
+    ret = lis2de12_read_reg( LIS2DE12_CLICK_THS, ( uint8_t* ) &click_ths, 1 );
+    switch( click_ths.lir_click )
+    {
     case LIS2DE12_TAP_PULSED:
-      *val = LIS2DE12_TAP_PULSED;
-      break;
+        *val = LIS2DE12_TAP_PULSED;
+        break;
     case LIS2DE12_TAP_LATCHED:
-      *val = LIS2DE12_TAP_LATCHED;
-      break;
+        *val = LIS2DE12_TAP_LATCHED;
+        break;
     default:
-      *val = LIS2DE12_TAP_PULSED;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_TAP_PULSED;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -2127,17 +2129,18 @@ int32_t lis2de12_tap_notification_mode_get(
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_shock_dur_set(uint8_t val)
+int32_t lis2de12_shock_dur_set( uint8_t val )
 {
-  lis2de12_time_limit_t time_limit;
-  int32_t ret;
+    lis2de12_time_limit_t time_limit;
+    int32_t               ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_LIMIT, (uint8_t*)&time_limit, 1);
-  if (ret == 0) {
-    time_limit.tli = val;
-    ret = lis2de12_write_reg(LIS2DE12_TIME_LIMIT, (uint8_t*)&time_limit, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_TIME_LIMIT, ( uint8_t* ) &time_limit, 1 );
+    if( ret == 0 )
+    {
+        time_limit.tli = val;
+        ret            = lis2de12_write_reg( LIS2DE12_TIME_LIMIT, ( uint8_t* ) &time_limit, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2150,15 +2153,15 @@ int32_t lis2de12_shock_dur_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_shock_dur_get(uint8_t *val)
+int32_t lis2de12_shock_dur_get( uint8_t* val )
 {
-  lis2de12_time_limit_t time_limit;
-  int32_t ret;
+    lis2de12_time_limit_t time_limit;
+    int32_t               ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_LIMIT, (uint8_t*)&time_limit, 1);
-  *val = (uint8_t)time_limit.tli;
+    ret  = lis2de12_read_reg( LIS2DE12_TIME_LIMIT, ( uint8_t* ) &time_limit, 1 );
+    *val = ( uint8_t ) time_limit.tli;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -2172,17 +2175,18 @@ int32_t lis2de12_shock_dur_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_quiet_dur_set(uint8_t val)
+int32_t lis2de12_quiet_dur_set( uint8_t val )
 {
-  lis2de12_time_latency_t time_latency;
-  int32_t ret;
+    lis2de12_time_latency_t time_latency;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_LATENCY, (uint8_t*)&time_latency, 1);
-  if (ret == 0) {
-    time_latency.tla = val;
-    ret = lis2de12_write_reg(LIS2DE12_TIME_LATENCY, (uint8_t*)&time_latency, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_TIME_LATENCY, ( uint8_t* ) &time_latency, 1 );
+    if( ret == 0 )
+    {
+        time_latency.tla = val;
+        ret              = lis2de12_write_reg( LIS2DE12_TIME_LATENCY, ( uint8_t* ) &time_latency, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2196,15 +2200,15 @@ int32_t lis2de12_quiet_dur_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_quiet_dur_get(uint8_t *val)
+int32_t lis2de12_quiet_dur_get( uint8_t* val )
 {
-  lis2de12_time_latency_t time_latency;
-  int32_t ret;
+    lis2de12_time_latency_t time_latency;
+    int32_t                 ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_LATENCY, (uint8_t*)&time_latency, 1);
-  *val = (uint8_t)time_latency.tla;
+    ret  = lis2de12_read_reg( LIS2DE12_TIME_LATENCY, ( uint8_t* ) &time_latency, 1 );
+    *val = ( uint8_t ) time_latency.tla;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -2218,17 +2222,18 @@ int32_t lis2de12_quiet_dur_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_double_tap_timeout_set(uint8_t val)
+int32_t lis2de12_double_tap_timeout_set( uint8_t val )
 {
-  lis2de12_time_window_t time_window;
-  int32_t ret;
+    lis2de12_time_window_t time_window;
+    int32_t                ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_WINDOW, (uint8_t*)&time_window, 1);
-  if (ret == 0) {
-    time_window.tw = val;
-    ret = lis2de12_write_reg(LIS2DE12_TIME_WINDOW, (uint8_t*)&time_window, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_TIME_WINDOW, ( uint8_t* ) &time_window, 1 );
+    if( ret == 0 )
+    {
+        time_window.tw = val;
+        ret            = lis2de12_write_reg( LIS2DE12_TIME_WINDOW, ( uint8_t* ) &time_window, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2242,29 +2247,29 @@ int32_t lis2de12_double_tap_timeout_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_double_tap_timeout_get(uint8_t *val)
+int32_t lis2de12_double_tap_timeout_get( uint8_t* val )
 {
-  lis2de12_time_window_t time_window;
-  int32_t ret;
+    lis2de12_time_window_t time_window;
+    int32_t                ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_TIME_WINDOW, (uint8_t*)&time_window, 1);
-  *val = (uint8_t)time_window.tw;
+    ret  = lis2de12_read_reg( LIS2DE12_TIME_WINDOW, ( uint8_t* ) &time_window, 1 );
+    *val = ( uint8_t ) time_window.tw;
 
-  return ret;
+    return ret;
 }
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Activity_inactivity
-  * @brief     This section group all the functions concerning activity
-  *            inactivity functionality
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Activity_inactivity
+ * @brief     This section group all the functions concerning activity
+ *            inactivity functionality
+ * @{
+ *
+ */
 
 /**
   * @brief    Sleep-to-wake, return-to-sleep activation threshold in
@@ -2276,17 +2281,18 @@ int32_t lis2de12_double_tap_timeout_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_act_threshold_set(uint8_t val)
+int32_t lis2de12_act_threshold_set( uint8_t val )
 {
-  lis2de12_act_ths_t act_ths;
-  int32_t ret;
+    lis2de12_act_ths_t act_ths;
+    int32_t            ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_ACT_THS, (uint8_t*)&act_ths, 1);
-  if (ret == 0) {
-    act_ths.acth = val;
-    ret = lis2de12_write_reg(LIS2DE12_ACT_THS, (uint8_t*)&act_ths, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_ACT_THS, ( uint8_t* ) &act_ths, 1 );
+    if( ret == 0 )
+    {
+        act_ths.acth = val;
+        ret          = lis2de12_write_reg( LIS2DE12_ACT_THS, ( uint8_t* ) &act_ths, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2299,15 +2305,15 @@ int32_t lis2de12_act_threshold_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_act_threshold_get(uint8_t *val)
+int32_t lis2de12_act_threshold_get( uint8_t* val )
 {
-  lis2de12_act_ths_t act_ths;
-  int32_t ret;
+    lis2de12_act_ths_t act_ths;
+    int32_t            ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_ACT_THS, (uint8_t*)&act_ths, 1);
-  *val = (uint8_t)act_ths.acth;
+    ret  = lis2de12_read_reg( LIS2DE12_ACT_THS, ( uint8_t* ) &act_ths, 1 );
+    *val = ( uint8_t ) act_ths.acth;
 
-  return ret;
+    return ret;
 }
 
 /**
@@ -2319,17 +2325,18 @@ int32_t lis2de12_act_threshold_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_act_timeout_set(uint8_t val)
+int32_t lis2de12_act_timeout_set( uint8_t val )
 {
-  lis2de12_act_dur_t act_dur;
-  int32_t ret;
+    lis2de12_act_dur_t act_dur;
+    int32_t            ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_ACT_DUR, (uint8_t*)&act_dur, 1);
-  if (ret == 0) {
-    act_dur.actd = val;
-    ret = lis2de12_write_reg(LIS2DE12_ACT_DUR, (uint8_t*)&act_dur, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_ACT_DUR, ( uint8_t* ) &act_dur, 1 );
+    if( ret == 0 )
+    {
+        act_dur.actd = val;
+        ret          = lis2de12_write_reg( LIS2DE12_ACT_DUR, ( uint8_t* ) &act_dur, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2341,29 +2348,29 @@ int32_t lis2de12_act_timeout_set(uint8_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_act_timeout_get(uint8_t *val)
+int32_t lis2de12_act_timeout_get( uint8_t* val )
 {
-  lis2de12_act_dur_t act_dur;
-  int32_t ret;
+    lis2de12_act_dur_t act_dur;
+    int32_t            ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_ACT_DUR, (uint8_t*)&act_dur, 1);
-  *val = (uint8_t)act_dur.actd;
+    ret  = lis2de12_read_reg( LIS2DE12_ACT_DUR, ( uint8_t* ) &act_dur, 1 );
+    *val = ( uint8_t ) act_dur.actd;
 
-  return ret;
+    return ret;
 }
 
 /**
-  * @}
-  *
-  */
+ * @}
+ *
+ */
 
 /**
-  * @defgroup  LIS2DE12_Serial_interface
-  * @brief     This section group all the functions concerning serial
-  *            interface management
-  * @{
-  *
-  */
+ * @defgroup  LIS2DE12_Serial_interface
+ * @brief     This section group all the functions concerning serial
+ *            interface management
+ * @{
+ *
+ */
 
 /**
   * @brief  Connect/Disconnect SDO/SA0 internal pull-up.[set]
@@ -2373,17 +2380,18 @@ int32_t lis2de12_act_timeout_get(uint8_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_sdo_sa0_mode_set(lis2de12_sdo_pu_disc_t val)
+int32_t lis2de12_pin_sdo_sa0_mode_set( lis2de12_sdo_pu_disc_t val )
 {
-  lis2de12_ctrl_reg0_t ctrl_reg0;
-  int32_t ret;
+    lis2de12_ctrl_reg0_t ctrl_reg0;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG0, (uint8_t*)&ctrl_reg0, 1);
-  if (ret == 0) {
-    ctrl_reg0.sdo_pu_disc = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG0, (uint8_t*)&ctrl_reg0, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG0, ( uint8_t* ) &ctrl_reg0, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg0.sdo_pu_disc = ( uint8_t ) val;
+        ret                   = lis2de12_write_reg( LIS2DE12_CTRL_REG0, ( uint8_t* ) &ctrl_reg0, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2394,24 +2402,25 @@ int32_t lis2de12_pin_sdo_sa0_mode_set(lis2de12_sdo_pu_disc_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_pin_sdo_sa0_mode_get(lis2de12_sdo_pu_disc_t *val)
+int32_t lis2de12_pin_sdo_sa0_mode_get( lis2de12_sdo_pu_disc_t* val )
 {
-  lis2de12_ctrl_reg0_t ctrl_reg0;
-  int32_t ret;
+    lis2de12_ctrl_reg0_t ctrl_reg0;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG0, (uint8_t*)&ctrl_reg0, 1);
-  switch (ctrl_reg0.sdo_pu_disc) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG0, ( uint8_t* ) &ctrl_reg0, 1 );
+    switch( ctrl_reg0.sdo_pu_disc )
+    {
     case LIS2DE12_PULL_UP_DISCONNECT:
-      *val = LIS2DE12_PULL_UP_DISCONNECT;
-      break;
+        *val = LIS2DE12_PULL_UP_DISCONNECT;
+        break;
     case LIS2DE12_PULL_UP_CONNECT:
-      *val = LIS2DE12_PULL_UP_CONNECT;
-      break;
+        *val = LIS2DE12_PULL_UP_CONNECT;
+        break;
     default:
-      *val = LIS2DE12_PULL_UP_DISCONNECT;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_PULL_UP_DISCONNECT;
+        break;
+    }
+    return ret;
 }
 
 /**
@@ -2422,17 +2431,18 @@ int32_t lis2de12_pin_sdo_sa0_mode_get(lis2de12_sdo_pu_disc_t *val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_spi_mode_set(lis2de12_sim_t val)
+int32_t lis2de12_spi_mode_set( lis2de12_sim_t val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  if (ret == 0) {
-    ctrl_reg4.sim = (uint8_t)val;
-    ret = lis2de12_write_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  }
-  return ret;
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    if( ret == 0 )
+    {
+        ctrl_reg4.sim = ( uint8_t ) val;
+        ret           = lis2de12_write_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    }
+    return ret;
 }
 
 /**
@@ -2443,24 +2453,25 @@ int32_t lis2de12_spi_mode_set(lis2de12_sim_t val)
   * @retval          interface status (MANDATORY: return 0 -> no Error)
   *
   */
-int32_t lis2de12_spi_mode_get(lis2de12_sim_t *val)
+int32_t lis2de12_spi_mode_get( lis2de12_sim_t* val )
 {
-  lis2de12_ctrl_reg4_t ctrl_reg4;
-  int32_t ret;
+    lis2de12_ctrl_reg4_t ctrl_reg4;
+    int32_t              ret;
 
-  ret = lis2de12_read_reg(LIS2DE12_CTRL_REG4, (uint8_t*)&ctrl_reg4, 1);
-  switch (ctrl_reg4.sim) {
+    ret = lis2de12_read_reg( LIS2DE12_CTRL_REG4, ( uint8_t* ) &ctrl_reg4, 1 );
+    switch( ctrl_reg4.sim )
+    {
     case LIS2DE12_SPI_4_WIRE:
-      *val = LIS2DE12_SPI_4_WIRE;
-      break;
+        *val = LIS2DE12_SPI_4_WIRE;
+        break;
     case LIS2DE12_SPI_3_WIRE:
-      *val = LIS2DE12_SPI_3_WIRE;
-      break;
+        *val = LIS2DE12_SPI_3_WIRE;
+        break;
     default:
-      *val = LIS2DE12_SPI_4_WIRE;
-      break;
-  }
-  return ret;
+        *val = LIS2DE12_SPI_4_WIRE;
+        break;
+    }
+    return ret;
 }
 
 /***************************************************************************\
@@ -2468,13 +2479,8 @@ int32_t lis2de12_spi_mode_get(lis2de12_sim_t *val)
 \***************************************************************************/
 
 static void accelerometer_irq1_init( void )
-{   
+{
     hal_gpio_init_in( lis2de12_int1.pin, HAL_GPIO_PULL_MODE_NONE, HAL_GPIO_IRQ_MODE_RISING, &lis2de12_int1 );
 }
 
-void lis2de12_int1_irq_handler( void* obj )
-{
-    accelerometer_irq1_state = true;
-}
-
-
+void lis2de12_int1_irq_handler( void* obj ) { accelerometer_irq1_state = true; }

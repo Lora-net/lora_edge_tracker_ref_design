@@ -54,7 +54,6 @@
 #define NB_CHUNK_ALMANAC 42
 #define CHUNK_INTERNAL_LOG 145
 #define INTERNAL_LOG_BUFFER_LEN 3000
-#define ACCUMULATED_CHARGE_THRESHOLD 10000
 #define RESET_COUNTER_THRESHOLD 10000
 
 /*
@@ -360,18 +359,6 @@ uint8_t tracker_restore_app_ctx( void )
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 16;
         tracker_ctx.accumulated_charge += tracker_ctx_buf[tracker_ctx_buf_idx++] << 24;
-
-        /* When a device is updated with an existing context. the accumulated_charge will be not
-        properly set and the value will be read just from the flash which has a dummy value
-        (because not previously set in the flash).
-        a normal device provided by Semtech has two batteries which have 2.6Ah (total) capacity
-        so 2600 mAh. so a normal device can't cross 10 000 mAh.
-        Avoid wrong value after update a device which didn't have this metric */
-
-        if( tracker_ctx.accumulated_charge > ACCUMULATED_CHARGE_THRESHOLD )
-        {
-            tracker_ctx.accumulated_charge = 0;
-        }
 
         tracker_ctx.host_reset_cnt = tracker_ctx_buf[tracker_ctx_buf_idx++];
         tracker_ctx.host_reset_cnt += tracker_ctx_buf[tracker_ctx_buf_idx++] << 8;
@@ -1519,6 +1506,17 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
 
             switch( tag )
             {
+            case GET_TRACKER_TYPE_CMD:
+            {
+                buffer_out[0] += 1;  // Add the element in the output buffer
+                buffer_out[output_buffer_index++] = GET_TRACKER_TYPE_CMD;
+                buffer_out[output_buffer_index++] = GET_TRACKER_TYPE_ANSWER_LEN;
+                buffer_out[output_buffer_index++] = 0;  // 0 means Tracker with Modem-E
+
+                payload_index += GET_TRACKER_TYPE_LEN;
+                break;
+            }
+
             case GET_FW_VERSION_CMD:
             {
                 buffer_out[0] += 1;  // Add the element in the output buffer
@@ -1574,7 +1572,11 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
             case GET_MODEM_STATUS_CMD:
             {
                 lr1110_modem_status_t modem_status;
-                lr1110_modem_get_status( &lr1110, &modem_status );
+
+                if( tracker_ctx.has_lr1110_firmware == true )
+                {
+                    lr1110_modem_get_status( &lr1110, &modem_status );
+                }
 
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_MODEM_STATUS_CMD;
@@ -1588,7 +1590,12 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
 
             case GET_MODEM_DATE_CMD:
             {
-                uint32_t date = lr1110_tracker_board_get_systime_from_gps( &lr1110 );
+                uint32_t date = 0;
+
+                if( tracker_ctx.has_lr1110_firmware == true )
+                {
+                    date = lr1110_tracker_board_get_systime_from_gps( &lr1110 );
+                }
 
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_MODEM_DATE_CMD;
@@ -1658,8 +1665,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                         lr1110_bootloader_write_flash_encrypted( &lr1110, lr1110_modem_flash_offset, chunk_buffer,
                                                                  chunk_buffer_index - 1 );
 
-                        lr1110_hal_reset( &lr1110 );
-                        HAL_Delay( 1500 );
+                        lr1110_modem_hal_reset( &lr1110 );
 
                         lr1110_modem_get_version( &lr1110, &tracker_ctx.modem_version );
                         HAL_DBG_TRACE_PRINTF(
@@ -1668,6 +1674,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                             tracker_ctx.modem_version.bootloader, tracker_ctx.modem_version.functionality );
 
                         /* new modem version, reset the board */
+                        tracker_ctx.has_lr1110_firmware             = true;
                         tracker_ctx.lorawan_parameters_have_changed = true;
                     }
 
@@ -1812,7 +1819,11 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
             {
                 uint16_t nb_uplink_mobile_static;
                 uint16_t nb_uplink_reset;
-                lr1110_modem_get_connection_timeout_status( &lr1110, &nb_uplink_mobile_static, &nb_uplink_reset );
+
+                if( tracker_ctx.has_lr1110_firmware == true )
+                {
+                    lr1110_modem_get_connection_timeout_status( &lr1110, &nb_uplink_mobile_static, &nb_uplink_reset );
+                }
 
                 buffer_out[0] += 1;  // Add the element in the output buffer
                 buffer_out[output_buffer_index++] = GET_LORAWAN_NB_UPLINK_SINCE_LAST_DOWNLINK_CMD;
@@ -2110,7 +2121,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                 uint32_t newest_almanac_date = 0;
 
                 /* get the dates form the Modem-E */
-                lr1110_tracker_board_get_almanac_dates( &lr1110, &oldest_almanac_date, &newest_almanac_date );
+                if( tracker_ctx.has_lr1110_firmware == true )
+                {
+                    lr1110_tracker_board_get_almanac_dates( &lr1110, &oldest_almanac_date, &newest_almanac_date );
+                }
 
                 if( oldest_almanac_date > tracker_ctx.last_almanac_update )
                 {
@@ -3284,7 +3298,8 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
     }
 
     /* Store the new values here if it's asked */
-    if( ( ( tracker_ctx.new_value_to_set ) == true ) && ( reset_board_asked == true ) )
+    if( ( ( tracker_ctx.new_value_to_set ) == true ) && ( reset_board_asked == true ) &&
+        ( tracker_ctx.has_lr1110_firmware == true ) )
     {
         tracker_store_app_ctx( );
     }

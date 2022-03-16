@@ -128,7 +128,7 @@ void P2PS_STM_App_Notification(P2PS_STM_App_Notification_evt_t *pNotification)
 
         case P2PS_STM_BOOT_REQUEST_EVT:
         {
-            pNotification->DataTransfered.pPayload[2] = 0xFF; // Force the nb_page to erase to 255
+            pNotification->DataTransfered.pPayload[2] = 188; // Force the nb_page to erase up to the sector 196 ( 7 sectors for bootloader & 188 sectors for the app)
             *(uint32_t*)SRAM1_BASE = *(uint32_t*)pNotification->DataTransfered.pPayload;
             hal_mcu_reset( );
             break;

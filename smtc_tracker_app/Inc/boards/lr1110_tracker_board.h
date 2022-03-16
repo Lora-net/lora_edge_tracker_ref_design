@@ -171,7 +171,8 @@ uint32_t lr1110_tracker_board_get_systime_from_gps( const void* context );
  *
  * @returns Modem-E response code
  */
-lr1110_modem_response_code_t lr1110_tracker_board_get_almanac_dates( const void* context, uint32_t* oldest_almanac_date, uint32_t* newest_almanac_date);
+lr1110_modem_response_code_t lr1110_tracker_board_get_almanac_dates( const void* context, uint32_t* oldest_almanac_date,
+                                                                     uint32_t* newest_almanac_date );
 
 /*!
  * @brief notify the user is the modem is ready
@@ -197,7 +198,7 @@ void lr1110_tracker_board_set_ready( bool ready );
  * @returns Modem-E response code
  */
 lr1110_modem_response_code_t lr1110_tracker_board_measure_battery_drop( const void* context, int32_t* drop,
-                                                                      uint32_t* time_recovery );
+                                                                        uint32_t* time_recovery );
 
 /*!
  * @brief Turn on/off the requested LED(s)

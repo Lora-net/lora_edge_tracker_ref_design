@@ -408,6 +408,15 @@ int main( void )
     if( lr1110_tracker_board_init( &lr1110, &lr1110_modem_event_callback ) != LR1110_MODEM_RESPONSE_CODE_OK )
     {
         HAL_DBG_TRACE_ERROR( "###### ===== LR1110 BOARD INIT FAIL ==== ######\r\n\r\n" );
+
+        HAL_DBG_TRACE_INFO( "Something goes wrong with the LR1110 firmware, stay in BLE mode and update it\n\r" );
+        tracker_ctx.has_lr1110_firmware = false;
+        tracker_restore_app_ctx( );
+        start_ble_thread( 0 );
+    }
+    else
+    {
+        tracker_ctx.has_lr1110_firmware = true;
     }
 
     /* LR1110 modem-e version */
@@ -579,7 +588,7 @@ int main( void )
 
                 /* Adapt the ADR following the acceleromer movement */
                 tracker_app_adapt_adr( );
-                
+
                 /* Reset flag and counter */
                 if( tracker_ctx.send_alive_frame == true )
                 {
@@ -993,7 +1002,7 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
         {
             HAL_DBG_TRACE_MSG( "LBT         : ACTIVATE LBT\r\n" );
             /* Activate LBT for 5ms before each transmission with a threshold at -80 dBm */
-            modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -80, 5, 1250000 );
+            modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -80, 5, 125000 );
         }
 
         HAL_DBG_TRACE_MSG( "REGION      : AS923_GRP1\r\n\r\n" );
@@ -1025,7 +1034,8 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
         HAL_DBG_TRACE_MSG( "REGION      : KR920\r\n\r\n" );
 
         /* Activate LBT for 5ms before each transmission with a threshold at -65 dBm */
-        modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -65, 5, 1250000 );
+        modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -65, 5, 125000 );
+
         break;
     }
     case LR1110_LORAWAN_REGION_RU864:

@@ -51,7 +51,7 @@
 /* download header files here : https://github.com/Lora-net/radio_firmware_images/tree/master/lr1110 */
 
 #if( MODEM_TO_TRX == 1 )
-#include "lr1110_transceiver_0306.h"
+#include "lr1110_transceiver_0307.h"
 #endif
 #if( ( TRX_TO_MODEM == 1 ) || ( MODEM_TO_MODEM == 1 ) )
 #include "lr1110_modem_1.1.7.h"

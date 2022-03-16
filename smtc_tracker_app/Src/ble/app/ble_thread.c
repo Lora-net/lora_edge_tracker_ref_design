@@ -234,7 +234,7 @@ void start_ble_thread( uint32_t adv_timeout )
     leds_off( LED_TX_MASK );
 
     /* Store the new values here only if a reset board is asked */
-    if( ( tracker_ctx.new_value_to_set ) == true )
+    if( ( tracker_ctx.new_value_to_set == true ) && ( tracker_ctx.has_lr1110_firmware == true ) )
     {
         tracker_ctx.new_value_to_set = false;
         tracker_store_app_ctx( );

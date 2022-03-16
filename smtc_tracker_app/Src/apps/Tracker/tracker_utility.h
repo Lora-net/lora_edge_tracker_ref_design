@@ -101,6 +101,9 @@ extern "C" {
 #define GET_MODEM_DATE_CMD 0x46
 #define GET_MODEM_DATE_LEN 0x00
 #define GET_MODEM_DATE_ANSWER_LEN 0x04
+#define GET_TRACKER_TYPE_CMD 0x54
+#define GET_TRACKER_TYPE_LEN 0x00
+#define GET_TRACKER_TYPE_ANSWER_LEN 0x01
 
 /* Board */
 #define GET_BOARD_VOLTAGE_CMD 0x40
@@ -352,6 +355,7 @@ typedef struct
 
     /* Modem version information */
     lr1110_modem_version_t modem_version;
+    bool                   has_lr1110_firmware;
 
     /* GNSS Parameters */
     gnss_settings_t gnss_settings;

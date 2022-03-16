@@ -188,7 +188,7 @@ void hal_mcu_init_periph( void )
     pe4259_wifi_ble_init( );
 
     /* LIS2DE12 accelerometer */
-    accelerometer_init( INT_1 );
+    accelerometer_init( );
 
     /* Effect Hall sensor */
     lr1110_tracker_board_hall_effect_enable( true );
@@ -487,18 +487,13 @@ static void hal_mcu_system_clock_config( void )
     {
         hal_mcu_panic( );
     }
-    
+
     /* Configure the SMPS */
     hal_mcu_smps_config( );
 
-    /*Configure GPIO pin : PA2 */
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF0_LSCO;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
+    /* HSE tuning for frequency drift in BLE */
+    LL_RCC_HSE_SetCapacitorTuning( 55 );
+
     hal_mcu_system_clock_forward_LSE( true );
 }
 
