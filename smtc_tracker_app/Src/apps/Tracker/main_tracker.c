@@ -994,6 +994,10 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
     case LR1110_LORAWAN_REGION_AU915:
     {
         HAL_DBG_TRACE_MSG( "REGION      : AU915\r\n\r\n" );
+        
+        /* limit TX power to 14 dBm */
+        modem_response_code |= lr1110_modem_set_tx_power_offset( &lr1110, -6 );
+        
         break;
     }
     case LR1110_LORAWAN_REGION_AS923_GRP1:
@@ -1003,6 +1007,9 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
             HAL_DBG_TRACE_MSG( "LBT         : ACTIVATE LBT\r\n" );
             /* Activate LBT for 5ms before each transmission with a threshold at -80 dBm */
             modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -80, 5, 125000 );
+
+            /* limit TX power to 9 dBm */
+            modem_response_code |= lr1110_modem_set_tx_power_offset( &lr1110, -7 );
         }
 
         HAL_DBG_TRACE_MSG( "REGION      : AS923_GRP1\r\n\r\n" );
@@ -1026,6 +1033,10 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
     case LR1110_LORAWAN_REGION_IN865:
     {
         HAL_DBG_TRACE_MSG( "REGION      : IN865\r\n\r\n" );
+        
+        /* limit TX power to 14 dBm */
+        modem_response_code |= lr1110_modem_set_tx_power_offset( &lr1110, -6 );
+        
         break;
     }
     case LR1110_LORAWAN_REGION_KR920:
@@ -1035,6 +1046,9 @@ static lr1110_modem_response_code_t lorawan_init( lr1110_modem_regions_t region,
 
         /* Activate LBT for 5ms before each transmission with a threshold at -65 dBm */
         modem_response_code |= lr1110_modem_activate_lbt( &lr1110, LR1110_MODEM_LBT_MODE_ENABLE, -65, 5, 125000 );
+
+        /* limit TX power to 8 dBm */
+        modem_response_code |= lr1110_modem_set_tx_power_offset( &lr1110, -6 );
 
         break;
     }

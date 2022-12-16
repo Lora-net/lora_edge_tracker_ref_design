@@ -1674,8 +1674,10 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                             tracker_ctx.modem_version.bootloader, tracker_ctx.modem_version.functionality );
 
                         /* new modem version, reset the board */
-                        tracker_ctx.has_lr1110_firmware             = true;
-                        tracker_ctx.lorawan_parameters_have_changed = true;
+                        if( tracker_ctx.has_lr1110_firmware )
+                        {
+                            tracker_ctx.lorawan_parameters_have_changed = true;
+                        }
                     }
 
                     HAL_DBG_TRACE_PRINTF( "modem_fragment_id %d\n\r", modem_fragment_id );
@@ -2153,12 +2155,16 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                     uint8_t           almanac_one_sv_buffer[20];
                     volatile uint32_t almanac_date;
 
-                    for( uint8_t i = 0; i < 3; i++ )
+                    if( tracker_ctx.has_lr1110_firmware )
                     {
-                        /* note : the + 2 represents the alamac_fragment_id len in bytes */
-                        memcpy( almanac_one_sv_buffer,
-                                payload + payload_index + 2 + ( LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE * i ), 20 );
-                        lr1110_modem_gnss_one_chunk_almanac_update( &lr1110, almanac_one_sv_buffer );
+                        for( uint8_t i = 0; i < 3; i++ )
+                        {
+                            /* note : the + 2 represents the alamac_fragment_id len in bytes */
+                            memcpy( almanac_one_sv_buffer,
+                                    payload + payload_index + 2 + ( LR1110_MODEM_GNSS_SINGLE_ALMANAC_WRITE_SIZE * i ),
+                                    20 );
+                            lr1110_modem_gnss_one_chunk_almanac_update( &lr1110, almanac_one_sv_buffer );
+                        }
                     }
 
                     /* set the date */
@@ -2174,7 +2180,7 @@ uint8_t tracker_parse_cmd( uint8_t* payload, uint8_t* buffer_out, bool all_comma
                         gnss_set_full_almanac_udapte_flag( true );
                     }
 
-                    if( alamac_fragment_id == NB_CHUNK_ALMANAC )
+                    if( alamac_fragment_id == NB_CHUNK_ALMANAC && ( tracker_ctx.has_lr1110_firmware == true ) )
                     {
                         while( gnss_get_full_almanac_udapte_flag( ) == true )
                         {

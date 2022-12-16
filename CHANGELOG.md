@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### [v1.5.0] 2022-08-17 ###
+
+### Changed
+* TX power adapted for Japan / IN865 / AU915 / KR920 regions
+
+### Fixed
+* Disable almanac update by BLE when LR1110 firmware not present
+
 ### [v1.4.0] 2022-03-16 ###
 
 ### Added

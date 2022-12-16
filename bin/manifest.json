@@ -3,7 +3,7 @@
   "url": "https://api.github.com/repos/Lora-net/radio_firmware_images/contents/lr1110/modem/lr1110_modem_1.1.7.h",
   "hash": "d88ce74a1d252a6375367fd858026589"},
   "tkr_app": {
-    "version": "1.04.00",
+    "version": "1.05.00",
     "url": "https://api.github.com/repos/Lora-net/lora_edge_tracker_ref_design/contents/bin/lr1110_modem_tracker_sdk.bin",
-    "hash": "378c31bfbb526a99e780ecd61cca47ce"}
+    "hash": "e2f81a8f10e17cae77295dc0014168d9"}
 }

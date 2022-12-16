@@ -131,7 +131,7 @@ extern "C" {
  * @brief Defines the application firmware version
  */
 #define TRACKER_MAJOR_APP_VERSION 1
-#define TRACKER_MINOR_APP_VERSION 4
+#define TRACKER_MINOR_APP_VERSION 5
 #define TRACKER_SUB_MINOR_APP_VERSION 0
 
 #define TRACKER_PCB_HW_NUMBER 595
