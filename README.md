@@ -1,5 +1,7 @@
 # LoRa Edge Tracker Reference Design SDK
 
+This repository is obsolete and not recommended for new designs. If you’re interested in evaluating the currnet LoRa Edge Tracker Reference Design, please use the repository located at: https://github.com/lora-net/SWSD004
+
 ## 1. Description
 
 The LoRa Edge Tracker Reference Design SDK project contains the tracker application and several simple examples highlighting the LoRa Edge Tracker Reference Design SDK features.
